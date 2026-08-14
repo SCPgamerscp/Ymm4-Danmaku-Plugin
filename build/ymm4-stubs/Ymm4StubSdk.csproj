@@ -1,0 +1,39 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    YMM4 本体 DLL の API 形状だけを真似たスタブアセンブリ。
+    YMM4 が存在しない環境 (CI / Linux) でプラグイン層のコンパイルを検証するためだけに使う。
+    詳細は README.md を参照。
+  -->
+  <PropertyGroup>
+    <TargetFramework>net10.0-windows10.0.19041.0</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <LangVersion>latest</LangVersion>
+
+    <!-- Windows 以外でも Windows ターゲットをビルドできるようにする -->
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
+
+    <!-- 実 DLL と同じアセンブリ名で出力する (参照の差し替えを成立させるため) -->
+    <AssemblyName>YukkuriMovieMaker.Plugin</AssemblyName>
+    <RootNamespace>YukkuriMovieMaker</RootNamespace>
+
+    <!-- スタブなので警告は抑制する -->
+    <NoWarn>$(NoWarn);CS1591;CA1050;IDE0060</NoWarn>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+
+    <!-- スタブを誤って配布物に混ぜないための目印 -->
+    <AssemblyTitle>YMM4 API stub (build verification only)</AssemblyTitle>
+    <Description>YMM4 が無い環境でのコンパイル検証専用のスタブ。実行はできません。</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!--
+      Vortice (Direct2D) は NuGet から取得できるため、スタブではなく本物を使う。
+      YMM4 本体も同じ Vortice を使用しているので API 形状は一致する。
+    -->
+    <PackageReference Include="Vortice.Direct2D1" Version="3.6.2" />
+  </ItemGroup>
+
+</Project>
