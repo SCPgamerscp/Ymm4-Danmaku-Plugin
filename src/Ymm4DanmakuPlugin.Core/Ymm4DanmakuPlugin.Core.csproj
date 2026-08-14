@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!--
+      コアエンジンはYMM4/WPF/Direct2Dに一切依存しない純粋な .NET ライブラリです。
+      これにより Windows 以外の CI 環境でもビルド・ユニットテストが実行できます。
+      配布用プラグイン (Ymm4DanmakuPlugin) はこのプロジェクトの *ソース* をリンク取り込みし、
+      単一DLLとして出力します。
+    -->
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <LangVersion>latest</LangVersion>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <EnforceCodeStyleInBuild>false</EnforceCodeStyleInBuild>
+    <RootNamespace>Ymm4DanmakuPlugin.Core</RootNamespace>
+    <AssemblyName>Ymm4DanmakuPlugin.Core</AssemblyName>
+    <InvariantGlobalization>true</InvariantGlobalization>
+  </PropertyGroup>
+
+</Project>

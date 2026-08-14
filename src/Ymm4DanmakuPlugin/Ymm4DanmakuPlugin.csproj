@@ -1,0 +1,109 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!--
+      YMM4 v4.47.0.0 以降のプラグインは net10.0-windows がターゲットです。
+      Windows SDK バージョンまで含めた TFM は公式サンプルに合わせています。
+    -->
+    <TargetFramework>net10.0-windows10.0.19041.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <LangVersion>latest</LangVersion>
+    <UseWPF>true</UseWPF>
+
+    <!-- Windows 以外 (CI / Linux) でもコンパイル検証できるようにする -->
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
+
+    <AssemblyName>Ymm4DanmakuPlugin</AssemblyName>
+    <RootNamespace>Ymm4DanmakuPlugin</RootNamespace>
+    <Version>0.1.0</Version>
+    <Authors>Ymm4DanmakuPlugin contributors</Authors>
+    <Description>YMM4 用 東方風弾幕作成プラグイン</Description>
+
+    <!-- Pdb 内にソースコードのフルパスを含めない -->
+    <RepoRoot>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..\..\'))</RepoRoot>
+    <PathMap>$(RepoRoot)=.</PathMap>
+
+    <!--
+      配布は単一 DLL とするため、コアエンジンは ProjectReference ではなく
+      *ソースをリンク取り込み* します (下の Compile Include を参照)。
+    -->
+    <CoreDir>$(MSBuildThisFileDirectory)..\Ymm4DanmakuPlugin.Core\</CoreDir>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!--
+      WPF (UseWPF=true) ターゲットでは暗黙 using のセットが通常の
+      Microsoft.NET.Sdk と異なり、System.IO 等が含まれない。
+      コアのソースをリンク取り込みしており、そちらは暗黙 using を前提に
+      書かれているため、ここで明示的に補う。
+
+      なお System.Windows.Shapes.Path と System.IO.Path が衝突しうるが、
+      本プロジェクトでは System.Windows.Shapes を using していないので問題ない。
+    -->
+    <Using Include="System.IO" />
+    <Using Include="System.Linq" />
+    <Using Include="System.Collections.Generic" />
+    <Using Include="System.Threading" />
+    <Using Include="System.Threading.Tasks" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!--
+      コアエンジンのソースをリンク取り込みする。
+      obj/ bin/ は除外しないと生成物まで巻き込むので注意。
+    -->
+    <Compile Include="$(CoreDir)**\*.cs"
+             Exclude="$(CoreDir)obj\**\*.cs;$(CoreDir)bin\**\*.cs"
+             Link="Core\%(RecursiveDir)%(Filename)%(Extension)" />
+  </ItemGroup>
+
+  <!--
+    ============================================================
+      参照するアセンブリ
+      - 通常 (Windows + YMM4 あり): YMM4 インストールフォルダの実 DLL
+      - UseYmm4Stubs=true         : build/ymm4-stubs のスタブ (コンパイル検証専用)
+    ============================================================
+  -->
+  <ItemGroup Condition="'$(UseYmm4Stubs)' == 'true'">
+    <ProjectReference Include="$(MSBuildThisFileDirectory)..\..\build\ymm4-stubs\Ymm4StubSdk.csproj" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(UseYmm4Stubs)' != 'true'">
+    <Reference Include="YukkuriMovieMaker.Controls">
+      <HintPath>$(YMM4DirPath)YukkuriMovieMaker.Controls.dll</HintPath>
+    </Reference>
+    <Reference Include="YukkuriMovieMaker.Plugin">
+      <HintPath>$(YMM4DirPath)YukkuriMovieMaker.Plugin.dll</HintPath>
+    </Reference>
+    <Reference Include="SharpGen.Runtime">
+      <HintPath>$(YMM4DirPath)SharpGen.Runtime.dll</HintPath>
+    </Reference>
+    <Reference Include="SharpGen.Runtime.COM">
+      <HintPath>$(YMM4DirPath)SharpGen.Runtime.COM.dll</HintPath>
+    </Reference>
+    <Reference Include="Vortice.Direct2D1">
+      <HintPath>$(YMM4DirPath)Vortice.Direct2D1.dll</HintPath>
+    </Reference>
+    <Reference Include="Vortice.DirectX">
+      <HintPath>$(YMM4DirPath)Vortice.DirectX.dll</HintPath>
+    </Reference>
+    <Reference Include="Vortice.Mathematics">
+      <HintPath>$(YMM4DirPath)Vortice.Mathematics.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
+  <!--
+    ビルド後に YMM4 のプラグインフォルダへ DLL をコピーする。
+    Directory.Build.props で CopyToYMM4PluginDir=false にすると無効化できる。
+    スタブビルド時は YMM4 では動かないのでコピーしない。
+  -->
+  <Target Name="CopyToYMM4"
+          AfterTargets="PostBuildEvent"
+          Condition="'$(CopyToYMM4PluginDir)' == 'true' AND '$(UseYmm4Stubs)' != 'true' AND '$(OS)' == 'Windows_NT'">
+    <MakeDir Directories="$(YMM4DirPath)user\plugin\$(AssemblyName)" />
+    <Copy SourceFiles="$(TargetPath)"
+          DestinationFolder="$(YMM4DirPath)user\plugin\$(AssemblyName)\" />
+  </Target>
+
+</Project>

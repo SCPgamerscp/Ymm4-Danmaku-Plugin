@@ -1,0 +1,104 @@
+# ---------------------------------------------------------------
+# .NET / Visual Studio
+# ---------------------------------------------------------------
+[Bb]in/
+[Oo]bj/
+[Oo]ut/
+[Ll]og/
+[Ll]ogs/
+*.user
+*.userosscache
+*.suo
+*.userprefs
+*.sln.docstates
+*.dbmdl
+*.jfm
+*.pidb
+*.svclog
+*.scc
+
+# ビルド結果 / 配布物
+[Dd]ebug/
+[Dd]ebugPublic/
+[Rr]elease/
+[Rr]eleases/
+x64/
+x86/
+[Ww][Ii][Nn]32/
+[Aa][Rr][Mm]/
+[Aa][Rr][Mm]64/
+bld/
+# 注意: build/ はソース管理対象です。
+#   build/ymm4-stubs/ に CI / Linux 用のスタブ SDK を置いているため、
+#   ここで build/ を丸ごと無視してはいけません。
+#   (build/ 配下のビルド生成物は上の [Bb]in/ [Oo]bj/ で無視されます)
+[Oo]bjectives/
+publish/
+dist/
+artifacts/
+
+# パッケージ
+*.nupkg
+*.snupkg
+**/packages/*
+!**/packages/build/
+project.lock.json
+project.fragment.lock.json
+
+# YMM4 プラグイン配布アーカイブ (ビルド生成物)
+*.ymme
+*.zip
+
+# ---------------------------------------------------------------
+# IDE / エディタ
+# ---------------------------------------------------------------
+.vs/
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+.idea/
+*.swp
+*~
+_ReSharper*/
+*.[Rr]e[Ss]harper
+*.DotSettings.user
+
+# ---------------------------------------------------------------
+# テスト / カバレッジ
+# ---------------------------------------------------------------
+[Tt]est[Rr]esult*/
+TestResults/
+*.trx
+*.coverage
+*.coveragexml
+coverage*.json
+coverage*.xml
+coverage*.info
+BenchmarkDotNet.Artifacts/
+
+# ---------------------------------------------------------------
+# 環境依存の設定 (YMM4 のインストール先など)
+# 各開発者は Directory.Build.props.sample をコピーして作成する
+# ---------------------------------------------------------------
+Directory.Build.props
+
+# ---------------------------------------------------------------
+# OS 生成ファイル
+# ---------------------------------------------------------------
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+*.lnk
+
+# ---------------------------------------------------------------
+# 一時ファイル
+# ---------------------------------------------------------------
+*.tmp
+*.temp
+*.bak
+*.orig
+*.rej

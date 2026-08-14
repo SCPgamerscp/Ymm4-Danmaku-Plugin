@@ -1,0 +1,14 @@
+<Project>
+  <PropertyGroup>
+    <!--
+      YMM4 のインストールフォルダを指定してください（末尾に \ が必要です）。
+      このファイルを "Directory.Build.props" という名前でコピーして使用します。
+      例: C:\Program Files\YukkuriMovieMaker\
+          D:\YMM4\
+    -->
+    <YMM4DirPath>D:\YMM4\</YMM4DirPath>
+
+    <!-- ビルド後に YMM4\user\plugin\ へ自動コピーするかどうか -->
+    <CopyToYMM4PluginDir>true</CopyToYMM4PluginDir>
+  </PropertyGroup>
+</Project>
