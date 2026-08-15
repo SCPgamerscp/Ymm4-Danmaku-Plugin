@@ -51,10 +51,10 @@ public abstract class AudioEffectBase : Animatable
         ExoOutputDescription exoOutputDescription);
 
     /// <summary>このエフェクトが参照するファイル一覧。</summary>
-    public IEnumerable<string> GetFiles() => GetResources();
+    public IEnumerable<string> GetFiles() => [];
 
     /// <summary>参照リソース (ファイルパス) を列挙する。派生クラスで上書きする。</summary>
-    public virtual IEnumerable<string> GetResources() => [];
+    public virtual IEnumerable<YukkuriMovieMaker.Project.TimelineResource> GetResources() => [];
 
     /// <summary>参照ファイルのパスを置換する。</summary>
     public virtual void ReplaceFile(string from, string to) { }

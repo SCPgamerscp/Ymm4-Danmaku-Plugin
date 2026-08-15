@@ -73,9 +73,9 @@ public sealed class PatternEmitterBehavior(EmitterSettings settings) : IEmitterB
         var way = Math.Max(1, pattern.Way);
         var stack = Math.Max(1, pattern.Stack);
 
-        var baseAngle = pattern.BaseAngle;
+        var baseAngle = context.EmitterAngle(fireTime) ?? pattern.BaseAngle;
         if (pattern.AimAtTarget || pattern.Kind == PatternKind.Aimed)
-            baseAngle = context.AngleToTarget();
+            baseAngle = context.AngleToTarget() + baseAngle;
 
         if (pattern.Kind is PatternKind.Spiral or PatternKind.Rose or PatternKind.Whip or PatternKind.Laser)
             baseAngle += pattern.AngleStepPerShot * shotIndex;

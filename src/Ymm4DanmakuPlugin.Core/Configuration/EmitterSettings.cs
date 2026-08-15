@@ -56,4 +56,7 @@ public sealed record EmitterSettings
 
     /// <summary>スクリプト (BulletML / Lua) をループ再生するか。</summary>
     public bool ScriptLoop { get; init; } = true;
+
+    /// <summary>カスタム画像ファイルパス。</summary>
+    public string? ImagePath { get; init; }
 }

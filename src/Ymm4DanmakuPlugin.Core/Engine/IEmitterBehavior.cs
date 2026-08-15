@@ -48,4 +48,7 @@ public sealed class EmitterContext(DanmakuEngine engine, int emitterIndex)
 
     /// <summary>ターゲットへの角度 (度) を返す。</summary>
     public double AngleToTarget() => (TargetPosition - Position).Degrees;
+
+    /// <summary>動的な発射基準角度 (度) を引く。未設定なら null。</summary>
+    public double? EmitterAngle(double time) => Engine.Live.EmitterAngle?.Invoke(EmitterIndex, time);
 }

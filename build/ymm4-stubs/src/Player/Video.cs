@@ -94,7 +94,7 @@ public class ControllerPointMouseWheelEventArgs(int delta, ModifierKeys modifier
 }
 
 /// <summary>制御点の形状 (スタブ)。</summary>
-public enum ControllerPointShape
+public enum VideoControllerPointShape
 {
     Default,
     Square,
@@ -108,7 +108,7 @@ public class ControllerPoint(Vector3 position, Action<ControlPointDragEventArgs>
 
     public bool IsSelected { get; set; }
 
-    public ControllerPointShape Shape { get; set; } = ControllerPointShape.Default;
+    public VideoControllerPointShape Shape { get; set; } = VideoControllerPointShape.Default;
 
     public Action<ControlPointDragEventArgs>? OnDrag { get; set; } = onDrag;
 

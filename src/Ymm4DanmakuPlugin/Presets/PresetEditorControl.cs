@@ -270,7 +270,7 @@ internal sealed class PresetEditorControl : UserControl, IPropertyEditorControl
 /// エミッター編集エリアにプリセット操作パネルを表示する属性。
 /// <c>string</c> 型のプロパティ (選択中プリセット名) に付ける。
 /// </summary>
-internal sealed class PresetSelectorAttribute : PropertyEditorAttribute2
+internal sealed class PresetSelectorAttribute : PropertyEditorAttribute
 {
     public PresetSelectorAttribute()
     {
@@ -285,7 +285,12 @@ internal sealed class PresetSelectorAttribute : PropertyEditorAttribute2
         object propertyOwner,
         PropertyInfo propertyInfo)
     {
-        if (control is PresetEditorControl editor) editor.Attach(propertyOwner as EmitterParameter);
+        if (control is PresetEditorControl editor)
+        {
+            var target = propertyOwner as EmitterParameter
+                         ?? (propertyOwner as DanmakuShapeParameter)?.MainEmitter;
+            editor.Attach(target);
+        }
     }
 
     public override void ClearBindings(FrameworkElement control)

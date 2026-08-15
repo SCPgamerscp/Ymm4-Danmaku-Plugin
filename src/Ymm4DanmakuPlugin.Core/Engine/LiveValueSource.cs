@@ -31,13 +31,20 @@ public sealed class LiveValueSource
     /// </summary>
     public Func<double, Vec2?>? TargetPosition { get; set; }
 
+    /// <summary>
+    /// エミッターの発射基準角度 (度) を供給する関数。引数は (エミッター番号, 時刻秒)。
+    /// null を返した場合は設定値 (<c>PatternSettings.BaseAngle</c>) が使われる。
+    /// </summary>
+    public Func<int, double, double?>? EmitterAngle { get; set; }
+
     /// <summary>いずれかの供給関数が設定されているかどうか。</summary>
-    public bool HasAny => EmitterPosition is not null || TargetPosition is not null;
+    public bool HasAny => EmitterPosition is not null || TargetPosition is not null || EmitterAngle is not null;
 
     /// <summary>すべての供給関数を解除する。</summary>
     public void Clear()
     {
         EmitterPosition = null;
         TargetPosition = null;
+        EmitterAngle = null;
     }
 }

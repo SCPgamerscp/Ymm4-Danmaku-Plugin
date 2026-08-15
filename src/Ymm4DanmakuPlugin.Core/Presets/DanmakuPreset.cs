@@ -32,6 +32,9 @@ public sealed record DanmakuPreset
 
     public double SplitDelay { get; init; } = 0.6;
 
+    /// <summary>カスタム画像ファイルパス。</summary>
+    public string? ImagePath { get; init; }
+
     /// <summary>このプリセットの内容をエミッター設定へ適用する。</summary>
     public EmitterSettings ApplyTo(EmitterSettings emitter) => emitter with
     {
@@ -41,6 +44,7 @@ public sealed record DanmakuPreset
         Appearance = Appearance,
         Split = Split,
         SplitDelay = SplitDelay,
+        ImagePath = ImagePath ?? emitter.ImagePath,
     };
 
     /// <summary>エミッター設定からプリセットを作る。</summary>
@@ -53,6 +57,7 @@ public sealed record DanmakuPreset
         Appearance = emitter.Appearance,
         Split = emitter.Split,
         SplitDelay = emitter.SplitDelay,
+        ImagePath = emitter.ImagePath,
     };
 
     public string ToJson() => DanmakuJson.Serialize(this);

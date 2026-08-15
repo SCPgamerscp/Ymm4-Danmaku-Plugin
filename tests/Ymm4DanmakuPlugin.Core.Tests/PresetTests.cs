@@ -588,4 +588,27 @@ public class DanmakuJsonTests
         Assert.NotNull(restored);
         Assert.Equal((PatternKind)1, restored!.Kind);
     }
+
+    [Fact]
+    public void プリセットに画像パスを保持して往復できる()
+    {
+        var preset = new DanmakuPreset
+        {
+            Name = "画像テスト",
+            ImagePath = "C:/images/bullet.png",
+        };
+
+        var json = preset.ToJson();
+        Assert.Contains("bullet.png", json);
+
+        var restored = DanmakuPreset.FromJson(json);
+        Assert.NotNull(restored);
+        Assert.Equal("C:/images/bullet.png", restored!.ImagePath);
+
+        var emitter = preset.ApplyTo(new EmitterSettings());
+        Assert.Equal("C:/images/bullet.png", emitter.ImagePath);
+
+        var fromEmitter = DanmakuPreset.FromEmitter(emitter, "復元");
+        Assert.Equal("C:/images/bullet.png", fromEmitter.ImagePath);
+    }
 }

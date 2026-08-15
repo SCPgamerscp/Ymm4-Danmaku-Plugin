@@ -22,3 +22,22 @@ public sealed class SharedDataStore
 
     public void Save(object value) => values[value.GetType()] = value;
 }
+
+public enum TimelineResourceType
+{
+    None,
+    File,
+    Plugin,
+}
+
+public readonly record struct ContentId(string Value);
+
+public class TimelineResource
+{
+    public string Key { get; set; } = string.Empty;
+    public string Name { get; set; } = string.Empty;
+    public string Author { get; set; } = string.Empty;
+    public ContentId ContentId { get; set; }
+    public string Remark { get; set; } = string.Empty;
+    public TimelineResourceType ResourceType { get; set; }
+}

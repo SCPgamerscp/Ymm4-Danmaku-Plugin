@@ -5,6 +5,7 @@ using YukkuriMovieMaker.Controls;
 using YukkuriMovieMaker.Exo;
 using YukkuriMovieMaker.Player.Audio.Effects;
 using YukkuriMovieMaker.Plugin.Effects;
+using YukkuriMovieMaker.Project;
 using Ymm4DanmakuPlugin.Core.Audio;
 using Ymm4DanmakuPlugin.Core.Configuration;
 using Ymm4DanmakuPlugin.Core.Engine;
@@ -76,7 +77,7 @@ public class DanmakuAudioEffect : AudioEffectBase
         ExoOutputDescription exoOutputDescription) => [];
 
     /// <summary>参照する音声ファイルは YMM4 の設定画面側で管理するため、ここでは列挙しない。</summary>
-    public override IEnumerable<string> GetResources() => [];
+    public override IEnumerable<TimelineResource> GetResources() => [];
 
     protected override IEnumerable<IAnimatable> GetAnimatables() => [];
 }

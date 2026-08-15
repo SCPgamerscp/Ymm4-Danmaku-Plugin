@@ -103,7 +103,7 @@ public class DanmakuSoundEntry : INotifyPropertyChanged
 /// </summary>
 public class DanmakuSoundSettings : SettingsBase<DanmakuSoundSettings>
 {
-    public override string Category => "弾幕";
+    public override SettingsCategory Category => SettingsCategory.Other;
 
     public override string Name => "弾幕効果音";
 
@@ -111,6 +111,8 @@ public class DanmakuSoundSettings : SettingsBase<DanmakuSoundSettings>
     public override bool HasSettingView => false;
 
     public override object? SettingView => null;
+
+    public override void Initialize() { }
 
     [Display(GroupName = "発射音", Name = "音声ファイル", Description = "弾を発射した瞬間に鳴る音。")]
     [FileSelector(YukkuriMovieMaker.Settings.FileGroupType.AudioItem)]

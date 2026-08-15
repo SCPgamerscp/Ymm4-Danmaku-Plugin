@@ -600,6 +600,10 @@ public sealed class DanmakuEngine
 
         switch (appearance.ColorMode)
         {
+            case ColorMode.Original:
+                bullet.Color = new BulletColor(1f, 1f, 1f, opacity);
+                break;
+
             case ColorMode.Single:
                 bullet.Color = appearance.PrimaryColor.MultiplyAlpha(opacity);
                 break;

@@ -33,7 +33,7 @@
       Vortice (Direct2D) は NuGet から取得できるため、スタブではなく本物を使う。
       YMM4 本体も同じ Vortice を使用しているので API 形状は一致する。
     -->
-    <PackageReference Include="Vortice.Direct2D1" Version="3.6.2" />
+    <PackageReference Include="Vortice.Direct2D1" Version="2.1.8-beta" />
   </ItemGroup>
 
 </Project>

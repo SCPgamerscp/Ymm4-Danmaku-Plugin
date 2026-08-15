@@ -46,6 +46,7 @@ public sealed class DanmakuShapeSource : IShapeSource2
     private int lastFps;
     private int lastCanvasWidth;
     private int lastCanvasHeight;
+    private int lastTotalFrame;
 
     public DanmakuShapeSource(IGraphicsDevicesAndContext devices, DanmakuShapeParameter parameter)
     {
@@ -116,6 +117,7 @@ public sealed class DanmakuShapeSource : IShapeSource2
         lastFps = fps;
         lastCanvasWidth = canvasWidth;
         lastCanvasHeight = canvasHeight;
+        lastTotalFrame = totalFrame;
 
         batchBuilder.Build(simulator.Bullets, GetAppearance, parameter.GlobalOpacity);
         output = renderer.Render(batchBuilder, parameter.GetGlowIntensity);
@@ -151,30 +153,29 @@ public sealed class DanmakuShapeSource : IShapeSource2
                 parameter.TargetX.GetValue(frame, totalFrame, fps),
                 parameter.TargetY.GetValue(frame, totalFrame, fps));
         };
+
+        sim.Live.EmitterAngle = (index, timeSeconds) =>
+        {
+            if (index < 0 || index >= emitters.Count) return null;
+
+            var emitter = emitters[index];
+            var frame = TimeToFrame(timeSeconds, fps, totalFrame);
+            return emitter.BaseAngle.GetValue(frame, totalFrame, fps);
+        };
     }
 
     /// <summary>
     /// 秒をフレーム番号へ変換する。
-    /// <para>
-    /// シミュレーションは 1/120 秒などフレームより細かい刻みで進むため、
-    /// キーフレーム値もフレーム境界で階段状になる。これは YMM4 本体の挙動と一致しており、
-    /// 「同じフレームなら同じ値」という決定論の条件を満たす。
-    /// </para>
     /// </summary>
-    private static long TimeToFrame(double timeSeconds, int fps, int totalFrame)
-    {
-        var frame = (long)(timeSeconds * fps);
-        if (frame < 0) frame = 0;
-        if (frame > totalFrame) frame = totalFrame;
-        return frame;
-    }
+    private static int TimeToFrame(double timeSeconds, int fps, int totalFrame) =>
+        Math.Clamp((int)Math.Round(timeSeconds * fps), 0, Math.Max(0, totalFrame - 1));
 
-    /// <summary>エミッター番号から見た目設定を引く (トレイル描画のため描画側で必要)。</summary>
+    /// <summary>弾の描画用プロパティを引く (バッチ生成用)。</summary>
     private BulletAppearance GetAppearance(int emitterIndex)
     {
-        var settings = simulator?.Settings;
-        if (settings is null) return new BulletAppearance();
+        if (simulator is null) return new BulletAppearance();
 
+        var settings = simulator.Settings;
         if (emitterIndex < 0 || emitterIndex >= settings.Emitters.Length)
             return settings.Emitters.Length > 0 ? settings.Emitters[0].Appearance : new BulletAppearance();
 
@@ -206,13 +207,14 @@ public sealed class DanmakuShapeSource : IShapeSource2
         var emitters = parameter.Emitters;
         var fps = lastFps > 0 ? lastFps : 60;
         var frame = Math.Max(0, lastFrame);
+        var totalFrame = Math.Max(1, lastTotalFrame > 0 ? lastTotalFrame : frame + 1);
 
         foreach (var emitter in emitters)
         {
             var captured = emitter;
             var position = new Vector3(
-                (float)captured.X.GetValue(frame, frame + 1, fps),
-                (float)captured.Y.GetValue(frame, frame + 1, fps),
+                (float)captured.X.GetValue(frame, totalFrame, fps),
+                (float)captured.Y.GetValue(frame, totalFrame, fps),
                 0);
 
             var point = new ControllerPoint(position, arg =>
@@ -221,7 +223,7 @@ public sealed class DanmakuShapeSource : IShapeSource2
                 captured.Y.AddToEachValues(arg.Delta.Y);
             })
             {
-                Shape = ControllerPointShape.Circle,
+                Shape = VideoControllerPointShape.Circle,
             };
 
             yield return new VideoController([point])
@@ -233,8 +235,8 @@ public sealed class DanmakuShapeSource : IShapeSource2
         if (!parameter.CollisionEnabled) yield break;
 
         var targetPosition = new Vector3(
-            (float)parameter.TargetX.GetValue(frame, frame + 1, fps),
-            (float)parameter.TargetY.GetValue(frame, frame + 1, fps),
+            (float)parameter.TargetX.GetValue(frame, totalFrame, fps),
+            (float)parameter.TargetY.GetValue(frame, totalFrame, fps),
             0);
 
         var targetPoint = new ControllerPoint(targetPosition, arg =>
@@ -243,7 +245,7 @@ public sealed class DanmakuShapeSource : IShapeSource2
             parameter.TargetY.AddToEachValues(arg.Delta.Y);
         })
         {
-            Shape = ControllerPointShape.Square,
+            Shape = VideoControllerPointShape.Square,
         };
 
         yield return new VideoController([targetPoint])

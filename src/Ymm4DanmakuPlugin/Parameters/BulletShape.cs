@@ -62,4 +62,7 @@ public static class SpriteSlots
 
     /// <summary>エミッター番号に対応するユーザー画像スロット番号を返す。</summary>
     public static int CustomSlotOf(int emitterIndex) => CustomBase + emitterIndex;
+
+    /// <summary>ユーザー画像スロット番号に対応するエミッター番号を返す。</summary>
+    public static int EmitterIndexOf(int slot) => slot - CustomBase;
 }

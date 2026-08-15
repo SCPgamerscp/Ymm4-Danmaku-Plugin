@@ -53,6 +53,9 @@ public enum PatternKind
 /// <summary>色の決定方法。</summary>
 public enum ColorMode
 {
+    /// <summary>元画像そのまま (着色なし)。</summary>
+    Original = -1,
+
     /// <summary>単色。</summary>
     Single = 0,
 

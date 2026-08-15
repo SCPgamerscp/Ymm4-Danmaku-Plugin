@@ -1322,4 +1322,30 @@ public class KeyframeLiveValueTests
         Assert.Equal(42.0, engine.TargetPosition.X, 6);
         Assert.Equal(84.0, engine.TargetPosition.Y, 6);
     }
+
+    [Fact]
+    public void EmitterAngle供給関数によって発射角度が動的に変化する()
+    {
+        var pattern = new PatternSettings
+        {
+            Kind = PatternKind.Circle,
+            Way = 1,
+            FireInterval = 0.1,
+            BaseAngle = 0,
+        };
+
+        var settings = TestFactory.Settings(TestFactory.Emitter(pattern));
+        var engine = TestFactory.Engine(settings);
+
+        // 時刻 t に応じて発射角度を 90度 * t にする
+        engine.Live.EmitterAngle = (idx, t) => 90.0 * t;
+
+        engine.Advance(0.05); // 1発目: t=0, angle = 0度
+        Assert.Single(engine.AliveBullets());
+        Assert.Equal(0.0, engine.AliveBullets()[0].Velocity.Degrees, 1);
+
+        engine.Advance(0.1); // 2発目: t=0.1, angle = 9度
+        Assert.Equal(2, engine.AliveBullets().Length);
+        Assert.Equal(9.0, engine.AliveBullets()[1].Velocity.Degrees, 1);
+    }
 }

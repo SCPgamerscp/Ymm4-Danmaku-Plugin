@@ -184,7 +184,7 @@ public sealed class BulletSpriteLibrary : IDisposable
     /// <summary>札弾: 角の丸い縦長の板。進行方向 (+X) に長い。</summary>
     private ID2D1Geometry CreateCard(ID2D1Factory f)
     {
-        var rect = new RoundedRectangle(new System.Drawing.RectangleF(-1f, -0.55f, 2f, 1.1f), 0.35f, 0.35f);
+        var rect = new RoundedRectangle(new Vortice.Mathematics.Rect(-1f, -0.55f, 2f, 1.1f), 0.35f, 0.35f);
         return Collect(f.CreateRoundedRectangleGeometry(rect));
     }
 

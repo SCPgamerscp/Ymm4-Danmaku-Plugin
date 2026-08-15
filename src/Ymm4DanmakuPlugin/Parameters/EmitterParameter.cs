@@ -3,6 +3,7 @@ using System.ComponentModel.DataAnnotations;
 using System.Windows.Media;
 using YukkuriMovieMaker.Commons;
 using YukkuriMovieMaker.Controls;
+using YukkuriMovieMaker.Settings;
 using Ymm4DanmakuPlugin.Core.Configuration;
 using Ymm4DanmakuPlugin.Core.Model;
 using Ymm4DanmakuPlugin.Interop;
@@ -110,7 +111,7 @@ public class EmitterParameter : Animatable
     private DanmakuSourceMode sourceMode = DanmakuSourceMode.Pattern;
 
     [Display(GroupName = "弾幕データ", Name = "ファイル", Description = "JSON / BulletML(XML) / Lua ファイルのパス。「本文」が空のときに使用されます。")]
-    [FileSelector]
+    [FileSelector(FileGroupType.None)]
     public string SourcePath { get => sourcePath; set => Set(ref sourcePath, value); }
     private string sourcePath = string.Empty;
 
@@ -175,12 +176,9 @@ public class EmitterParameter : Animatable
     public double StackAngleStep { get => stackAngleStep; set => Set(ref stackAngleStep, value); }
     private double stackAngleStep;
 
-    [Display(GroupName = "パターン", Name = "基準角", Description = "0 が右、-90 が上です。")]
-    [TextBoxSlider("F1", "度", -180, 180)]
-    [DefaultValue(-90d)]
-    [Range(-100000, 100000)]
-    public double BaseAngle { get => baseAngle; set => Set(ref baseAngle, value); }
-    private double baseAngle = -90;
+    [Display(GroupName = "パターン", Name = "基準角", Description = "発射の中心方向。キーフレームで自由に回転させられます。0 で下向き。")]
+    [AnimationSlider("F1", "度", -360, 360)]
+    public Animation BaseAngle { get; } = new Animation(-90, -100000, 100000);
 
     [Display(GroupName = "パターン", Name = "広がり角", Description = "弾を配置する扇の角度。360 で全方位。")]
     [TextBoxSlider("F1", "度", 0, 360)]
@@ -655,6 +653,7 @@ public class EmitterParameter : Animatable
         ScriptSpeedScale = ScriptSpeedScale,
         ScriptRank = ScriptRank,
         ScriptLoop = ScriptLoop,
+        ImagePath = string.IsNullOrWhiteSpace(ImagePath) ? null : ImagePath,
 
         Pattern = new PatternSettings
         {
@@ -663,7 +662,7 @@ public class EmitterParameter : Animatable
             Stack = Stack,
             StackSpeedStep = StackSpeedStep,
             StackAngleStep = StackAngleStep,
-            BaseAngle = BaseAngle,
+            BaseAngle = BaseAngle.GetFirstValue(),
             SpreadAngle = SpreadAngle,
             AngleStepPerShot = AngleStepPerShot,
             AngleJitter = AngleJitter,
@@ -782,7 +781,7 @@ public class EmitterParameter : Animatable
         other.Stack = Stack;
         other.StackSpeedStep = StackSpeedStep;
         other.StackAngleStep = StackAngleStep;
-        other.BaseAngle = BaseAngle;
+        other.BaseAngle.CopyFrom(BaseAngle);
         other.SpreadAngle = SpreadAngle;
         other.AngleStepPerShot = AngleStepPerShot;
         other.AngleJitter = AngleJitter;
@@ -879,7 +878,7 @@ public class EmitterParameter : Animatable
         Stack = pattern.Stack;
         StackSpeedStep = pattern.StackSpeedStep;
         StackAngleStep = pattern.StackAngleStep;
-        BaseAngle = pattern.BaseAngle;
+        BaseAngle.SetFirstValue(pattern.BaseAngle);
         SpreadAngle = pattern.SpreadAngle;
         AngleStepPerShot = pattern.AngleStepPerShot;
         AngleJitter = pattern.AngleJitter;
@@ -955,5 +954,5 @@ public class EmitterParameter : Animatable
     public Core.Presets.DanmakuPreset ToPreset(string name, string description = "")
         => Core.Presets.DanmakuPreset.FromEmitter(ToSettings(0), name, description);
 
-    protected override IEnumerable<IAnimatable> GetAnimatables() => [X, Y];
+    protected override IEnumerable<IAnimatable> GetAnimatables() => [X, Y, BaseAngle];
 }

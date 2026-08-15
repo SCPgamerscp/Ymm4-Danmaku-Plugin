@@ -24,11 +24,31 @@ public interface IPlugin
     PluginDetailsAttribute? Details { get; }
 }
 
+/// <summary>設定画面のカテゴリ (スタブ)。</summary>
+public enum SettingsCategory
+{
+    None = 0,
+    Voice = 1,
+    VideoEffect = 2,
+    AudioEffect = 3,
+    VideoFileWriter = 4,
+    VideoFileSource = 5,
+    AudioFileSource = 6,
+    ImageFileSource = 7,
+    Transition = 8,
+    Shape = 9,
+    Tachie = 10,
+    Tool = 11,
+    TextCompletion = 12,
+    Brush = 13,
+    Other = 14,
+}
+
 /// <summary>YMM4 の設定画面に項目を追加するためのインターフェース (スタブ)。</summary>
 public interface ISetting
 {
-    /// <summary>設定画面での分類名。</summary>
-    string Category { get; }
+    /// <summary>設定画面での分類。</summary>
+    SettingsCategory Category { get; }
 
     /// <summary>設定画面での表示名。</summary>
     string Name { get; }
@@ -48,10 +68,6 @@ public interface ISetting
 
 /// <summary>
 /// プラグイン設定の基底クラス (スタブ)。
-/// <para>
-/// 実物は <c>%AppData%</c> 配下へ JSON として自動保存し、
-/// <see cref="Default"/> でシングルトンを提供する。
-/// </para>
 /// </summary>
 public abstract class SettingsBase<T> : ISetting
     where T : SettingsBase<T>, new()
@@ -70,7 +86,7 @@ public abstract class SettingsBase<T> : ISetting
 
     protected SettingsBase() { }
 
-    public abstract string Category { get; }
+    public abstract SettingsCategory Category { get; }
 
     public abstract string Name { get; }
 
@@ -78,7 +94,7 @@ public abstract class SettingsBase<T> : ISetting
 
     public abstract object? SettingView { get; }
 
-    public virtual void Initialize() { }
+    public abstract void Initialize();
 
     public virtual void Save() { }
 }

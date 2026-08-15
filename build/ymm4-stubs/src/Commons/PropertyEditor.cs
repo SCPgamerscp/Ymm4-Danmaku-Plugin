@@ -33,7 +33,24 @@ public abstract class PropertyEditorAttribute : Attribute
 }
 
 /// <summary>カスタムコントロール用の属性基底 (スタブ)。</summary>
-public abstract class PropertyEditorAttribute2 : PropertyEditorAttribute;
+public abstract class PropertyEditorAttribute2 : PropertyEditorAttribute
+{
+    public sealed override void SetBindings(
+        FrameworkElement control,
+        object item,
+        object propertyOwner,
+        PropertyInfo propertyInfo) { }
+
+    public abstract void SetBindings(FrameworkElement control, ItemProperty[] itemProperties);
+}
+
+/// <summary>アイテムプロパティ情報 (スタブ)。</summary>
+public class ItemProperty
+{
+    public object Item { get; } = null!;
+    public object PropertyOwner { get; } = null!;
+    public PropertyInfo PropertyInfo { get; } = null!;
+}
 
 /// <summary>アイテム編集エリアのカスタムコントロールが実装するインターフェース (スタブ)。</summary>
 public interface IPropertyEditorControl
