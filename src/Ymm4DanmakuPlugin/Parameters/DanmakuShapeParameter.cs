@@ -45,7 +45,7 @@ public class DanmakuShapeParameter : ShapeParameterBase
     public double OrbitRadius
     {
         get => MainEmitter.OrbitRadius;
-        set { if (MainEmitter.OrbitRadius != value) { MainEmitter.OrbitRadius = value; OnPropertyChanged(); } }
+        set => MainEmitter.OrbitRadius = value;
     }
 
     [Display(GroupName = "発射位置", Name = "公転速度", Description = "エミッターの円運動の速度。")]
@@ -55,7 +55,7 @@ public class DanmakuShapeParameter : ShapeParameterBase
     public double OrbitSpeed
     {
         get => MainEmitter.OrbitSpeed;
-        set { if (MainEmitter.OrbitSpeed != value) { MainEmitter.OrbitSpeed = value; OnPropertyChanged(); } }
+        set => MainEmitter.OrbitSpeed = value;
     }
 
     [Display(GroupName = "発射位置", Name = "公転位相", Description = "公転の初期角度。")]
@@ -65,7 +65,7 @@ public class DanmakuShapeParameter : ShapeParameterBase
     public double OrbitPhase
     {
         get => MainEmitter.OrbitPhase;
-        set { if (MainEmitter.OrbitPhase != value) { MainEmitter.OrbitPhase = value; OnPropertyChanged(); } }
+        set => MainEmitter.OrbitPhase = value;
     }
 
     [Display(GroupName = "発射位置", Name = "シードずらし", Description = "乱数をずらして弾のばらけ方を変えます。")]
@@ -75,7 +75,7 @@ public class DanmakuShapeParameter : ShapeParameterBase
     public int SeedOffset
     {
         get => MainEmitter.SeedOffset;
-        set { if (MainEmitter.SeedOffset != value) { MainEmitter.SeedOffset = value; OnPropertyChanged(); } }
+        set => MainEmitter.SeedOffset = value;
     }
 
     // =====================================================================
@@ -87,7 +87,7 @@ public class DanmakuShapeParameter : ShapeParameterBase
     public string PresetName
     {
         get => MainEmitter.PresetName;
-        set { if (MainEmitter.PresetName != value) { MainEmitter.PresetName = value; OnPropertyChanged(); } }
+        set => MainEmitter.PresetName = value;
     }
 
     // =====================================================================
@@ -99,7 +99,7 @@ public class DanmakuShapeParameter : ShapeParameterBase
     public PatternKind PatternKind
     {
         get => MainEmitter.PatternKind;
-        set { if (MainEmitter.PatternKind != value) { MainEmitter.PatternKind = value; OnPropertyChanged(); } }
+        set => MainEmitter.PatternKind = value;
     }
 
     [Display(GroupName = "発射パターン", Name = "ウェイ数 (方向数)", Description = "同時に放つ方向の数。全方位弾なら 16〜36 程度。")]
@@ -109,7 +109,7 @@ public class DanmakuShapeParameter : ShapeParameterBase
     public int Way
     {
         get => MainEmitter.Way;
-        set { if (MainEmitter.Way != value) { MainEmitter.Way = value; OnPropertyChanged(); } }
+        set => MainEmitter.Way = value;
     }
 
     [Display(GroupName = "発射パターン", Name = "段数 (連数)", Description = "1 方向あたりに連続して放つ弾数。")]
@@ -119,7 +119,7 @@ public class DanmakuShapeParameter : ShapeParameterBase
     public int Stack
     {
         get => MainEmitter.Stack;
-        set { if (MainEmitter.Stack != value) { MainEmitter.Stack = value; OnPropertyChanged(); } }
+        set => MainEmitter.Stack = value;
     }
 
     [Display(GroupName = "発射パターン", Name = "段ごとの速度差")]
@@ -129,7 +129,7 @@ public class DanmakuShapeParameter : ShapeParameterBase
     public double StackSpeedStep
     {
         get => MainEmitter.StackSpeedStep;
-        set { if (MainEmitter.StackSpeedStep != value) { MainEmitter.StackSpeedStep = value; OnPropertyChanged(); } }
+        set => MainEmitter.StackSpeedStep = value;
     }
 
     [Display(GroupName = "発射パターン", Name = "段ごとの角度差")]
@@ -139,7 +139,7 @@ public class DanmakuShapeParameter : ShapeParameterBase
     public double StackAngleStep
     {
         get => MainEmitter.StackAngleStep;
-        set { if (MainEmitter.StackAngleStep != value) { MainEmitter.StackAngleStep = value; OnPropertyChanged(); } }
+        set => MainEmitter.StackAngleStep = value;
     }
 
     [Display(GroupName = "発射パターン", Name = "発射角度", Description = "発射の基準となる向き。キーフレームで自由に回転させられます。0 で下向き。")]
@@ -153,7 +153,7 @@ public class DanmakuShapeParameter : ShapeParameterBase
     public double SpreadAngle
     {
         get => MainEmitter.SpreadAngle;
-        set { if (MainEmitter.SpreadAngle != value) { MainEmitter.SpreadAngle = value; OnPropertyChanged(); } }
+        set => MainEmitter.SpreadAngle = value;
     }
 
     [Display(GroupName = "発射パターン", Name = "回転速度 (発射毎)", Description = "1 回撃つごとに発射方向を回転させる角度。渦巻き弾幕を作れます。")]
@@ -163,7 +163,7 @@ public class DanmakuShapeParameter : ShapeParameterBase
     public double AngleStepPerShot
     {
         get => MainEmitter.AngleStepPerShot;
-        set { if (MainEmitter.AngleStepPerShot != value) { MainEmitter.AngleStepPerShot = value; OnPropertyChanged(); } }
+        set => MainEmitter.AngleStepPerShot = value;
     }
 
     [Display(GroupName = "発射パターン", Name = "角度ゆらぎ")]
@@ -173,7 +173,7 @@ public class DanmakuShapeParameter : ShapeParameterBase
     public double AngleJitter
     {
         get => MainEmitter.AngleJitter;
-        set { if (MainEmitter.AngleJitter != value) { MainEmitter.AngleJitter = value; OnPropertyChanged(); } }
+        set => MainEmitter.AngleJitter = value;
     }
 
     [Display(GroupName = "発射パターン", Name = "発射間隔", Description = "次の発射までの時間。0.1 で秒間 10 回。")]
@@ -183,7 +183,7 @@ public class DanmakuShapeParameter : ShapeParameterBase
     public double FireInterval
     {
         get => MainEmitter.FireInterval;
-        set { if (MainEmitter.FireInterval != value) { MainEmitter.FireInterval = value; OnPropertyChanged(); } }
+        set => MainEmitter.FireInterval = value;
     }
 
     [Display(GroupName = "発射パターン", Name = "バースト発射数")]
@@ -193,7 +193,7 @@ public class DanmakuShapeParameter : ShapeParameterBase
     public int BurstCount
     {
         get => MainEmitter.BurstCount;
-        set { if (MainEmitter.BurstCount != value) { MainEmitter.BurstCount = value; OnPropertyChanged(); } }
+        set => MainEmitter.BurstCount = value;
     }
 
     [Display(GroupName = "発射パターン", Name = "バースト内間隔")]
@@ -203,7 +203,7 @@ public class DanmakuShapeParameter : ShapeParameterBase
     public double BurstInterval
     {
         get => MainEmitter.BurstInterval;
-        set { if (MainEmitter.BurstInterval != value) { MainEmitter.BurstInterval = value; OnPropertyChanged(); } }
+        set => MainEmitter.BurstInterval = value;
     }
 
     [Display(GroupName = "発射パターン", Name = "バースト後休止")]
@@ -213,7 +213,7 @@ public class DanmakuShapeParameter : ShapeParameterBase
     public double BurstCooldown
     {
         get => MainEmitter.BurstCooldown;
-        set { if (MainEmitter.BurstCooldown != value) { MainEmitter.BurstCooldown = value; OnPropertyChanged(); } }
+        set => MainEmitter.BurstCooldown = value;
     }
 
     [Display(GroupName = "発射パターン", Name = "生成半径", Description = "エミッター中心から離れた円周上から弾を発生させます。")]
@@ -223,7 +223,7 @@ public class DanmakuShapeParameter : ShapeParameterBase
     public double SpawnRadius
     {
         get => MainEmitter.SpawnRadius;
-        set { if (MainEmitter.SpawnRadius != value) { MainEmitter.SpawnRadius = value; OnPropertyChanged(); } }
+        set => MainEmitter.SpawnRadius = value;
     }
 
     [Display(GroupName = "発射パターン", Name = "自機狙い (ターゲット追尾)", Description = "ターゲット (自機) の方向へ向けて発射します。")]
@@ -231,7 +231,7 @@ public class DanmakuShapeParameter : ShapeParameterBase
     public bool AimAtTarget
     {
         get => MainEmitter.AimAtTarget;
-        set { if (MainEmitter.AimAtTarget != value) { MainEmitter.AimAtTarget = value; OnPropertyChanged(); } }
+        set => MainEmitter.AimAtTarget = value;
     }
 
     [Display(GroupName = "発射パターン", Name = "開始時刻")]
@@ -241,7 +241,7 @@ public class DanmakuShapeParameter : ShapeParameterBase
     public double StartTime
     {
         get => MainEmitter.StartTime;
-        set { if (MainEmitter.StartTime != value) { MainEmitter.StartTime = value; OnPropertyChanged(); } }
+        set => MainEmitter.StartTime = value;
     }
 
     [Display(GroupName = "発射パターン", Name = "終了時刻")]
@@ -251,7 +251,7 @@ public class DanmakuShapeParameter : ShapeParameterBase
     public double EndTime
     {
         get => MainEmitter.EndTime;
-        set { if (MainEmitter.EndTime != value) { MainEmitter.EndTime = value; OnPropertyChanged(); } }
+        set => MainEmitter.EndTime = value;
     }
 
     // =====================================================================
@@ -263,7 +263,7 @@ public class DanmakuShapeParameter : ShapeParameterBase
     public BulletShape Shape
     {
         get => MainEmitter.Shape;
-        set { if (MainEmitter.Shape != value) { MainEmitter.Shape = value; OnPropertyChanged(); } }
+        set => MainEmitter.Shape = value;
     }
 
     [Display(GroupName = "弾の見た目", Name = "画像", Description = "指定すると「弾の形」の代わりにこの画像を使います。")]
@@ -271,7 +271,7 @@ public class DanmakuShapeParameter : ShapeParameterBase
     public string ImagePath
     {
         get => MainEmitter.ImagePath;
-        set { if (MainEmitter.ImagePath != value) { MainEmitter.ImagePath = value; OnPropertyChanged(); } }
+        set => MainEmitter.ImagePath = value;
     }
 
     [Display(GroupName = "弾の見た目", Name = "大きさ")]
@@ -281,7 +281,7 @@ public class DanmakuShapeParameter : ShapeParameterBase
     public double Scale
     {
         get => MainEmitter.Scale;
-        set { if (MainEmitter.Scale != value) { MainEmitter.Scale = value; OnPropertyChanged(); } }
+        set => MainEmitter.Scale = value;
     }
 
     [Display(GroupName = "弾の見た目", Name = "進行方向に向ける", Description = "弾が飛んでいく向きに合わせて弾の向き・画像を回転させます。")]
@@ -289,7 +289,7 @@ public class DanmakuShapeParameter : ShapeParameterBase
     public bool AlignToDirection
     {
         get => MainEmitter.AlignToDirection;
-        set { if (MainEmitter.AlignToDirection != value) { MainEmitter.AlignToDirection = value; OnPropertyChanged(); } }
+        set => MainEmitter.AlignToDirection = value;
     }
 
     [Display(GroupName = "弾の見た目", Name = "着色モード")]
@@ -297,7 +297,7 @@ public class DanmakuShapeParameter : ShapeParameterBase
     public ColorMode ColorMode
     {
         get => MainEmitter.ColorMode;
-        set { if (MainEmitter.ColorMode != value) { MainEmitter.ColorMode = value; OnPropertyChanged(); } }
+        set => MainEmitter.ColorMode = value;
     }
 
     [Display(GroupName = "弾の見た目", Name = "メイン色 / ティント色")]
@@ -305,7 +305,7 @@ public class DanmakuShapeParameter : ShapeParameterBase
     public System.Windows.Media.Color PrimaryColor
     {
         get => MainEmitter.PrimaryColor;
-        set { if (MainEmitter.PrimaryColor != value) { MainEmitter.PrimaryColor = value; OnPropertyChanged(); } }
+        set => MainEmitter.PrimaryColor = value;
     }
 
     [Display(GroupName = "弾の見た目", Name = "サブ色 (グラデーション用)")]
@@ -313,7 +313,7 @@ public class DanmakuShapeParameter : ShapeParameterBase
     public System.Windows.Media.Color SecondaryColor
     {
         get => MainEmitter.SecondaryColor;
-        set { if (MainEmitter.SecondaryColor != value) { MainEmitter.SecondaryColor = value; OnPropertyChanged(); } }
+        set => MainEmitter.SecondaryColor = value;
     }
 
     [Display(GroupName = "弾の見た目", Name = "加算合成 (発光)")]
@@ -321,7 +321,7 @@ public class DanmakuShapeParameter : ShapeParameterBase
     public bool Additive
     {
         get => MainEmitter.Additive;
-        set { if (MainEmitter.Additive != value) { MainEmitter.Additive = value; OnPropertyChanged(); } }
+        set => MainEmitter.Additive = value;
     }
 
     [Display(GroupName = "弾の見た目", Name = "グロー発光強度")]
@@ -331,7 +331,7 @@ public class DanmakuShapeParameter : ShapeParameterBase
     public double GlowIntensity
     {
         get => MainEmitter.GlowIntensity;
-        set { if (MainEmitter.GlowIntensity != value) { MainEmitter.GlowIntensity = value; OnPropertyChanged(); } }
+        set => MainEmitter.GlowIntensity = value;
     }
 
     [Display(GroupName = "弾の見た目", Name = "弾の不透明度")]
@@ -341,7 +341,7 @@ public class DanmakuShapeParameter : ShapeParameterBase
     public double Opacity
     {
         get => MainEmitter.Opacity;
-        set { if (MainEmitter.Opacity != value) { MainEmitter.Opacity = value; OnPropertyChanged(); } }
+        set => MainEmitter.Opacity = value;
     }
 
     [Display(GroupName = "弾の見た目", Name = "残像の長さ")]
@@ -351,7 +351,7 @@ public class DanmakuShapeParameter : ShapeParameterBase
     public int TrailLength
     {
         get => MainEmitter.TrailLength;
-        set { if (MainEmitter.TrailLength != value) { MainEmitter.TrailLength = value; OnPropertyChanged(); } }
+        set => MainEmitter.TrailLength = value;
     }
 
     // =====================================================================
@@ -365,7 +365,7 @@ public class DanmakuShapeParameter : ShapeParameterBase
     public double Speed
     {
         get => MainEmitter.Speed;
-        set { if (MainEmitter.Speed != value) { MainEmitter.Speed = value; OnPropertyChanged(); } }
+        set => MainEmitter.Speed = value;
     }
 
     [Display(GroupName = "弾の物理", Name = "加速度", Description = "1 秒あたりの速度変化。正で加速、負で減速。")]
@@ -375,7 +375,7 @@ public class DanmakuShapeParameter : ShapeParameterBase
     public double Acceleration
     {
         get => MainEmitter.Acceleration;
-        set { if (MainEmitter.Acceleration != value) { MainEmitter.Acceleration = value; OnPropertyChanged(); } }
+        set => MainEmitter.Acceleration = value;
     }
 
     [Display(GroupName = "弾の物理", Name = "角速度 (カーブ)", Description = "弾の進行方向を曲げる速度。正で時計回り。")]
@@ -385,7 +385,7 @@ public class DanmakuShapeParameter : ShapeParameterBase
     public double AngularVelocity
     {
         get => MainEmitter.AngularVelocity;
-        set { if (MainEmitter.AngularVelocity != value) { MainEmitter.AngularVelocity = value; OnPropertyChanged(); } }
+        set => MainEmitter.AngularVelocity = value;
     }
 
     [Display(GroupName = "弾の物理", Name = "重力", Description = "下方向への引力。")]
@@ -395,7 +395,7 @@ public class DanmakuShapeParameter : ShapeParameterBase
     public double Gravity
     {
         get => MainEmitter.Gravity;
-        set { if (MainEmitter.Gravity != value) { MainEmitter.Gravity = value; OnPropertyChanged(); } }
+        set => MainEmitter.Gravity = value;
     }
 
     [Display(GroupName = "弾の物理", Name = "風 (横力)", Description = "右方向への力。")]
@@ -405,7 +405,7 @@ public class DanmakuShapeParameter : ShapeParameterBase
     public double Wind
     {
         get => MainEmitter.Wind;
-        set { if (MainEmitter.Wind != value) { MainEmitter.Wind = value; OnPropertyChanged(); } }
+        set => MainEmitter.Wind = value;
     }
 
     [Display(GroupName = "弾の物理", Name = "弾の寿命")]
@@ -415,7 +415,7 @@ public class DanmakuShapeParameter : ShapeParameterBase
     public double Lifetime
     {
         get => MainEmitter.Lifetime;
-        set { if (MainEmitter.Lifetime != value) { MainEmitter.Lifetime = value; OnPropertyChanged(); } }
+        set => MainEmitter.Lifetime = value;
     }
 
     [Display(GroupName = "弾の物理", Name = "ホーミング (自機誘導)")]
@@ -423,7 +423,7 @@ public class DanmakuShapeParameter : ShapeParameterBase
     public bool HomingEnabled
     {
         get => MainEmitter.HomingEnabled;
-        set { if (MainEmitter.HomingEnabled != value) { MainEmitter.HomingEnabled = value; OnPropertyChanged(); } }
+        set => MainEmitter.HomingEnabled = value;
     }
 
     [Display(GroupName = "弾の物理", Name = "誘導旋回速度")]
@@ -433,7 +433,7 @@ public class DanmakuShapeParameter : ShapeParameterBase
     public double HomingTurnRate
     {
         get => MainEmitter.HomingTurnRate;
-        set { if (MainEmitter.HomingTurnRate != value) { MainEmitter.HomingTurnRate = value; OnPropertyChanged(); } }
+        set => MainEmitter.HomingTurnRate = value;
     }
 
     // =====================================================================
@@ -445,7 +445,7 @@ public class DanmakuShapeParameter : ShapeParameterBase
     public bool SplitEnabled
     {
         get => MainEmitter.SplitEnabled;
-        set { if (MainEmitter.SplitEnabled != value) { MainEmitter.SplitEnabled = value; OnPropertyChanged(); } }
+        set => MainEmitter.SplitEnabled = value;
     }
 
     [Display(GroupName = "弾の分裂", Name = "分裂数")]
@@ -455,7 +455,7 @@ public class DanmakuShapeParameter : ShapeParameterBase
     public int SplitCount
     {
         get => MainEmitter.SplitCount;
-        set { if (MainEmitter.SplitCount != value) { MainEmitter.SplitCount = value; OnPropertyChanged(); } }
+        set => MainEmitter.SplitCount = value;
     }
 
     [Display(GroupName = "弾の分裂", Name = "分裂までの時間")]
@@ -465,7 +465,7 @@ public class DanmakuShapeParameter : ShapeParameterBase
     public double SplitDelay
     {
         get => MainEmitter.SplitDelay;
-        set { if (MainEmitter.SplitDelay != value) { MainEmitter.SplitDelay = value; OnPropertyChanged(); } }
+        set => MainEmitter.SplitDelay = value;
     }
 
     [Display(GroupName = "弾の分裂", Name = "分裂拡散角度")]
@@ -475,7 +475,7 @@ public class DanmakuShapeParameter : ShapeParameterBase
     public double SplitSpread
     {
         get => MainEmitter.SplitSpread;
-        set { if (MainEmitter.SplitSpread != value) { MainEmitter.SplitSpread = value; OnPropertyChanged(); } }
+        set => MainEmitter.SplitSpread = value;
     }
 
     [Display(GroupName = "弾の分裂", Name = "分裂後の速度")]
@@ -485,7 +485,7 @@ public class DanmakuShapeParameter : ShapeParameterBase
     public double SplitSpeed
     {
         get => MainEmitter.SplitSpeed;
-        set { if (MainEmitter.SplitSpeed != value) { MainEmitter.SplitSpeed = value; OnPropertyChanged(); } }
+        set => MainEmitter.SplitSpeed = value;
     }
 
     // =====================================================================
@@ -497,7 +497,7 @@ public class DanmakuShapeParameter : ShapeParameterBase
     public DanmakuSourceMode SourceMode
     {
         get => MainEmitter.SourceMode;
-        set { if (MainEmitter.SourceMode != value) { MainEmitter.SourceMode = value; OnPropertyChanged(); } }
+        set => MainEmitter.SourceMode = value;
     }
 
     [Display(GroupName = "弾幕データ", Name = "スクリプトファイル")]
@@ -505,7 +505,7 @@ public class DanmakuShapeParameter : ShapeParameterBase
     public string SourcePath
     {
         get => MainEmitter.SourcePath;
-        set { if (MainEmitter.SourcePath != value) { MainEmitter.SourcePath = value; OnPropertyChanged(); } }
+        set => MainEmitter.SourcePath = value;
     }
 
     [Display(GroupName = "弾幕データ", Name = "スクリプト本文")]
@@ -513,7 +513,7 @@ public class DanmakuShapeParameter : ShapeParameterBase
     public string SourceText
     {
         get => MainEmitter.SourceText;
-        set { if (MainEmitter.SourceText != value) { MainEmitter.SourceText = value; OnPropertyChanged(); } }
+        set => MainEmitter.SourceText = value;
     }
 
     [Display(GroupName = "弾幕データ", Name = "BulletML 速度スケール")]
@@ -523,7 +523,7 @@ public class DanmakuShapeParameter : ShapeParameterBase
     public double ScriptSpeedScale
     {
         get => MainEmitter.ScriptSpeedScale;
-        set { if (MainEmitter.ScriptSpeedScale != value) { MainEmitter.ScriptSpeedScale = value; OnPropertyChanged(); } }
+        set => MainEmitter.ScriptSpeedScale = value;
     }
 
     [Display(GroupName = "弾幕データ", Name = "BulletML 難易度 ($rank)")]
@@ -533,7 +533,7 @@ public class DanmakuShapeParameter : ShapeParameterBase
     public double ScriptRank
     {
         get => MainEmitter.ScriptRank;
-        set { if (MainEmitter.ScriptRank != value) { MainEmitter.ScriptRank = value; OnPropertyChanged(); } }
+        set => MainEmitter.ScriptRank = value;
     }
 
     [Display(GroupName = "弾幕データ", Name = "スクリプトをループ再生")]
@@ -541,7 +541,7 @@ public class DanmakuShapeParameter : ShapeParameterBase
     public bool ScriptLoop
     {
         get => MainEmitter.ScriptLoop;
-        set { if (MainEmitter.ScriptLoop != value) { MainEmitter.ScriptLoop = value; OnPropertyChanged(); } }
+        set => MainEmitter.ScriptLoop = value;
     }
 
     // =====================================================================
@@ -699,7 +699,17 @@ public class DanmakuShapeParameter : ShapeParameterBase
     public ImmutableList<EmitterParameter> Emitters
     {
         get => emitters;
-        set => Set(ref emitters, value.IsEmpty ? [new EmitterParameter()] : value);
+        set
+        {
+            var oldEmitters = emitters;
+            var newEmitters = value.IsEmpty ? [new EmitterParameter()] : value;
+            if (Set(ref emitters, newEmitters))
+            {
+                UnsubscribeEmitters(oldEmitters);
+                SubscribeEmitters(newEmitters);
+                OnPropertyChanged(string.Empty);
+            }
+        }
     }
     private ImmutableList<EmitterParameter> emitters = [new EmitterParameter()];
 
@@ -708,7 +718,48 @@ public class DanmakuShapeParameter : ShapeParameterBase
 
     public DanmakuShapeParameter() : this(null) { }
 
-    public DanmakuShapeParameter(SharedDataStore? sharedData) : base(sharedData) { }
+    public DanmakuShapeParameter(SharedDataStore? sharedData) : base(sharedData)
+    {
+        SubscribeChildUndoRedoable(TargetX);
+        SubscribeChildUndoRedoable(TargetY);
+        TargetX.PropertyChanged += (_, _) => OnPropertyChanged(nameof(TargetX));
+        TargetY.PropertyChanged += (_, _) => OnPropertyChanged(nameof(TargetY));
+
+        SubscribeEmitters(emitters);
+    }
+
+    private void SubscribeEmitters(IEnumerable<EmitterParameter> list)
+    {
+        foreach (var emitter in list)
+        {
+            SubscribeChildUndoRedoable(emitter);
+            emitter.PropertyChanged += OnEmitterPropertyChanged;
+        }
+    }
+
+    private void UnsubscribeEmitters(IEnumerable<EmitterParameter> list)
+    {
+        foreach (var emitter in list)
+        {
+            UnSubscribeChildUndoRedoable(emitter);
+            emitter.PropertyChanged -= OnEmitterPropertyChanged;
+        }
+    }
+
+    private void OnEmitterPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (sender == MainEmitter)
+        {
+            if (string.IsNullOrEmpty(e.PropertyName))
+            {
+                OnPropertyChanged(string.Empty);
+            }
+            else
+            {
+                OnPropertyChanged(e.PropertyName);
+            }
+        }
+    }
 
     /// <summary>エミッターを追加する。既存の最後のエミッターを複製する。</summary>
     public EmitterParameter? AddEmitter()

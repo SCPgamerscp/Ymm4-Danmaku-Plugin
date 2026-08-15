@@ -26,6 +26,16 @@ namespace Ymm4DanmakuPlugin.Parameters;
 /// </summary>
 public class EmitterParameter : Animatable
 {
+    public EmitterParameter()
+    {
+        SubscribeChildUndoRedoable(X);
+        SubscribeChildUndoRedoable(Y);
+        SubscribeChildUndoRedoable(BaseAngle);
+        X.PropertyChanged += (_, _) => OnPropertyChanged(nameof(X));
+        Y.PropertyChanged += (_, _) => OnPropertyChanged(nameof(Y));
+        BaseAngle.PropertyChanged += (_, _) => OnPropertyChanged(nameof(BaseAngle));
+    }
+
     // =====================================================================
     // 基本
     // =====================================================================
