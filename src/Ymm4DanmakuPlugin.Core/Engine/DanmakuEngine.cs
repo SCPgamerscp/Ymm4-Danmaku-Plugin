@@ -213,9 +213,10 @@ public sealed class DanmakuEngine
 
             var orbitRadius = Live.EmitterOrbitRadius?.Invoke(context.EmitterIndex, CurrentTime) ?? settings.OrbitRadius;
             var orbitSpeed = Live.EmitterOrbitSpeed?.Invoke(context.EmitterIndex, CurrentTime) ?? settings.OrbitSpeed;
+            var orbitPhase = Live.EmitterOrbitPhase?.Invoke(context.EmitterIndex, CurrentTime) ?? settings.OrbitPhase;
             if (orbitRadius > 0)
             {
-                var angle = settings.OrbitPhase + orbitSpeed * CurrentTime;
+                var angle = orbitPhase + orbitSpeed * CurrentTime;
                 position += Vec2.FromDegrees(angle, orbitRadius);
             }
 
@@ -553,6 +554,24 @@ public sealed class DanmakuEngine
             bullet.ExternalAcceleration = new Vec2(w, g);
         }
 
+        if (request.AccelerationOverride is { } accel)
+            bullet.Acceleration = accel;
+
+        if (request.DampingOverride is { } damping)
+            bullet.Damping = damping;
+
+        if (request.HomingTurnRateOverride is { } homingTurn)
+            bullet.HomingTurnRate = homingTurn;
+
+        if (request.HomingDurationOverride is { } homingDur)
+            bullet.HomingRemaining = homingDur;
+
+        if (request.HomingDelayOverride is { } homingDelay)
+            bullet.HomingDelay = homingDelay;
+
+        if (request.HitRadiusOverride is { } hitRadius)
+            bullet.HitRadius = hitRadius;
+
         if (request.LifetimeOverride > 0)
             bullet.Lifetime = request.LifetimeOverride;
 
@@ -579,6 +598,11 @@ public sealed class DanmakuEngine
         bullet.TrailInterval = appearance.TrailInterval;
 
         ApplyColor(bullet, appearance, request);
+
+        if (request.OpacityOverride is { } opacity)
+        {
+            bullet.Color = bullet.Color with { A = (byte)Math.Clamp((int)Math.Round(bullet.Color.A * opacity), 0, 255) };
+        }
 
         // --- 分裂 ---
         if (request.Split is not null && request.Generation < request.Split.MaxGeneration)

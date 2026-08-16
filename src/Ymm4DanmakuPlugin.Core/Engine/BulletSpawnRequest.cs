@@ -50,14 +50,35 @@ public struct BulletSpawnRequest
     /// <summary>旋回角速度の上書き (null で Physics の値)。</summary>
     public double? AngularVelocityOverride;
 
+    /// <summary>加速度の上書き (null で Physics の値)。</summary>
+    public double? AccelerationOverride;
+
+    /// <summary>減速/空気抵抗の上書き (null で Physics の値)。</summary>
+    public double? DampingOverride;
+
     /// <summary>重力の上書き (null で Physics の値)。</summary>
     public double? GravityOverride;
 
     /// <summary>風の上書き (null で Physics の値)。</summary>
     public double? WindOverride;
 
+    /// <summary>誘導旋回速度の上書き (null で Physics の値)。</summary>
+    public double? HomingTurnRateOverride;
+
+    /// <summary>誘導時間の上書き (null で Physics の値)。</summary>
+    public double? HomingDurationOverride;
+
+    /// <summary>誘導遅延の上書き (null で Physics の値)。</summary>
+    public double? HomingDelayOverride;
+
+    /// <summary>当たり判定半径の上書き (null で Physics の値)。</summary>
+    public double? HitRadiusOverride;
+
     /// <summary>スケールの上書き (null で Appearance の値)。</summary>
     public double? ScaleOverride;
+
+    /// <summary>不透明度の上書き (null で Appearance の値)。</summary>
+    public double? OpacityOverride;
 
     /// <summary>自転速度の上書き (null で Appearance の値)。</summary>
     public double? RotationVelocityOverride;

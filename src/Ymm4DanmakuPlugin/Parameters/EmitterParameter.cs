@@ -6,63 +6,102 @@ using YukkuriMovieMaker.Controls;
 using YukkuriMovieMaker.Settings;
 using Ymm4DanmakuPlugin.Core.Configuration;
 using Ymm4DanmakuPlugin.Core.Model;
+using Ymm4DanmakuPlugin.Core.Scripting;
 using Ymm4DanmakuPlugin.Interop;
 
 namespace Ymm4DanmakuPlugin.Parameters;
 
 /// <summary>
-/// 1 つのエミッター (発射源) の編集項目。
+/// 単一エミッター (弾の発生源) の編集パラメータ。
 /// <para>
-/// 開発計画書の 3 階層に対応する。
-/// ・第 1 階層: <see cref="Pattern"/> ほかの GUI スライダー<br/>
-/// ・第 2 階層: 速度 / 加速度 / ホーミングなどの物理パラメータ<br/>
-/// ・第 3 階層: <see cref="SourceMode"/> を切り替えて JSON / BulletML / Lua を読み込む
-/// </para>
-/// <para>
-/// <b>X / Y だけが <see cref="Animation"/></b> なのは意図的である。
-/// キーフレームで動かしたい値はここに限られ、それ以外を Animation にすると
-/// シミュレーションの再構築判定 (設定署名) が毎フレーム変化して極端に重くなる。
+/// 弾幕の基本単位。マルチエミッター機能により、1 つの弾幕アイテム内に複数のエミッターを
+/// 追加・配置できる。メインエミッター (1 個目) の値は <see cref="DanmakuShapeParameter"/>
+/// にも委譲され、プロパティパネルのトップレベルから直接編集できる。
 /// </para>
 /// </summary>
 public class EmitterParameter : Animatable
 {
     public EmitterParameter()
     {
-        SubscribeChildUndoRedoable(X);
-        SubscribeChildUndoRedoable(Y);
-        SubscribeChildUndoRedoable(BaseAngle);
-        SubscribeChildUndoRedoable(OrbitRadius);
-        SubscribeChildUndoRedoable(OrbitSpeed);
-        SubscribeChildUndoRedoable(Way);
-        SubscribeChildUndoRedoable(Stack);
-        SubscribeChildUndoRedoable(SpreadAngle);
-        SubscribeChildUndoRedoable(AngleStepPerShot);
-        SubscribeChildUndoRedoable(FireInterval);
-        SubscribeChildUndoRedoable(SpawnRadius);
-        SubscribeChildUndoRedoable(Speed);
-        SubscribeChildUndoRedoable(AngularVelocity);
-        SubscribeChildUndoRedoable(Gravity);
-        SubscribeChildUndoRedoable(Wind);
-        SubscribeChildUndoRedoable(Scale);
-        SubscribeChildUndoRedoable(RotationVelocity);
+        // アニメーション項目の Undo/Redo & プロパティ変更購読
+        SubscribeAnimatable(X, nameof(X));
+        SubscribeAnimatable(Y, nameof(Y));
+        SubscribeAnimatable(OrbitRadius, nameof(OrbitRadius));
+        SubscribeAnimatable(OrbitSpeed, nameof(OrbitSpeed));
+        SubscribeAnimatable(OrbitPhase, nameof(OrbitPhase));
+        SubscribeAnimatable(SeedOffset, nameof(SeedOffset));
 
-        X.PropertyChanged += (_, _) => OnPropertyChanged(nameof(X));
-        Y.PropertyChanged += (_, _) => OnPropertyChanged(nameof(Y));
-        BaseAngle.PropertyChanged += (_, _) => OnPropertyChanged(nameof(BaseAngle));
-        OrbitRadius.PropertyChanged += (_, _) => OnPropertyChanged(nameof(OrbitRadius));
-        OrbitSpeed.PropertyChanged += (_, _) => OnPropertyChanged(nameof(OrbitSpeed));
-        Way.PropertyChanged += (_, _) => OnPropertyChanged(nameof(Way));
-        Stack.PropertyChanged += (_, _) => OnPropertyChanged(nameof(Stack));
-        SpreadAngle.PropertyChanged += (_, _) => OnPropertyChanged(nameof(SpreadAngle));
-        AngleStepPerShot.PropertyChanged += (_, _) => OnPropertyChanged(nameof(AngleStepPerShot));
-        FireInterval.PropertyChanged += (_, _) => OnPropertyChanged(nameof(FireInterval));
-        SpawnRadius.PropertyChanged += (_, _) => OnPropertyChanged(nameof(SpawnRadius));
-        Speed.PropertyChanged += (_, _) => OnPropertyChanged(nameof(Speed));
-        AngularVelocity.PropertyChanged += (_, _) => OnPropertyChanged(nameof(AngularVelocity));
-        Gravity.PropertyChanged += (_, _) => OnPropertyChanged(nameof(Gravity));
-        Wind.PropertyChanged += (_, _) => OnPropertyChanged(nameof(Wind));
-        Scale.PropertyChanged += (_, _) => OnPropertyChanged(nameof(Scale));
-        RotationVelocity.PropertyChanged += (_, _) => OnPropertyChanged(nameof(RotationVelocity));
+        SubscribeAnimatable(ScriptSpeedScale, nameof(ScriptSpeedScale));
+        SubscribeAnimatable(ScriptRank, nameof(ScriptRank));
+
+        SubscribeAnimatable(Way, nameof(Way));
+        SubscribeAnimatable(Stack, nameof(Stack));
+        SubscribeAnimatable(StackSpeedStep, nameof(StackSpeedStep));
+        SubscribeAnimatable(StackAngleStep, nameof(StackAngleStep));
+        SubscribeAnimatable(BaseAngle, nameof(BaseAngle));
+        SubscribeAnimatable(SpreadAngle, nameof(SpreadAngle));
+        SubscribeAnimatable(AngleStepPerShot, nameof(AngleStepPerShot));
+        SubscribeAnimatable(AngleJitter, nameof(AngleJitter));
+        SubscribeAnimatable(FireInterval, nameof(FireInterval));
+        SubscribeAnimatable(BurstCount, nameof(BurstCount));
+        SubscribeAnimatable(BurstInterval, nameof(BurstInterval));
+        SubscribeAnimatable(BurstCooldown, nameof(BurstCooldown));
+        SubscribeAnimatable(StartTime, nameof(StartTime));
+        SubscribeAnimatable(EndTime, nameof(EndTime));
+        SubscribeAnimatable(SpawnRadius, nameof(SpawnRadius));
+        SubscribeAnimatable(SpawnJitter, nameof(SpawnJitter));
+        SubscribeAnimatable(WallWidth, nameof(WallWidth));
+        SubscribeAnimatable(LaserSpacing, nameof(LaserSpacing));
+        SubscribeAnimatable(WhipAmplitude, nameof(WhipAmplitude));
+        SubscribeAnimatable(WhipPeriod, nameof(WhipPeriod));
+
+        SubscribeAnimatable(Speed, nameof(Speed));
+        SubscribeAnimatable(SpeedJitter, nameof(SpeedJitter));
+        SubscribeAnimatable(SpeedStep, nameof(SpeedStep));
+        SubscribeAnimatable(Acceleration, nameof(Acceleration));
+        SubscribeAnimatable(AngularVelocity, nameof(AngularVelocity));
+        SubscribeAnimatable(AngularVelocityJitter, nameof(AngularVelocityJitter));
+        SubscribeAnimatable(Damping, nameof(Damping));
+        SubscribeAnimatable(MinSpeed, nameof(MinSpeed));
+        SubscribeAnimatable(MaxSpeed, nameof(MaxSpeed));
+        SubscribeAnimatable(Gravity, nameof(Gravity));
+        SubscribeAnimatable(Wind, nameof(Wind));
+        SubscribeAnimatable(Lifetime, nameof(Lifetime));
+        SubscribeAnimatable(LifetimeJitter, nameof(LifetimeJitter));
+        SubscribeAnimatable(HomingTurnRate, nameof(HomingTurnRate));
+        SubscribeAnimatable(HomingDuration, nameof(HomingDuration));
+        SubscribeAnimatable(HomingDelay, nameof(HomingDelay));
+
+        SubscribeAnimatable(Scale, nameof(Scale));
+        SubscribeAnimatable(ScaleJitter, nameof(ScaleJitter));
+        SubscribeAnimatable(ScaleVelocity, nameof(ScaleVelocity));
+        SubscribeAnimatable(RotationVelocity, nameof(RotationVelocity));
+        SubscribeAnimatable(HueVelocity, nameof(HueVelocity));
+        SubscribeAnimatable(HueStep, nameof(HueStep));
+        SubscribeAnimatable(GlowIntensity, nameof(GlowIntensity));
+        SubscribeAnimatable(Opacity, nameof(Opacity));
+        SubscribeAnimatable(FadeInDuration, nameof(FadeInDuration));
+        SubscribeAnimatable(FadeOutDuration, nameof(FadeOutDuration));
+
+        SubscribeAnimatable(TrailLength, nameof(TrailLength));
+        SubscribeAnimatable(TrailInterval, nameof(TrailInterval));
+        SubscribeAnimatable(TrailFade, nameof(TrailFade));
+        SubscribeAnimatable(TrailScale, nameof(TrailScale));
+
+        SubscribeAnimatable(SplitDelay, nameof(SplitDelay));
+        SubscribeAnimatable(SplitCount, nameof(SplitCount));
+        SubscribeAnimatable(SplitSpread, nameof(SplitSpread));
+        SubscribeAnimatable(SplitSpeed, nameof(SplitSpeed));
+        SubscribeAnimatable(SplitScaleFactor, nameof(SplitScaleFactor));
+        SubscribeAnimatable(SplitMaxGeneration, nameof(SplitMaxGeneration));
+
+        SubscribeAnimatable(HitRadius, nameof(HitRadius));
+    }
+
+    private void SubscribeAnimatable(Animation anim, string propertyName)
+    {
+        SubscribeChildUndoRedoable(anim);
+        anim.PropertyChanged += (_, _) => OnPropertyChanged(propertyName);
     }
 
     // =====================================================================
@@ -100,31 +139,17 @@ public class EmitterParameter : Animatable
     public Animation OrbitSpeed { get; } = new Animation(0, -100000, 100000);
 
     [Display(GroupName = "エミッター", Name = "公転位相", Description = "公転の初期角度。")]
-    [TextBoxSlider("F1", "度", 0, 360)]
-    [DefaultValue(0d)]
-    [Range(-100000, 100000)]
-    public double OrbitPhase { get => orbitPhase; set => Set(ref orbitPhase, value); }
-    private double orbitPhase;
+    [AnimationSlider("F1", "度", 0, 360)]
+    public Animation OrbitPhase { get; } = new Animation(0, -100000, 100000);
 
     [Display(GroupName = "エミッター", Name = "シードずらし", Description = "同じ設定のエミッターを複数置いたとき、乱数をずらして重なりを防ぎます。")]
-    [TextBoxSlider("F0", "", 0, 100)]
-    [DefaultValue(0)]
-    [Range(-1000000, 1000000)]
-    public int SeedOffset { get => seedOffset; set => Set(ref seedOffset, value); }
-    private int seedOffset;
+    [AnimationSlider("F0", "", 0, 100)]
+    public Animation SeedOffset { get; } = new Animation(0, -1000000, 1000000);
 
     // =====================================================================
     // プリセット
     // =====================================================================
 
-    /// <summary>
-    /// 選択中のプリセット名。
-    /// <para>
-    /// この値は「どのプリセットを選んでいたか」を覚えておくだけで、
-    /// シミュレーションには一切影響しない。実際の設定はプリセット適用時に
-    /// 各プロパティへ展開される (= 適用後に個別調整できる)。
-    /// </para>
-    /// </summary>
     [Display(GroupName = "プリセット", Name = "プリセット", Description = "東方風のサンプルを選んで [適用]。保存・読み込み・書き出しもここから行えます。")]
     [Presets.PresetSelector]
     public string PresetName
@@ -154,18 +179,12 @@ public class EmitterParameter : Animatable
     private string sourceText = string.Empty;
 
     [Display(GroupName = "弾幕データ", Name = "速度換算", Description = "BulletML の速度 1 を何 px/秒 とみなすか。60 で「1px/フレーム(60fps)」相当です。")]
-    [TextBoxSlider("F0", "px/秒", 1, 240)]
-    [DefaultValue(60d)]
-    [Range(0.01, 100000)]
-    public double ScriptSpeedScale { get => scriptSpeedScale; set => Set(ref scriptSpeedScale, value); }
-    private double scriptSpeedScale = 60;
+    [AnimationSlider("F0", "px/秒", 1, 240)]
+    public Animation ScriptSpeedScale { get; } = new Animation(60, 0.01, 100000);
 
     [Display(GroupName = "弾幕データ", Name = "難易度($rank)", Description = "BulletML の $rank に渡す値 (0〜1)。")]
-    [TextBoxSlider("F2", "", 0, 1)]
-    [DefaultValue(0.5d)]
-    [Range(0, 1)]
-    public double ScriptRank { get => scriptRank; set => Set(ref scriptRank, value); }
-    private double scriptRank = 0.5;
+    [AnimationSlider("F2", "", 0, 1)]
+    public Animation ScriptRank { get; } = new Animation(0.5, 0, 1);
 
     [Display(GroupName = "弾幕データ", Name = "繰り返し", Description = "スクリプトが終端に達したら最初から再生します。")]
     [ToggleSlider]
@@ -200,18 +219,12 @@ public class EmitterParameter : Animatable
     public Animation Stack { get; } = new Animation(1, 1, 200);
 
     [Display(GroupName = "パターン", Name = "段ごとの速度差")]
-    [TextBoxSlider("F0", "px/秒", -200, 200)]
-    [DefaultValue(40d)]
-    [Range(-100000, 100000)]
-    public double StackSpeedStep { get => stackSpeedStep; set => Set(ref stackSpeedStep, value); }
-    private double stackSpeedStep = 40;
+    [AnimationSlider("F0", "px/秒", -200, 200)]
+    public Animation StackSpeedStep { get; } = new Animation(40, -100000, 100000);
 
     [Display(GroupName = "パターン", Name = "段ごとの角度差")]
-    [TextBoxSlider("F1", "度", -90, 90)]
-    [DefaultValue(0d)]
-    [Range(-100000, 100000)]
-    public double StackAngleStep { get => stackAngleStep; set => Set(ref stackAngleStep, value); }
-    private double stackAngleStep;
+    [AnimationSlider("F1", "度", -90, 90)]
+    public Animation StackAngleStep { get; } = new Animation(0, -100000, 100000);
 
     [Display(GroupName = "パターン", Name = "基準角", Description = "発射の中心方向。キーフレームで自由に回転させられます。0 で下向き。")]
     [AnimationSlider("F1", "度", -360, 360)]
@@ -226,61 +239,40 @@ public class EmitterParameter : Animatable
     public Animation AngleStepPerShot { get; } = new Animation(0, -100000, 100000);
 
     [Display(GroupName = "パターン", Name = "角度ゆらぎ", Description = "基準角にかけるランダム幅 (±)。")]
-    [TextBoxSlider("F1", "度", 0, 90)]
-    [DefaultValue(0d)]
-    [Range(0, 100000)]
-    public double AngleJitter { get => angleJitter; set => Set(ref angleJitter, value); }
-    private double angleJitter;
+    [AnimationSlider("F1", "度", 0, 90)]
+    public Animation AngleJitter { get; } = new Animation(0, 0, 100000);
 
     [Display(GroupName = "パターン", Name = "発射間隔")]
     [AnimationSlider("F3", "秒", 0.01, 2)]
     public Animation FireInterval { get; } = new Animation(0.35, 0.001, 10000);
 
     [Display(GroupName = "パターン", Name = "連射数", Description = "ひとかたまり (バースト) あたりの発射回数。")]
-    [TextBoxSlider("F0", "回", 1, 20)]
-    [DefaultValue(1)]
-    [Range(1, 1000)]
-    public int BurstCount { get => burstCount; set => Set(ref burstCount, value); }
-    private int burstCount = 1;
+    [AnimationSlider("F0", "回", 1, 20)]
+    public Animation BurstCount { get; } = new Animation(1, 1, 1000);
 
     [Display(GroupName = "パターン", Name = "連射間隔")]
-    [TextBoxSlider("F3", "秒", 0.005, 0.5)]
-    [DefaultValue(0.02d)]
-    [Range(0.001, 10000)]
-    public double BurstInterval { get => burstInterval; set => Set(ref burstInterval, value); }
-    private double burstInterval = 0.02;
+    [AnimationSlider("F3", "秒", 0.005, 0.5)]
+    public Animation BurstInterval { get; } = new Animation(0.02, 0.001, 10000);
 
     [Display(GroupName = "パターン", Name = "連射後の待機")]
-    [TextBoxSlider("F3", "秒", 0, 3)]
-    [DefaultValue(0d)]
-    [Range(0, 10000)]
-    public double BurstCooldown { get => burstCooldown; set => Set(ref burstCooldown, value); }
-    private double burstCooldown;
+    [AnimationSlider("F3", "秒", 0, 3)]
+    public Animation BurstCooldown { get; } = new Animation(0, 0, 10000);
 
     [Display(GroupName = "パターン", Name = "発射開始", Description = "アイテム先頭からの相対時間。")]
-    [TextBoxSlider("F2", "秒", 0, 10)]
-    [DefaultValue(0d)]
-    [Range(0, 100000)]
-    public double StartTime { get => startTime; set => Set(ref startTime, value); }
-    private double startTime;
+    [AnimationSlider("F2", "秒", 0, 10)]
+    public Animation StartTime { get; } = new Animation(0, 0, 100000);
 
     [Display(GroupName = "パターン", Name = "発射終了", Description = "0 でアイテム終端まで撃ち続けます。")]
-    [TextBoxSlider("F2", "秒", 0, 60)]
-    [DefaultValue(0d)]
-    [Range(0, 100000)]
-    public double EndTime { get => endTime; set => Set(ref endTime, value); }
-    private double endTime;
+    [AnimationSlider("F2", "秒", 0, 60)]
+    public Animation EndTime { get; } = new Animation(0, 0, 100000);
 
     [Display(GroupName = "パターン", Name = "発生半径", Description = "発射位置からこの距離だけ離した位置に弾を出します。")]
     [AnimationSlider("F1", "px", 0, 300)]
     public Animation SpawnRadius { get; } = new Animation(0, 0, 100000);
 
     [Display(GroupName = "パターン", Name = "発生位置ゆらぎ")]
-    [TextBoxSlider("F1", "px", 0, 200)]
-    [DefaultValue(0d)]
-    [Range(0, 100000)]
-    public double SpawnJitter { get => spawnJitter; set => Set(ref spawnJitter, value); }
-    private double spawnJitter;
+    [AnimationSlider("F1", "px", 0, 200)]
+    public Animation SpawnJitter { get; } = new Animation(0, 0, 100000);
 
     [Display(GroupName = "パターン", Name = "自機狙い", Description = "基準角をターゲット方向に合わせます。")]
     [ToggleSlider]
@@ -288,32 +280,20 @@ public class EmitterParameter : Animatable
     private bool aimAtTarget;
 
     [Display(GroupName = "パターン", Name = "壁の横幅", Description = "「壁弾」で弾を並べる横幅。")]
-    [TextBoxSlider("F0", "px", 100, 3840)]
-    [DefaultValue(1280d)]
-    [Range(1, 100000)]
-    public double WallWidth { get => wallWidth; set => Set(ref wallWidth, value); }
-    private double wallWidth = 1280;
+    [AnimationSlider("F0", "px", 100, 3840)]
+    public Animation WallWidth { get; } = new Animation(1280, 1, 100000);
 
     [Display(GroupName = "パターン", Name = "レーザー間隔", Description = "「疑似レーザー」で弾を並べる間隔。")]
-    [TextBoxSlider("F1", "px", 4, 120)]
-    [DefaultValue(24d)]
-    [Range(0.1, 100000)]
-    public double LaserSpacing { get => laserSpacing; set => Set(ref laserSpacing, value); }
-    private double laserSpacing = 24;
+    [AnimationSlider("F1", "px", 4, 120)]
+    public Animation LaserSpacing { get; } = new Animation(24, 0.1, 100000);
 
     [Display(GroupName = "パターン", Name = "鞭の振れ幅")]
-    [TextBoxSlider("F1", "度", 0, 180)]
-    [DefaultValue(60d)]
-    [Range(0, 100000)]
-    public double WhipAmplitude { get => whipAmplitude; set => Set(ref whipAmplitude, value); }
-    private double whipAmplitude = 60;
+    [AnimationSlider("F1", "度", 0, 180)]
+    public Animation WhipAmplitude { get; } = new Animation(60, 0, 100000);
 
     [Display(GroupName = "パターン", Name = "鞭の周期")]
-    [TextBoxSlider("F2", "秒", 0.1, 6)]
-    [DefaultValue(1.2d)]
-    [Range(0.01, 100000)]
-    public double WhipPeriod { get => whipPeriod; set => Set(ref whipPeriod, value); }
-    private double whipPeriod = 1.2;
+    [AnimationSlider("F2", "秒", 0.1, 6)]
+    public Animation WhipPeriod { get; } = new Animation(1.2, 0.01, 100000);
 
     // =====================================================================
     // 第 2 階層: 物理
@@ -324,57 +304,36 @@ public class EmitterParameter : Animatable
     public Animation Speed { get; } = new Animation(260, -100000, 100000);
 
     [Display(GroupName = "弾の動き", Name = "初速ゆらぎ")]
-    [TextBoxSlider("F0", "px/秒", 0, 300)]
-    [DefaultValue(0d)]
-    [Range(0, 100000)]
-    public double SpeedJitter { get => speedJitter; set => Set(ref speedJitter, value); }
-    private double speedJitter;
+    [AnimationSlider("F0", "px/秒", 0, 300)]
+    public Animation SpeedJitter { get; } = new Animation(0, 0, 100000);
 
     [Display(GroupName = "弾の動き", Name = "弾ごとの速度差", Description = "n-way の内側と外側で速度差をつけます。")]
-    [TextBoxSlider("F1", "px/秒", -50, 50)]
-    [DefaultValue(0d)]
-    [Range(-100000, 100000)]
-    public double SpeedStep { get => speedStep; set => Set(ref speedStep, value); }
-    private double speedStep;
+    [AnimationSlider("F1", "px/秒", -50, 50)]
+    public Animation SpeedStep { get; } = new Animation(0, -100000, 100000);
 
     [Display(GroupName = "弾の動き", Name = "加速度")]
-    [TextBoxSlider("F1", "px/秒²", -400, 400)]
-    [DefaultValue(0d)]
-    [Range(-1000000, 1000000)]
-    public double Acceleration { get => acceleration; set => Set(ref acceleration, value); }
-    private double acceleration;
+    [AnimationSlider("F1", "px/秒²", -400, 400)]
+    public Animation Acceleration { get; } = new Animation(0, -1000000, 1000000);
 
     [Display(GroupName = "弾の動き", Name = "旋回速度", Description = "正で時計回りに曲がります。")]
     [AnimationSlider("F1", "度/秒", -360, 360)]
     public Animation AngularVelocity { get; } = new Animation(0, -100000, 100000);
 
     [Display(GroupName = "弾の動き", Name = "旋回ゆらぎ")]
-    [TextBoxSlider("F1", "度/秒", 0, 180)]
-    [DefaultValue(0d)]
-    [Range(0, 100000)]
-    public double AngularVelocityJitter { get => angularVelocityJitter; set => Set(ref angularVelocityJitter, value); }
-    private double angularVelocityJitter;
+    [AnimationSlider("F1", "度/秒", 0, 180)]
+    public Animation AngularVelocityJitter { get; } = new Animation(0, 0, 100000);
 
     [Display(GroupName = "弾の動き", Name = "減速", Description = "1 秒後に残る速度の割合。1 で減速なし。")]
-    [TextBoxSlider("F2", "", 0, 1)]
-    [DefaultValue(1d)]
-    [Range(0, 1)]
-    public double Damping { get => damping; set => Set(ref damping, value); }
-    private double damping = 1.0;
+    [AnimationSlider("F2", "", 0, 1)]
+    public Animation Damping { get; } = new Animation(1.0, 0, 1);
 
     [Display(GroupName = "弾の動き", Name = "最低速度")]
-    [TextBoxSlider("F0", "px/秒", 0, 300)]
-    [DefaultValue(0d)]
-    [Range(0, 100000)]
-    public double MinSpeed { get => minSpeed; set => Set(ref minSpeed, value); }
-    private double minSpeed;
+    [AnimationSlider("F0", "px/秒", 0, 300)]
+    public Animation MinSpeed { get; } = new Animation(0, 0, 100000);
 
     [Display(GroupName = "弾の動き", Name = "最高速度")]
-    [TextBoxSlider("F0", "px/秒", 100, 3000)]
-    [DefaultValue(2000d)]
-    [Range(0, 1000000)]
-    public double MaxSpeed { get => maxSpeed; set => Set(ref maxSpeed, value); }
-    private double maxSpeed = 2000;
+    [AnimationSlider("F0", "px/秒", 100, 3000)]
+    public Animation MaxSpeed { get; } = new Animation(2000, 0, 1000000);
 
     [Display(GroupName = "弾の動き", Name = "重力", Description = "正で下向き。")]
     [AnimationSlider("F0", "px/秒²", -600, 600)]
@@ -385,18 +344,12 @@ public class EmitterParameter : Animatable
     public Animation Wind { get; } = new Animation(0, -1000000, 1000000);
 
     [Display(GroupName = "弾の動き", Name = "寿命", Description = "0 で無限 (画面外に出るまで残ります)。")]
-    [TextBoxSlider("F2", "秒", 0, 20)]
-    [DefaultValue(6d)]
-    [Range(0, 100000)]
-    public double Lifetime { get => lifetime; set => Set(ref lifetime, value); }
-    private double lifetime = 6.0;
+    [AnimationSlider("F2", "秒", 0, 20)]
+    public Animation Lifetime { get; } = new Animation(6.0, 0, 100000);
 
     [Display(GroupName = "弾の動き", Name = "寿命ゆらぎ")]
-    [TextBoxSlider("F2", "秒", 0, 5)]
-    [DefaultValue(0d)]
-    [Range(0, 100000)]
-    public double LifetimeJitter { get => lifetimeJitter; set => Set(ref lifetimeJitter, value); }
-    private double lifetimeJitter;
+    [AnimationSlider("F2", "秒", 0, 5)]
+    public Animation LifetimeJitter { get; } = new Animation(0, 0, 100000);
 
     // ---- ホーミング ----
 
@@ -406,25 +359,16 @@ public class EmitterParameter : Animatable
     private bool homingEnabled;
 
     [Display(GroupName = "ホーミング", Name = "旋回力", Description = "大きいほど鋭く曲がります。")]
-    [TextBoxSlider("F0", "度/秒", 0, 720)]
-    [DefaultValue(90d)]
-    [Range(0, 100000)]
-    public double HomingTurnRate { get => homingTurnRate; set => Set(ref homingTurnRate, value); }
-    private double homingTurnRate = 90;
+    [AnimationSlider("F0", "度/秒", 0, 720)]
+    public Animation HomingTurnRate { get; } = new Animation(90, 0, 100000);
 
     [Display(GroupName = "ホーミング", Name = "追尾時間", Description = "0 で寿命いっぱい追尾します。")]
-    [TextBoxSlider("F2", "秒", 0, 10)]
-    [DefaultValue(1.5d)]
-    [Range(0, 100000)]
-    public double HomingDuration { get => homingDuration; set => Set(ref homingDuration, value); }
-    private double homingDuration = 1.5;
+    [AnimationSlider("F2", "秒", 0, 10)]
+    public Animation HomingDuration { get; } = new Animation(1.5, 0, 100000);
 
     [Display(GroupName = "ホーミング", Name = "追尾開始まで")]
-    [TextBoxSlider("F2", "秒", 0, 3)]
-    [DefaultValue(0d)]
-    [Range(0, 100000)]
-    public double HomingDelay { get => homingDelay; set => Set(ref homingDelay, value); }
-    private double homingDelay;
+    [AnimationSlider("F2", "秒", 0, 3)]
+    public Animation HomingDelay { get; } = new Animation(0, 0, 100000);
 
     // =====================================================================
     // 見た目
@@ -445,18 +389,12 @@ public class EmitterParameter : Animatable
     public Animation Scale { get; } = new Animation(1.0, 0.001, 1000);
 
     [Display(GroupName = "見た目", Name = "大きさゆらぎ")]
-    [TextBoxSlider("F2", "倍", 0, 1)]
-    [DefaultValue(0d)]
-    [Range(0, 1000)]
-    public double ScaleJitter { get => scaleJitter; set => Set(ref scaleJitter, value); }
-    private double scaleJitter;
+    [AnimationSlider("F2", "倍", 0, 1)]
+    public Animation ScaleJitter { get; } = new Animation(0, 0, 1000);
 
     [Display(GroupName = "見た目", Name = "拡縮速度", Description = "1 秒あたりの大きさの変化量。負で縮みます。")]
-    [TextBoxSlider("F2", "倍/秒", -2, 2)]
-    [DefaultValue(0d)]
-    [Range(-1000, 1000)]
-    public double ScaleVelocity { get => scaleVelocity; set => Set(ref scaleVelocity, value); }
-    private double scaleVelocity;
+    [AnimationSlider("F2", "倍/秒", -2, 2)]
+    public Animation ScaleVelocity { get; } = new Animation(0, -1000, 1000);
 
     [Display(GroupName = "見た目", Name = "回転速度")]
     [AnimationSlider("F0", "度/秒", -720, 720)]
@@ -483,18 +421,12 @@ public class EmitterParameter : Animatable
     private Color secondaryColor = Color.FromRgb(102, 178, 255);
 
     [Display(GroupName = "見た目", Name = "色相の速度", Description = "「虹色」のときの色の流れる速さ。")]
-    [TextBoxSlider("F0", "度/秒", -720, 720)]
-    [DefaultValue(120d)]
-    [Range(-100000, 100000)]
-    public double HueVelocity { get => hueVelocity; set => Set(ref hueVelocity, value); }
-    private double hueVelocity = 120;
+    [AnimationSlider("F0", "度/秒", -720, 720)]
+    public Animation HueVelocity { get; } = new Animation(120, -100000, 100000);
 
     [Display(GroupName = "見た目", Name = "弾ごとの色相差")]
-    [TextBoxSlider("F1", "度", 0, 180)]
-    [DefaultValue(15d)]
-    [Range(-100000, 100000)]
-    public double HueStep { get => hueStep; set => Set(ref hueStep, value); }
-    private double hueStep = 15;
+    [AnimationSlider("F1", "度", 0, 180)]
+    public Animation HueStep { get; } = new Animation(15, -100000, 100000);
 
     [Display(GroupName = "見た目", Name = "発光 (加算合成)", Description = "東方風の光る弾にします。")]
     [ToggleSlider]
@@ -502,62 +434,38 @@ public class EmitterParameter : Animatable
     private bool additive = true;
 
     [Display(GroupName = "見た目", Name = "発光の強さ")]
-    [TextBoxSlider("F2", "倍", 0, 3)]
-    [DefaultValue(1d)]
-    [Range(0, 100)]
-    public double GlowIntensity { get => glowIntensity; set => Set(ref glowIntensity, value); }
-    private double glowIntensity = 1.0;
+    [AnimationSlider("F2", "倍", 0, 3)]
+    public Animation GlowIntensity { get; } = new Animation(1.0, 0, 100);
 
     [Display(GroupName = "見た目", Name = "不透明度")]
-    [TextBoxSlider("F2", "", 0, 1)]
-    [DefaultValue(1d)]
-    [Range(0, 1)]
-    public double Opacity { get => opacity; set => Set(ref opacity, value); }
-    private double opacity = 1.0;
+    [AnimationSlider("F2", "", 0, 1)]
+    public Animation Opacity { get; } = new Animation(1.0, 0, 1);
 
     [Display(GroupName = "見た目", Name = "フェードイン")]
-    [TextBoxSlider("F2", "秒", 0, 1)]
-    [DefaultValue(0.05d)]
-    [Range(0, 1000)]
-    public double FadeInDuration { get => fadeInDuration; set => Set(ref fadeInDuration, value); }
-    private double fadeInDuration = 0.05;
+    [AnimationSlider("F2", "秒", 0, 1)]
+    public Animation FadeInDuration { get; } = new Animation(0.05, 0, 1000);
 
     [Display(GroupName = "見た目", Name = "フェードアウト")]
-    [TextBoxSlider("F2", "秒", 0, 2)]
-    [DefaultValue(0.15d)]
-    [Range(0, 1000)]
-    public double FadeOutDuration { get => fadeOutDuration; set => Set(ref fadeOutDuration, value); }
-    private double fadeOutDuration = 0.15;
+    [AnimationSlider("F2", "秒", 0, 2)]
+    public Animation FadeOutDuration { get; } = new Animation(0.15, 0, 1000);
 
     // ---- トレイル (残像) ----
 
     [Display(GroupName = "残像", Name = "残像の数", Description = "0 で残像なし。")]
-    [TextBoxSlider("F0", "個", 0, 32)]
-    [DefaultValue(0)]
-    [Range(0, 48)]
-    public int TrailLength { get => trailLength; set => Set(ref trailLength, value); }
-    private int trailLength;
+    [AnimationSlider("F0", "個", 0, 32)]
+    public Animation TrailLength { get; } = new Animation(0, 0, 48);
 
     [Display(GroupName = "残像", Name = "残像の間隔")]
-    [TextBoxSlider("F3", "秒", 0.005, 0.2)]
-    [DefaultValue(0.0166d)]
-    [Range(0.001, 100)]
-    public double TrailInterval { get => trailInterval; set => Set(ref trailInterval, value); }
-    private double trailInterval = 1.0 / 60.0;
+    [AnimationSlider("F3", "秒", 0.005, 0.2)]
+    public Animation TrailInterval { get; } = new Animation(1.0 / 60.0, 0.001, 100);
 
     [Display(GroupName = "残像", Name = "末端の濃さ")]
-    [TextBoxSlider("F2", "", 0, 1)]
-    [DefaultValue(0d)]
-    [Range(0, 1)]
-    public double TrailFade { get => trailFade; set => Set(ref trailFade, value); }
-    private double trailFade;
+    [AnimationSlider("F2", "", 0, 1)]
+    public Animation TrailFade { get; } = new Animation(0, 0, 1);
 
     [Display(GroupName = "残像", Name = "末端の大きさ")]
-    [TextBoxSlider("F2", "倍", 0, 1.5)]
-    [DefaultValue(0.6d)]
-    [Range(0, 100)]
-    public double TrailScale { get => trailScale; set => Set(ref trailScale, value); }
-    private double trailScale = 0.6;
+    [AnimationSlider("F2", "倍", 0, 1.5)]
+    public Animation TrailScale { get; } = new Animation(0.6, 0, 100);
 
     // =====================================================================
     // 分裂 (多段弾幕)
@@ -569,39 +477,24 @@ public class EmitterParameter : Animatable
     private bool splitEnabled;
 
     [Display(GroupName = "分裂", Name = "分裂までの時間")]
-    [TextBoxSlider("F2", "秒", 0.05, 5)]
-    [DefaultValue(0.6d)]
-    [Range(0.01, 100000)]
-    public double SplitDelay { get => splitDelay; set => Set(ref splitDelay, value); }
-    private double splitDelay = 0.6;
+    [AnimationSlider("F2", "秒", 0.05, 5)]
+    public Animation SplitDelay { get; } = new Animation(0.6, 0.01, 100000);
 
     [Display(GroupName = "分裂", Name = "分裂数")]
-    [TextBoxSlider("F0", "個", 1, 32)]
-    [DefaultValue(8)]
-    [Range(1, 500)]
-    public int SplitCount { get => splitCount; set => Set(ref splitCount, value); }
-    private int splitCount = 8;
+    [AnimationSlider("F0", "個", 1, 32)]
+    public Animation SplitCount { get; } = new Animation(8, 1, 500);
 
     [Display(GroupName = "分裂", Name = "分裂の広がり角")]
-    [TextBoxSlider("F1", "度", 0, 360)]
-    [DefaultValue(360d)]
-    [Range(0, 100000)]
-    public double SplitSpread { get => splitSpread; set => Set(ref splitSpread, value); }
-    private double splitSpread = 360;
+    [AnimationSlider("F1", "度", 0, 360)]
+    public Animation SplitSpread { get; } = new Animation(360, 0, 100000);
 
     [Display(GroupName = "分裂", Name = "分裂後の速度")]
-    [TextBoxSlider("F0", "px/秒", 0, 800)]
-    [DefaultValue(180d)]
-    [Range(-100000, 100000)]
-    public double SplitSpeed { get => splitSpeed; set => Set(ref splitSpeed, value); }
-    private double splitSpeed = 180;
+    [AnimationSlider("F0", "px/秒", 0, 800)]
+    public Animation SplitSpeed { get; } = new Animation(180, -100000, 100000);
 
     [Display(GroupName = "分裂", Name = "分裂後の大きさ")]
-    [TextBoxSlider("F2", "倍", 0.1, 2)]
-    [DefaultValue(0.8d)]
-    [Range(0.001, 100)]
-    public double SplitScaleFactor { get => splitScaleFactor; set => Set(ref splitScaleFactor, value); }
-    private double splitScaleFactor = 0.8;
+    [AnimationSlider("F2", "倍", 0.1, 2)]
+    public Animation SplitScaleFactor { get; } = new Animation(0.8, 0.001, 100);
 
     [Display(GroupName = "分裂", Name = "親を消す")]
     [ToggleSlider]
@@ -609,22 +502,16 @@ public class EmitterParameter : Animatable
     private bool splitDestroyParent = true;
 
     [Display(GroupName = "分裂", Name = "多段の世代数", Description = "2 以上でさらに分裂を繰り返します。")]
-    [TextBoxSlider("F0", "世代", 1, 5)]
-    [DefaultValue(1)]
-    [Range(1, 10)]
-    public int SplitMaxGeneration { get => splitMaxGeneration; set => Set(ref splitMaxGeneration, value); }
-    private int splitMaxGeneration = 1;
+    [AnimationSlider("F0", "世代", 1, 5)]
+    public Animation SplitMaxGeneration { get; } = new Animation(1, 1, 10);
 
     // =====================================================================
     // 当たり判定
     // =====================================================================
 
     [Display(GroupName = "当たり判定", Name = "弾の判定半径", Description = "0 で判定なし。全体設定の「当たり判定」も有効にしてください。")]
-    [TextBoxSlider("F1", "px", 0, 40)]
-    [DefaultValue(0d)]
-    [Range(0, 100000)]
-    public double HitRadius { get => hitRadius; set => Set(ref hitRadius, value); }
-    private double hitRadius;
+    [AnimationSlider("F1", "px", 0, 40)]
+    public Animation HitRadius { get; } = new Animation(0, 0, 100000);
 
     [Display(GroupName = "当たり判定", Name = "当たったら消える")]
     [ToggleSlider]
@@ -637,10 +524,6 @@ public class EmitterParameter : Animatable
 
     /// <summary>
     /// 編集項目をコアエンジンの設定へ変換する。
-    /// <para>
-    /// X / Y はキーフレームで動くため <b>ここでは既定値のみ</b>を入れ、
-    /// 実際の値は <c>LiveValueSource</c> 経由で毎ステップ供給する。
-    /// </para>
     /// </summary>
     /// <param name="emitterIndex">このエミッターの番号 (画像スロットの決定に使用)。</param>
     public EmitterSettings ToSettings(int emitterIndex) => new()
@@ -651,14 +534,14 @@ public class EmitterParameter : Animatable
         Y = 0,
         OrbitRadius = OrbitRadius.GetFirstValue(),
         OrbitSpeed = OrbitSpeed.GetFirstValue(),
-        OrbitPhase = OrbitPhase,
-        SeedOffset = SeedOffset,
+        OrbitPhase = OrbitPhase.GetFirstValue(),
+        SeedOffset = (int)Math.Round(SeedOffset.GetFirstValue()),
 
         SourceMode = SourceMode,
         SourcePath = string.IsNullOrWhiteSpace(SourcePath) ? null : SourcePath,
         SourceText = string.IsNullOrWhiteSpace(SourceText) ? null : SourceText,
-        ScriptSpeedScale = ScriptSpeedScale,
-        ScriptRank = ScriptRank,
+        ScriptSpeedScale = ScriptSpeedScale.GetFirstValue(),
+        ScriptRank = ScriptRank.GetFirstValue(),
         ScriptLoop = ScriptLoop,
         ImagePath = string.IsNullOrWhiteSpace(ImagePath) ? null : ImagePath,
 
@@ -667,47 +550,47 @@ public class EmitterParameter : Animatable
             Kind = PatternKind,
             Way = Math.Max(1, (int)Math.Round(Way.GetFirstValue())),
             Stack = Math.Max(1, (int)Math.Round(Stack.GetFirstValue())),
-            StackSpeedStep = StackSpeedStep,
-            StackAngleStep = StackAngleStep,
+            StackSpeedStep = StackSpeedStep.GetFirstValue(),
+            StackAngleStep = StackAngleStep.GetFirstValue(),
             BaseAngle = BaseAngle.GetFirstValue(),
             SpreadAngle = SpreadAngle.GetFirstValue(),
             AngleStepPerShot = AngleStepPerShot.GetFirstValue(),
-            AngleJitter = AngleJitter,
+            AngleJitter = AngleJitter.GetFirstValue(),
             FireInterval = FireInterval.GetFirstValue(),
-            BurstCount = BurstCount,
-            BurstInterval = BurstInterval,
-            BurstCooldown = BurstCooldown,
-            StartTime = StartTime,
-            EndTime = EndTime,
+            BurstCount = Math.Max(1, (int)Math.Round(BurstCount.GetFirstValue())),
+            BurstInterval = BurstInterval.GetFirstValue(),
+            BurstCooldown = BurstCooldown.GetFirstValue(),
+            StartTime = StartTime.GetFirstValue(),
+            EndTime = EndTime.GetFirstValue(),
             SpawnRadius = SpawnRadius.GetFirstValue(),
-            SpawnJitter = SpawnJitter,
+            SpawnJitter = SpawnJitter.GetFirstValue(),
             AimAtTarget = AimAtTarget,
-            WallWidth = WallWidth,
-            LaserSpacing = LaserSpacing,
-            WhipAmplitude = WhipAmplitude,
-            WhipPeriod = WhipPeriod,
+            WallWidth = WallWidth.GetFirstValue(),
+            LaserSpacing = LaserSpacing.GetFirstValue(),
+            WhipAmplitude = WhipAmplitude.GetFirstValue(),
+            WhipPeriod = WhipPeriod.GetFirstValue(),
         },
 
         Physics = new BulletPhysics
         {
             Speed = Speed.GetFirstValue(),
-            SpeedJitter = SpeedJitter,
-            SpeedStep = SpeedStep,
-            Acceleration = Acceleration,
+            SpeedJitter = SpeedJitter.GetFirstValue(),
+            SpeedStep = SpeedStep.GetFirstValue(),
+            Acceleration = Acceleration.GetFirstValue(),
             AngularVelocity = AngularVelocity.GetFirstValue(),
-            AngularVelocityJitter = AngularVelocityJitter,
-            Damping = Damping,
-            MinSpeed = MinSpeed,
-            MaxSpeed = MaxSpeed,
+            AngularVelocityJitter = AngularVelocityJitter.GetFirstValue(),
+            Damping = Damping.GetFirstValue(),
+            MinSpeed = MinSpeed.GetFirstValue(),
+            MaxSpeed = MaxSpeed.GetFirstValue(),
             Gravity = Gravity.GetFirstValue(),
             Wind = Wind.GetFirstValue(),
-            Lifetime = Lifetime,
-            LifetimeJitter = LifetimeJitter,
+            Lifetime = Lifetime.GetFirstValue(),
+            LifetimeJitter = LifetimeJitter.GetFirstValue(),
             HomingEnabled = HomingEnabled,
-            HomingTurnRate = HomingTurnRate,
-            HomingDuration = HomingDuration,
-            HomingDelay = HomingDelay,
-            HitRadius = HitRadius,
+            HomingTurnRate = HomingTurnRate.GetFirstValue(),
+            HomingDuration = HomingDuration.GetFirstValue(),
+            HomingDelay = HomingDelay.GetFirstValue(),
+            HitRadius = HitRadius.GetFirstValue(),
             DestroyOnHit = DestroyOnHit,
         },
 
@@ -717,28 +600,28 @@ public class EmitterParameter : Animatable
             SpriteIndex = HasCustomImage ? SpriteSlots.CustomSlotOf(emitterIndex) : (int)Shape,
             SpriteCycleCount = 1,
             Scale = Scale.GetFirstValue(),
-            ScaleJitter = ScaleJitter,
-            ScaleVelocity = ScaleVelocity,
+            ScaleJitter = ScaleJitter.GetFirstValue(),
+            ScaleVelocity = ScaleVelocity.GetFirstValue(),
             RotationVelocity = RotationVelocity.GetFirstValue(),
             AlignToDirection = AlignToDirection,
             ColorMode = ColorMode,
             PrimaryColor = PrimaryColor.ToBulletColor(),
             SecondaryColor = SecondaryColor.ToBulletColor(),
-            HueVelocity = HueVelocity,
-            HueStep = HueStep,
+            HueVelocity = HueVelocity.GetFirstValue(),
+            HueStep = HueStep.GetFirstValue(),
             Additive = Additive,
-            GlowIntensity = GlowIntensity,
-            Opacity = Opacity,
-            FadeInDuration = FadeInDuration,
-            FadeOutDuration = FadeOutDuration,
-            TrailLength = TrailLength,
-            TrailInterval = TrailInterval,
-            TrailFade = TrailFade,
-            TrailScale = TrailScale,
+            GlowIntensity = GlowIntensity.GetFirstValue(),
+            Opacity = Opacity.GetFirstValue(),
+            FadeInDuration = FadeInDuration.GetFirstValue(),
+            FadeOutDuration = FadeOutDuration.GetFirstValue(),
+            TrailLength = Math.Max(0, (int)Math.Round(TrailLength.GetFirstValue())),
+            TrailInterval = TrailInterval.GetFirstValue(),
+            TrailFade = TrailFade.GetFirstValue(),
+            TrailScale = TrailScale.GetFirstValue(),
         },
 
-        Split = SplitEnabled ? BuildSplit(SplitMaxGeneration) : null,
-        SplitDelay = SplitDelay,
+        Split = SplitEnabled ? BuildSplit(Math.Max(1, (int)Math.Round(SplitMaxGeneration.GetFirstValue()))) : null,
+        SplitDelay = SplitDelay.GetFirstValue(),
     };
 
     /// <summary>ユーザー指定画像を使うかどうか。</summary>
@@ -747,18 +630,16 @@ public class EmitterParameter : Animatable
     /// <summary>多段分裂の設定を世代数ぶん入れ子にして組み立てる。</summary>
     private SplitSpec BuildSplit(int remainingGenerations)
     {
-        var generations = Math.Clamp(SplitMaxGeneration, 1, 10);
+        var generations = Math.Clamp((int)Math.Round(SplitMaxGeneration.GetFirstValue()), 1, 10);
         return new SplitSpec
         {
-            Count = SplitCount,
-            SpreadDegrees = SplitSpread,
-            Speed = SplitSpeed,
-            ScaleFactor = SplitScaleFactor,
+            Count = Math.Max(1, (int)Math.Round(SplitCount.GetFirstValue())),
+            SpreadDegrees = SplitSpread.GetFirstValue(),
+            Speed = SplitSpeed.GetFirstValue(),
+            ScaleFactor = SplitScaleFactor.GetFirstValue(),
             DestroyParent = SplitDestroyParent,
             MaxGeneration = generations,
-            NextDelay = SplitDelay,
-            // 世代数が 2 以上なら、同じ設定を次段として連結する。
-            // MaxGeneration による打ち切りがあるため無限再帰にはならない。
+            NextDelay = SplitDelay.GetFirstValue(),
             Next = remainingGenerations > 1 ? BuildSplit(remainingGenerations - 1) : null,
         };
     }
@@ -773,187 +654,179 @@ public class EmitterParameter : Animatable
         other.Y.CopyFrom(Y);
         other.OrbitRadius.CopyFrom(OrbitRadius);
         other.OrbitSpeed.CopyFrom(OrbitSpeed);
-        other.OrbitPhase = OrbitPhase;
-        other.SeedOffset = SeedOffset;
+        other.OrbitPhase.CopyFrom(OrbitPhase);
+        other.SeedOffset.CopyFrom(SeedOffset);
 
         other.SourceMode = SourceMode;
         other.SourcePath = SourcePath;
         other.SourceText = SourceText;
-        other.ScriptSpeedScale = ScriptSpeedScale;
-        other.ScriptRank = ScriptRank;
+        other.ScriptSpeedScale.CopyFrom(ScriptSpeedScale);
+        other.ScriptRank.CopyFrom(ScriptRank);
         other.ScriptLoop = ScriptLoop;
 
         other.PatternKind = PatternKind;
         other.Way.CopyFrom(Way);
         other.Stack.CopyFrom(Stack);
-        other.StackSpeedStep = StackSpeedStep;
-        other.StackAngleStep = StackAngleStep;
+        other.StackSpeedStep.CopyFrom(StackSpeedStep);
+        other.StackAngleStep.CopyFrom(StackAngleStep);
         other.BaseAngle.CopyFrom(BaseAngle);
         other.SpreadAngle.CopyFrom(SpreadAngle);
         other.AngleStepPerShot.CopyFrom(AngleStepPerShot);
-        other.AngleJitter = AngleJitter;
+        other.AngleJitter.CopyFrom(AngleJitter);
         other.FireInterval.CopyFrom(FireInterval);
-        other.BurstCount = BurstCount;
-        other.BurstInterval = BurstInterval;
-        other.BurstCooldown = BurstCooldown;
-        other.StartTime = StartTime;
-        other.EndTime = EndTime;
+        other.BurstCount.CopyFrom(BurstCount);
+        other.BurstInterval.CopyFrom(BurstInterval);
+        other.BurstCooldown.CopyFrom(BurstCooldown);
+        other.StartTime.CopyFrom(StartTime);
+        other.EndTime.CopyFrom(EndTime);
         other.SpawnRadius.CopyFrom(SpawnRadius);
-        other.SpawnJitter = SpawnJitter;
+        other.SpawnJitter.CopyFrom(SpawnJitter);
         other.AimAtTarget = AimAtTarget;
-        other.WallWidth = WallWidth;
-        other.LaserSpacing = LaserSpacing;
-        other.WhipAmplitude = WhipAmplitude;
-        other.WhipPeriod = WhipPeriod;
+        other.WallWidth.CopyFrom(WallWidth);
+        other.LaserSpacing.CopyFrom(LaserSpacing);
+        other.WhipAmplitude.CopyFrom(WhipAmplitude);
+        other.WhipPeriod.CopyFrom(WhipPeriod);
 
         other.Speed.CopyFrom(Speed);
-        other.SpeedJitter = SpeedJitter;
-        other.SpeedStep = SpeedStep;
-        other.Acceleration = Acceleration;
+        other.SpeedJitter.CopyFrom(SpeedJitter);
+        other.SpeedStep.CopyFrom(SpeedStep);
+        other.Acceleration.CopyFrom(Acceleration);
         other.AngularVelocity.CopyFrom(AngularVelocity);
-        other.AngularVelocityJitter = AngularVelocityJitter;
-        other.Damping = Damping;
-        other.MinSpeed = MinSpeed;
-        other.MaxSpeed = MaxSpeed;
+        other.AngularVelocityJitter.CopyFrom(AngularVelocityJitter);
+        other.Damping.CopyFrom(Damping);
+        other.MinSpeed.CopyFrom(MinSpeed);
+        other.MaxSpeed.CopyFrom(MaxSpeed);
         other.Gravity.CopyFrom(Gravity);
         other.Wind.CopyFrom(Wind);
-        other.Lifetime = Lifetime;
-        other.LifetimeJitter = LifetimeJitter;
+        other.Lifetime.CopyFrom(Lifetime);
+        other.LifetimeJitter.CopyFrom(LifetimeJitter);
 
         other.HomingEnabled = HomingEnabled;
-        other.HomingTurnRate = HomingTurnRate;
-        other.HomingDuration = HomingDuration;
-        other.HomingDelay = HomingDelay;
+        other.HomingTurnRate.CopyFrom(HomingTurnRate);
+        other.HomingDuration.CopyFrom(HomingDuration);
+        other.HomingDelay.CopyFrom(HomingDelay);
 
         other.Shape = Shape;
         other.ImagePath = ImagePath;
         other.Scale.CopyFrom(Scale);
-        other.ScaleJitter = ScaleJitter;
-        other.ScaleVelocity = ScaleVelocity;
+        other.ScaleJitter.CopyFrom(ScaleJitter);
+        other.ScaleVelocity.CopyFrom(ScaleVelocity);
         other.RotationVelocity.CopyFrom(RotationVelocity);
         other.AlignToDirection = AlignToDirection;
         other.ColorMode = ColorMode;
         other.PrimaryColor = PrimaryColor;
         other.SecondaryColor = SecondaryColor;
-        other.HueVelocity = HueVelocity;
-        other.HueStep = HueStep;
+        other.HueVelocity.CopyFrom(HueVelocity);
+        other.HueStep.CopyFrom(HueStep);
         other.Additive = Additive;
-        other.GlowIntensity = GlowIntensity;
-        other.Opacity = Opacity;
-        other.FadeInDuration = FadeInDuration;
-        other.FadeOutDuration = FadeOutDuration;
+        other.GlowIntensity.CopyFrom(GlowIntensity);
+        other.Opacity.CopyFrom(Opacity);
+        other.FadeInDuration.CopyFrom(FadeInDuration);
+        other.FadeOutDuration.CopyFrom(FadeOutDuration);
 
-        other.TrailLength = TrailLength;
-        other.TrailInterval = TrailInterval;
-        other.TrailFade = TrailFade;
-        other.TrailScale = TrailScale;
+        other.TrailLength.CopyFrom(TrailLength);
+        other.TrailInterval.CopyFrom(TrailInterval);
+        other.TrailFade.CopyFrom(TrailFade);
+        other.TrailScale.CopyFrom(TrailScale);
 
         other.SplitEnabled = SplitEnabled;
-        other.SplitDelay = SplitDelay;
-        other.SplitCount = SplitCount;
-        other.SplitSpread = SplitSpread;
-        other.SplitSpeed = SplitSpeed;
-        other.SplitScaleFactor = SplitScaleFactor;
+        other.SplitDelay.CopyFrom(SplitDelay);
+        other.SplitCount.CopyFrom(SplitCount);
+        other.SplitSpread.CopyFrom(SplitSpread);
+        other.SplitSpeed.CopyFrom(SplitSpeed);
+        other.SplitScaleFactor.CopyFrom(SplitScaleFactor);
         other.SplitDestroyParent = SplitDestroyParent;
-        other.SplitMaxGeneration = SplitMaxGeneration;
+        other.SplitMaxGeneration.CopyFrom(SplitMaxGeneration);
 
-        other.HitRadius = HitRadius;
+        other.HitRadius.CopyFrom(HitRadius);
         other.DestroyOnHit = DestroyOnHit;
     }
 
     /// <summary>
     /// プリセットの内容をこのエミッターへ適用する。
-    /// <para>
-    /// X / Y (配置) と公転・シードずらしは<b>意図的に上書きしない</b>。
-    /// プリセットは「弾幕の見た目と挙動」だけを表し、画面上のどこから撃つかは
-    /// ユーザーがタイムライン上で決めた値を尊重する。
-    /// </para>
     /// </summary>
     public void ApplyPreset(Core.Presets.DanmakuPreset preset)
     {
         ArgumentNullException.ThrowIfNull(preset);
 
         PresetName = preset.Name;
-
-        // プリセットは GUI パターン方式の設定を持つので、外部データ読み込み中でも
-        // パターン方式へ戻しておく (そうしないと適用しても見た目が変わらない)。
         SourceMode = DanmakuSourceMode.Pattern;
 
         var pattern = preset.Pattern;
         PatternKind = pattern.Kind;
         Way.SetFirstValue(pattern.Way);
         Stack.SetFirstValue(pattern.Stack);
-        StackSpeedStep = pattern.StackSpeedStep;
-        StackAngleStep = pattern.StackAngleStep;
+        StackSpeedStep.SetFirstValue(pattern.StackSpeedStep);
+        StackAngleStep.SetFirstValue(pattern.StackAngleStep);
         BaseAngle.SetFirstValue(pattern.BaseAngle);
         SpreadAngle.SetFirstValue(pattern.SpreadAngle);
         AngleStepPerShot.SetFirstValue(pattern.AngleStepPerShot);
-        AngleJitter = pattern.AngleJitter;
+        AngleJitter.SetFirstValue(pattern.AngleJitter);
         FireInterval.SetFirstValue(pattern.FireInterval);
-        BurstCount = pattern.BurstCount;
-        BurstInterval = pattern.BurstInterval;
-        BurstCooldown = pattern.BurstCooldown;
+        BurstCount.SetFirstValue(pattern.BurstCount);
+        BurstInterval.SetFirstValue(pattern.BurstInterval);
+        BurstCooldown.SetFirstValue(pattern.BurstCooldown);
         SpawnRadius.SetFirstValue(pattern.SpawnRadius);
-        SpawnJitter = pattern.SpawnJitter;
+        SpawnJitter.SetFirstValue(pattern.SpawnJitter);
         AimAtTarget = pattern.AimAtTarget;
-        WallWidth = pattern.WallWidth;
-        LaserSpacing = pattern.LaserSpacing;
-        WhipAmplitude = pattern.WhipAmplitude;
-        WhipPeriod = pattern.WhipPeriod;
+        WallWidth.SetFirstValue(pattern.WallWidth);
+        LaserSpacing.SetFirstValue(pattern.LaserSpacing);
+        WhipAmplitude.SetFirstValue(pattern.WhipAmplitude);
+        WhipPeriod.SetFirstValue(pattern.WhipPeriod);
 
         var physics = preset.Physics;
         Speed.SetFirstValue(physics.Speed);
-        SpeedJitter = physics.SpeedJitter;
-        SpeedStep = physics.SpeedStep;
-        Acceleration = physics.Acceleration;
+        SpeedJitter.SetFirstValue(physics.SpeedJitter);
+        SpeedStep.SetFirstValue(physics.SpeedStep);
+        Acceleration.SetFirstValue(physics.Acceleration);
         AngularVelocity.SetFirstValue(physics.AngularVelocity);
-        AngularVelocityJitter = physics.AngularVelocityJitter;
-        Damping = physics.Damping;
-        MinSpeed = physics.MinSpeed;
-        MaxSpeed = physics.MaxSpeed;
+        AngularVelocityJitter.SetFirstValue(physics.AngularVelocityJitter);
+        Damping.SetFirstValue(physics.Damping);
+        MinSpeed.SetFirstValue(physics.MinSpeed);
+        MaxSpeed.SetFirstValue(physics.MaxSpeed);
         Gravity.SetFirstValue(physics.Gravity);
         Wind.SetFirstValue(physics.Wind);
-        Lifetime = physics.Lifetime;
-        LifetimeJitter = physics.LifetimeJitter;
+        Lifetime.SetFirstValue(physics.Lifetime);
+        LifetimeJitter.SetFirstValue(physics.LifetimeJitter);
         HomingEnabled = physics.HomingEnabled;
-        HomingTurnRate = physics.HomingTurnRate;
-        HomingDuration = physics.HomingDuration;
-        HomingDelay = physics.HomingDelay;
+        HomingTurnRate.SetFirstValue(physics.HomingTurnRate);
+        HomingDuration.SetFirstValue(physics.HomingDuration);
+        HomingDelay.SetFirstValue(physics.HomingDelay);
 
         var appearance = preset.Appearance;
         Shape = Enum.IsDefined((BulletShape)appearance.SpriteIndex)
             ? (BulletShape)appearance.SpriteIndex
             : BulletShape.Circle;
         Scale.SetFirstValue(appearance.Scale);
-        ScaleJitter = appearance.ScaleJitter;
-        ScaleVelocity = appearance.ScaleVelocity;
+        ScaleJitter.SetFirstValue(appearance.ScaleJitter);
+        ScaleVelocity.SetFirstValue(appearance.ScaleVelocity);
         RotationVelocity.SetFirstValue(appearance.RotationVelocity);
         AlignToDirection = appearance.AlignToDirection;
         ColorMode = appearance.ColorMode;
         PrimaryColor = appearance.PrimaryColor.ToMediaColor();
         SecondaryColor = appearance.SecondaryColor.ToMediaColor();
-        HueVelocity = appearance.HueVelocity;
-        HueStep = appearance.HueStep;
+        HueVelocity.SetFirstValue(appearance.HueVelocity);
+        HueStep.SetFirstValue(appearance.HueStep);
         Additive = appearance.Additive;
-        GlowIntensity = appearance.GlowIntensity;
-        Opacity = appearance.Opacity;
-        FadeInDuration = appearance.FadeInDuration;
-        FadeOutDuration = appearance.FadeOutDuration;
-        TrailLength = appearance.TrailLength;
-        TrailInterval = appearance.TrailInterval;
-        TrailFade = appearance.TrailFade;
-        TrailScale = appearance.TrailScale;
+        GlowIntensity.SetFirstValue(appearance.GlowIntensity);
+        Opacity.SetFirstValue(appearance.Opacity);
+        FadeInDuration.SetFirstValue(appearance.FadeInDuration);
+        FadeOutDuration.SetFirstValue(appearance.FadeOutDuration);
+        TrailLength.SetFirstValue(appearance.TrailLength);
+        TrailInterval.SetFirstValue(appearance.TrailInterval);
+        TrailFade.SetFirstValue(appearance.TrailFade);
+        TrailScale.SetFirstValue(appearance.TrailScale);
 
         SplitEnabled = preset.Split is not null;
-        SplitDelay = preset.SplitDelay;
+        SplitDelay.SetFirstValue(preset.SplitDelay);
         if (preset.Split is { } split)
         {
-            SplitCount = split.Count;
-            SplitSpread = split.SpreadDegrees;
-            SplitSpeed = split.Speed;
-            SplitScaleFactor = split.ScaleFactor;
+            SplitCount.SetFirstValue(split.Count);
+            SplitSpread.SetFirstValue(split.SpreadDegrees);
+            SplitSpeed.SetFirstValue(split.Speed);
+            SplitScaleFactor.SetFirstValue(split.ScaleFactor);
             SplitDestroyParent = split.DestroyParent;
-            SplitMaxGeneration = split.MaxGeneration;
+            SplitMaxGeneration.SetFirstValue(split.MaxGeneration);
         }
     }
 
@@ -962,22 +835,21 @@ public class EmitterParameter : Animatable
     /// </summary>
     private void ApplyPatternDefaults(PatternKind kind)
     {
-        // 以前のパターンの残骸（連射数、ゆらぎ、段数、角度など）が残らないよう、まず共通のクリーン状態にリセットする
         Stack.SetFirstValue(1);
-        StackSpeedStep = 40;
-        StackAngleStep = 0;
+        StackSpeedStep.SetFirstValue(40);
+        StackAngleStep.SetFirstValue(0);
         BaseAngle.SetFirstValue(-90);
-        AngleJitter = 0;
+        AngleJitter.SetFirstValue(0);
         SpawnRadius.SetFirstValue(0);
-        SpawnJitter = 0;
+        SpawnJitter.SetFirstValue(0);
         AimAtTarget = false;
-        BurstCount = 1;
-        BurstInterval = 0.02;
-        BurstCooldown = 0;
-        WallWidth = 1280;
-        LaserSpacing = 24;
-        WhipAmplitude = 45;
-        WhipPeriod = 1.5;
+        BurstCount.SetFirstValue(1);
+        BurstInterval.SetFirstValue(0.02);
+        BurstCooldown.SetFirstValue(0);
+        WallWidth.SetFirstValue(1280);
+        LaserSpacing.SetFirstValue(24);
+        WhipAmplitude.SetFirstValue(45);
+        WhipPeriod.SetFirstValue(1.5);
 
         switch (kind)
         {
@@ -1006,8 +878,8 @@ public class EmitterParameter : Animatable
                 Way.SetFirstValue(5);
                 SpreadAngle.SetFirstValue(34);
                 AimAtTarget = true;
-                BurstCount = 3;
-                BurstInterval = 0.09;
+                BurstCount.SetFirstValue(3);
+                BurstInterval.SetFirstValue(0.09);
                 FireInterval.SetFirstValue(0.8);
                 AngleStepPerShot.SetFirstValue(0);
                 break;
@@ -1016,14 +888,14 @@ public class EmitterParameter : Animatable
                 Way.SetFirstValue(6);
                 SpreadAngle.SetFirstValue(360);
                 AngleStepPerShot.SetFirstValue(0);
-                AngleJitter = 15;
-                SpawnJitter = 20;
+                AngleJitter.SetFirstValue(15);
+                SpawnJitter.SetFirstValue(20);
                 FireInterval.SetFirstValue(0.06);
                 break;
 
             case PatternKind.Wall:
                 Way.SetFirstValue(16);
-                WallWidth = 1280;
+                WallWidth.SetFirstValue(1280);
                 SpreadAngle.SetFirstValue(360);
                 AngleStepPerShot.SetFirstValue(0);
                 BaseAngle.SetFirstValue(90); // 下向きに降る
@@ -1033,7 +905,7 @@ public class EmitterParameter : Animatable
             case PatternKind.Bloom:
                 Way.SetFirstValue(16);
                 Stack.SetFirstValue(3);
-                StackSpeedStep = 30;
+                StackSpeedStep.SetFirstValue(30);
                 SpreadAngle.SetFirstValue(360);
                 AngleStepPerShot.SetFirstValue(6);
                 FireInterval.SetFirstValue(0.4);
@@ -1041,7 +913,7 @@ public class EmitterParameter : Animatable
 
             case PatternKind.Rose:
                 Way.SetFirstValue(32);
-                StackSpeedStep = 20;
+                StackSpeedStep.SetFirstValue(20);
                 SpreadAngle.SetFirstValue(360);
                 AngleStepPerShot.SetFirstValue(8);
                 FireInterval.SetFirstValue(0.5);
@@ -1049,7 +921,7 @@ public class EmitterParameter : Animatable
 
             case PatternKind.Laser:
                 Way.SetFirstValue(24);
-                LaserSpacing = 24;
+                LaserSpacing.SetFirstValue(24);
                 SpreadAngle.SetFirstValue(360);
                 AngleStepPerShot.SetFirstValue(20);
                 FireInterval.SetFirstValue(0.22);
@@ -1059,8 +931,8 @@ public class EmitterParameter : Animatable
                 Way.SetFirstValue(5);
                 SpreadAngle.SetFirstValue(60);
                 AngleStepPerShot.SetFirstValue(0);
-                WhipAmplitude = 45;
-                WhipPeriod = 1.5;
+                WhipAmplitude.SetFirstValue(45);
+                WhipPeriod.SetFirstValue(1.5);
                 FireInterval.SetFirstValue(0.05);
                 break;
         }
@@ -1071,7 +943,17 @@ public class EmitterParameter : Animatable
         => Core.Presets.DanmakuPreset.FromEmitter(ToSettings(0), name, description);
 
     protected override IEnumerable<IAnimatable> GetAnimatables() => [
-        X, Y, BaseAngle, OrbitRadius, OrbitSpeed, Way, Stack, SpreadAngle, AngleStepPerShot,
-        FireInterval, SpawnRadius, Speed, AngularVelocity, Gravity, Wind, Scale, RotationVelocity
+        X, Y, OrbitRadius, OrbitSpeed, OrbitPhase, SeedOffset,
+        ScriptSpeedScale, ScriptRank,
+        Way, Stack, StackSpeedStep, StackAngleStep, BaseAngle, SpreadAngle, AngleStepPerShot, AngleJitter,
+        FireInterval, BurstCount, BurstInterval, BurstCooldown, StartTime, EndTime, SpawnRadius, SpawnJitter,
+        WallWidth, LaserSpacing, WhipAmplitude, WhipPeriod,
+        Speed, SpeedJitter, SpeedStep, Acceleration, AngularVelocity, AngularVelocityJitter, Damping,
+        MinSpeed, MaxSpeed, Gravity, Wind, Lifetime, LifetimeJitter,
+        HomingTurnRate, HomingDuration, HomingDelay,
+        Scale, ScaleJitter, ScaleVelocity, RotationVelocity, HueVelocity, HueStep, GlowIntensity, Opacity,
+        FadeInDuration, FadeOutDuration, TrailLength, TrailInterval, TrailFade, TrailScale,
+        SplitDelay, SplitCount, SplitSpread, SplitSpeed, SplitScaleFactor, SplitMaxGeneration,
+        HitRadius
     ];
 }

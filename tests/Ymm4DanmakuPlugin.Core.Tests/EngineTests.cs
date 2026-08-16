@@ -1484,4 +1484,66 @@ public class KeyframeLiveValueTests
         engine.Advance(0.1); // 2回目 (t=0.1): 8 * 2 = 16発追加 (合計20発)
         Assert.Equal(20, engine.AliveBullets().Length);
     }
+
+    [Fact]
+    public void EmitterAccelerationおよびLifetime供給関数によって加速度と寿命が動的に変化する()
+    {
+        var pattern = new PatternSettings
+        {
+            Kind = PatternKind.Circle,
+            Way = 1,
+            FireInterval = 0.1,
+        };
+        var physics = new BulletPhysics { Speed = 100, Acceleration = 0, Lifetime = 5.0 };
+
+        var settings = TestFactory.Settings(TestFactory.Emitter(pattern, physics: physics));
+        var engine = TestFactory.Engine(settings);
+
+        engine.Live.EmitterAcceleration = (idx, t) => t > 0.05 ? 200.0 : 50.0;
+        engine.Live.EmitterLifetime = (idx, t) => t > 0.05 ? 1.0 : 3.0;
+
+        engine.Advance(0.05); // 1発目 (t=0): accel=50, lifetime=3
+        var b1 = engine.AliveBullets()[0];
+        Assert.Equal(50.0, b1.Acceleration);
+        Assert.Equal(3.0, b1.Lifetime);
+
+        engine.Advance(0.1); // 2発目 (t=0.1): accel=200, lifetime=1
+        var b2 = engine.AliveBullets()[1];
+        Assert.Equal(200.0, b2.Acceleration);
+        Assert.Equal(1.0, b2.Lifetime);
+    }
+
+    [Fact]
+    public void EmitterSplit供給関数によって分裂数と初速が動的に変化する()
+    {
+        var pattern = new PatternSettings
+        {
+            Kind = PatternKind.Circle,
+            Way = 1,
+            FireInterval = 0.5,
+        };
+        var split = new SplitSpec
+        {
+            Count = 4,
+            SpreadDegrees = 360,
+            Speed = 100,
+            ScaleFactor = 0.8,
+            DestroyParent = true,
+            MaxGeneration = 1,
+            NextDelay = 0.2,
+        };
+
+        var emitter = TestFactory.Emitter(pattern);
+        var settings = TestFactory.Settings(emitter with { Split = split, SplitDelay = 0.2 });
+        var engine = TestFactory.Engine(settings);
+
+        engine.Live.EmitterSplitCount = (idx, t) => 8;
+        engine.Live.EmitterSplitSpeed = (idx, t) => 300.0;
+
+        engine.Advance(0.05); // 発射
+        var parent = engine.AliveBullets()[0];
+        Assert.NotNull(parent.Split);
+        Assert.Equal(8, parent.Split.Count);
+        Assert.Equal(300.0, parent.Split.Speed);
+    }
 }

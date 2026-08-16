@@ -1,5 +1,6 @@
 using Ymm4DanmakuPlugin.Core.Configuration;
 using Ymm4DanmakuPlugin.Core.Mathematics;
+using Ymm4DanmakuPlugin.Core.Model;
 
 namespace Ymm4DanmakuPlugin.Core.Engine;
 
@@ -48,15 +49,19 @@ public sealed class PatternEmitterBehavior(EmitterSettings settings) : IEmitterB
             shotIndex++;
             burstIndex++;
 
-            if (pattern.BurstCount > 1 && burstIndex < pattern.BurstCount)
+            var burstCount = Math.Max(1, context.EmitterBurstCount(nextShotTime) ?? pattern.BurstCount);
+            var burstInterval = Math.Max(MinInterval, context.EmitterBurstInterval(nextShotTime) ?? pattern.BurstInterval);
+            var burstCooldown = Math.Max(0.0, context.EmitterBurstCooldown(nextShotTime) ?? pattern.BurstCooldown);
+
+            if (burstCount > 1 && burstIndex < burstCount)
             {
-                nextShotTime += Math.Max(MinInterval, pattern.BurstInterval);
+                nextShotTime += burstInterval;
             }
             else
             {
                 burstIndex = 0;
                 var interval = context.EmitterFireInterval(nextShotTime) ?? pattern.FireInterval;
-                nextShotTime += Math.Max(MinInterval, interval + pattern.BurstCooldown);
+                nextShotTime += Math.Max(MinInterval, interval + burstCooldown);
             }
         }
 
@@ -82,36 +87,71 @@ public sealed class PatternEmitterBehavior(EmitterSettings settings) : IEmitterB
         if (angleStepPerShot != 0)
             baseAngle += angleStepPerShot * shotIndex;
 
-        if (pattern.AngleJitter > 0)
-            baseAngle += context.Random.NextSymmetric(pattern.AngleJitter);
+        var angleJitter = context.EmitterAngleJitter(fireTime) ?? pattern.AngleJitter;
+        if (angleJitter > 0)
+            baseAngle += context.Random.NextSymmetric(angleJitter);
 
         if (pattern.Kind == PatternKind.Whip)
         {
-            var period = Math.Max(0.05, pattern.WhipPeriod);
-            baseAngle += pattern.WhipAmplitude * Math.Sin(DanmakuMath.Tau * fireTime / period);
+            var period = Math.Max(0.05, context.EmitterWhipPeriod(fireTime) ?? pattern.WhipPeriod);
+            var amplitude = context.EmitterWhipAmplitude(fireTime) ?? pattern.WhipAmplitude;
+            baseAngle += amplitude * Math.Sin(DanmakuMath.Tau * fireTime / period);
         }
 
         var spreadAngle = context.EmitterSpreadAngle(fireTime) ?? pattern.SpreadAngle;
         var spawnRadius = context.EmitterSpawnRadius(fireTime) ?? pattern.SpawnRadius;
+        var spawnJitter = context.EmitterSpawnJitter(fireTime) ?? pattern.SpawnJitter;
+        var stackSpeedStep = context.EmitterStackSpeedStep(fireTime) ?? pattern.StackSpeedStep;
+        var stackAngleStep = context.EmitterStackAngleStep(fireTime) ?? pattern.StackAngleStep;
+        var wallWidth = context.EmitterWallWidth(fireTime) ?? pattern.WallWidth;
+        var laserSpacing = context.EmitterLaserSpacing(fireTime) ?? pattern.LaserSpacing;
+
         var baseSpeed = context.EmitterSpeed(fireTime) ?? physics.Speed;
+        var acceleration = context.EmitterAcceleration(fireTime);
         var angularVelocity = context.EmitterAngularVelocity(fireTime) ?? physics.AngularVelocity;
+        var damping = context.EmitterDamping(fireTime);
         var gravity = context.EmitterGravity(fireTime) ?? physics.Gravity;
         var wind = context.EmitterWind(fireTime) ?? physics.Wind;
+        var lifetime = context.EmitterLifetime(fireTime) ?? 0;
+        var homingTurnRate = context.EmitterHomingTurnRate(fireTime);
+        var homingDuration = context.EmitterHomingDuration(fireTime);
+        var homingDelay = context.EmitterHomingDelay(fireTime);
+        var hitRadius = context.EmitterHitRadius(fireTime);
+
         var scale = context.EmitterScale(fireTime) ?? appearance.Scale;
+        var opacity = context.EmitterOpacity(fireTime);
         var rotationVelocity = context.EmitterRotationVelocity(fireTime) ?? appearance.RotationVelocity;
+
+        // 分裂の動的評価
+        SplitSpec? split = settings.Split;
+        var splitDelay = context.EmitterSplitDelay(fireTime) ?? settings.SplitDelay;
+        if (split is not null)
+        {
+            var splitCount = context.EmitterSplitCount(fireTime) ?? split.Count;
+            var splitSpread = context.EmitterSplitSpread(fireTime) ?? split.SpreadDegrees;
+            var splitSpeed = context.EmitterSplitSpeed(fireTime) ?? split.Speed;
+            var splitScaleFactor = context.EmitterSplitScaleFactor(fireTime) ?? split.ScaleFactor;
+            split = split with
+            {
+                Count = splitCount,
+                SpreadDegrees = splitSpread,
+                Speed = splitSpeed,
+                ScaleFactor = splitScaleFactor,
+            };
+        }
 
         var indexInBurst = 0;
         var fired = false;
 
         for (var s = 0; s < stack; s++)
         {
-            var stackAngle = baseAngle + pattern.StackAngleStep * s;
+            var stackAngle = baseAngle + stackAngleStep * s;
 
             // Bloom は段ごとに半ステップずらして花弁状にする
             if (pattern.Kind == PatternKind.Bloom && stack > 1)
                 stackAngle += 360.0 / way / stack * s;
 
-            var stackSpeed = pattern.StackSpeedStep * s;
+            var stackSpeed = stackSpeedStep * s;
 
             for (var i = 0; i < way; i++)
             {
@@ -120,28 +160,36 @@ public sealed class PatternEmitterBehavior(EmitterSettings settings) : IEmitterB
                 request.ShotIndex = shotIndex;
                 request.IndexInBurst = indexInBurst;
                 request.PlayFireSound = !fired; // 1 回の発射につき 1 音のみ
-                request.Split = settings.Split;
-                request.SplitDelay = settings.SplitDelay;
+                request.Split = split;
+                request.SplitDelay = splitDelay;
 
-                var (direction, offset, extraSpeed) = ResolveBullet(context, pattern, way, i, stackAngle, spreadAngle, spawnRadius);
+                var (direction, offset, extraSpeed) = ResolveBullet(context, pattern, way, i, stackAngle, spreadAngle, spawnRadius, wallWidth, laserSpacing, stackSpeedStep);
 
                 request.Direction = direction;
                 request.Position = context.Position + offset;
                 request.SpeedOverride = baseSpeed + stackSpeed + extraSpeed;
                 request.AngularVelocityOverride = angularVelocity;
+                request.AccelerationOverride = acceleration;
+                request.DampingOverride = damping;
                 request.GravityOverride = gravity;
                 request.WindOverride = wind;
+                request.LifetimeOverride = lifetime;
+                request.HomingTurnRateOverride = homingTurnRate;
+                request.HomingDurationOverride = homingDuration;
+                request.HomingDelayOverride = homingDelay;
+                request.HitRadiusOverride = hitRadius;
                 request.ScaleOverride = scale;
+                request.OpacityOverride = opacity;
                 request.RotationVelocityOverride = rotationVelocity;
 
                 if (spawnRadius > 0 && pattern.Kind != PatternKind.Laser && pattern.Kind != PatternKind.Wall)
                     request.Position += Vec2.FromDegrees(direction, spawnRadius);
 
-                if (pattern.SpawnJitter > 0)
+                if (spawnJitter > 0)
                 {
                     request.Position += new Vec2(
-                        context.Random.NextSymmetric(pattern.SpawnJitter),
-                        context.Random.NextSymmetric(pattern.SpawnJitter));
+                        context.Random.NextSymmetric(spawnJitter),
+                        context.Random.NextSymmetric(spawnJitter));
                 }
 
                 if (context.Spawn(in request) is not null)
@@ -160,7 +208,10 @@ public sealed class PatternEmitterBehavior(EmitterSettings settings) : IEmitterB
         int index,
         double baseAngle,
         double spreadAngle,
-        double spawnRadius)
+        double spawnRadius,
+        double wallWidth,
+        double laserSpacing,
+        double stackSpeedStep)
     {
         switch (pattern.Kind)
         {
@@ -194,7 +245,7 @@ public sealed class PatternEmitterBehavior(EmitterSettings settings) : IEmitterB
 
             case PatternKind.Wall:
             {
-                var width = pattern.WallWidth;
+                var width = wallWidth;
                 var step = way > 1 ? width / (way - 1) : 0;
                 // 1 発ごとに半ステップずらして隙間を互い違いにする
                 var stagger = shotIndex % 2 == 0 ? 0 : step / 2;
@@ -215,13 +266,13 @@ public sealed class PatternEmitterBehavior(EmitterSettings settings) : IEmitterB
             case PatternKind.Rose:
             {
                 var angle = baseAngle + DanmakuMath.GoldenAngleDegrees * index;
-                var extraSpeed = pattern.StackSpeedStep * Math.Sqrt(index);
+                var extraSpeed = stackSpeedStep * Math.Sqrt(index);
                 return (angle, Vec2.Zero, extraSpeed);
             }
 
             case PatternKind.Laser:
             {
-                var distance = spawnRadius + pattern.LaserSpacing * index;
+                var distance = spawnRadius + laserSpacing * index;
                 return (baseAngle, Vec2.FromDegrees(baseAngle, distance), 0);
             }
 

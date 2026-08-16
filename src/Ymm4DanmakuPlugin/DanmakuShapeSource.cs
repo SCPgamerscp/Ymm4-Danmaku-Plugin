@@ -175,6 +175,15 @@ public sealed class DanmakuShapeSource : IShapeSource2
             return emitter.OrbitSpeed.GetValue(frame, totalFrame, fps);
         };
 
+        sim.Live.EmitterOrbitPhase = (index, timeSeconds) =>
+        {
+            if (index < 0 || index >= emitters.Count) return null;
+
+            var emitter = emitters[index];
+            var frame = TimeToFrame(timeSeconds, fps, totalFrame);
+            return emitter.OrbitPhase.GetValue(frame, totalFrame, fps);
+        };
+
         sim.Live.EmitterWay = (index, timeSeconds) =>
         {
             if (index < 0 || index >= emitters.Count) return null;
@@ -191,6 +200,24 @@ public sealed class DanmakuShapeSource : IShapeSource2
             var emitter = emitters[index];
             var frame = TimeToFrame(timeSeconds, fps, totalFrame);
             return Math.Max(1, (int)Math.Round(emitter.Stack.GetValue(frame, totalFrame, fps)));
+        };
+
+        sim.Live.EmitterStackSpeedStep = (index, timeSeconds) =>
+        {
+            if (index < 0 || index >= emitters.Count) return null;
+
+            var emitter = emitters[index];
+            var frame = TimeToFrame(timeSeconds, fps, totalFrame);
+            return emitter.StackSpeedStep.GetValue(frame, totalFrame, fps);
+        };
+
+        sim.Live.EmitterStackAngleStep = (index, timeSeconds) =>
+        {
+            if (index < 0 || index >= emitters.Count) return null;
+
+            var emitter = emitters[index];
+            var frame = TimeToFrame(timeSeconds, fps, totalFrame);
+            return emitter.StackAngleStep.GetValue(frame, totalFrame, fps);
         };
 
         sim.Live.EmitterSpreadAngle = (index, timeSeconds) =>
@@ -211,6 +238,15 @@ public sealed class DanmakuShapeSource : IShapeSource2
             return emitter.AngleStepPerShot.GetValue(frame, totalFrame, fps);
         };
 
+        sim.Live.EmitterAngleJitter = (index, timeSeconds) =>
+        {
+            if (index < 0 || index >= emitters.Count) return null;
+
+            var emitter = emitters[index];
+            var frame = TimeToFrame(timeSeconds, fps, totalFrame);
+            return emitter.AngleJitter.GetValue(frame, totalFrame, fps);
+        };
+
         sim.Live.EmitterFireInterval = (index, timeSeconds) =>
         {
             if (index < 0 || index >= emitters.Count) return null;
@@ -218,6 +254,33 @@ public sealed class DanmakuShapeSource : IShapeSource2
             var emitter = emitters[index];
             var frame = TimeToFrame(timeSeconds, fps, totalFrame);
             return emitter.FireInterval.GetValue(frame, totalFrame, fps);
+        };
+
+        sim.Live.EmitterBurstCount = (index, timeSeconds) =>
+        {
+            if (index < 0 || index >= emitters.Count) return null;
+
+            var emitter = emitters[index];
+            var frame = TimeToFrame(timeSeconds, fps, totalFrame);
+            return Math.Max(1, (int)Math.Round(emitter.BurstCount.GetValue(frame, totalFrame, fps)));
+        };
+
+        sim.Live.EmitterBurstInterval = (index, timeSeconds) =>
+        {
+            if (index < 0 || index >= emitters.Count) return null;
+
+            var emitter = emitters[index];
+            var frame = TimeToFrame(timeSeconds, fps, totalFrame);
+            return emitter.BurstInterval.GetValue(frame, totalFrame, fps);
+        };
+
+        sim.Live.EmitterBurstCooldown = (index, timeSeconds) =>
+        {
+            if (index < 0 || index >= emitters.Count) return null;
+
+            var emitter = emitters[index];
+            var frame = TimeToFrame(timeSeconds, fps, totalFrame);
+            return emitter.BurstCooldown.GetValue(frame, totalFrame, fps);
         };
 
         sim.Live.EmitterSpawnRadius = (index, timeSeconds) =>
@@ -229,6 +292,51 @@ public sealed class DanmakuShapeSource : IShapeSource2
             return emitter.SpawnRadius.GetValue(frame, totalFrame, fps);
         };
 
+        sim.Live.EmitterSpawnJitter = (index, timeSeconds) =>
+        {
+            if (index < 0 || index >= emitters.Count) return null;
+
+            var emitter = emitters[index];
+            var frame = TimeToFrame(timeSeconds, fps, totalFrame);
+            return emitter.SpawnJitter.GetValue(frame, totalFrame, fps);
+        };
+
+        sim.Live.EmitterWallWidth = (index, timeSeconds) =>
+        {
+            if (index < 0 || index >= emitters.Count) return null;
+
+            var emitter = emitters[index];
+            var frame = TimeToFrame(timeSeconds, fps, totalFrame);
+            return emitter.WallWidth.GetValue(frame, totalFrame, fps);
+        };
+
+        sim.Live.EmitterLaserSpacing = (index, timeSeconds) =>
+        {
+            if (index < 0 || index >= emitters.Count) return null;
+
+            var emitter = emitters[index];
+            var frame = TimeToFrame(timeSeconds, fps, totalFrame);
+            return emitter.LaserSpacing.GetValue(frame, totalFrame, fps);
+        };
+
+        sim.Live.EmitterWhipAmplitude = (index, timeSeconds) =>
+        {
+            if (index < 0 || index >= emitters.Count) return null;
+
+            var emitter = emitters[index];
+            var frame = TimeToFrame(timeSeconds, fps, totalFrame);
+            return emitter.WhipAmplitude.GetValue(frame, totalFrame, fps);
+        };
+
+        sim.Live.EmitterWhipPeriod = (index, timeSeconds) =>
+        {
+            if (index < 0 || index >= emitters.Count) return null;
+
+            var emitter = emitters[index];
+            var frame = TimeToFrame(timeSeconds, fps, totalFrame);
+            return emitter.WhipPeriod.GetValue(frame, totalFrame, fps);
+        };
+
         sim.Live.EmitterSpeed = (index, timeSeconds) =>
         {
             if (index < 0 || index >= emitters.Count) return null;
@@ -238,6 +346,15 @@ public sealed class DanmakuShapeSource : IShapeSource2
             return emitter.Speed.GetValue(frame, totalFrame, fps);
         };
 
+        sim.Live.EmitterAcceleration = (index, timeSeconds) =>
+        {
+            if (index < 0 || index >= emitters.Count) return null;
+
+            var emitter = emitters[index];
+            var frame = TimeToFrame(timeSeconds, fps, totalFrame);
+            return emitter.Acceleration.GetValue(frame, totalFrame, fps);
+        };
+
         sim.Live.EmitterAngularVelocity = (index, timeSeconds) =>
         {
             if (index < 0 || index >= emitters.Count) return null;
@@ -245,6 +362,15 @@ public sealed class DanmakuShapeSource : IShapeSource2
             var emitter = emitters[index];
             var frame = TimeToFrame(timeSeconds, fps, totalFrame);
             return emitter.AngularVelocity.GetValue(frame, totalFrame, fps);
+        };
+
+        sim.Live.EmitterDamping = (index, timeSeconds) =>
+        {
+            if (index < 0 || index >= emitters.Count) return null;
+
+            var emitter = emitters[index];
+            var frame = TimeToFrame(timeSeconds, fps, totalFrame);
+            return emitter.Damping.GetValue(frame, totalFrame, fps);
         };
 
         sim.Live.EmitterGravity = (index, timeSeconds) =>
@@ -265,6 +391,51 @@ public sealed class DanmakuShapeSource : IShapeSource2
             return emitter.Wind.GetValue(frame, totalFrame, fps);
         };
 
+        sim.Live.EmitterLifetime = (index, timeSeconds) =>
+        {
+            if (index < 0 || index >= emitters.Count) return null;
+
+            var emitter = emitters[index];
+            var frame = TimeToFrame(timeSeconds, fps, totalFrame);
+            return emitter.Lifetime.GetValue(frame, totalFrame, fps);
+        };
+
+        sim.Live.EmitterHomingTurnRate = (index, timeSeconds) =>
+        {
+            if (index < 0 || index >= emitters.Count) return null;
+
+            var emitter = emitters[index];
+            var frame = TimeToFrame(timeSeconds, fps, totalFrame);
+            return emitter.HomingTurnRate.GetValue(frame, totalFrame, fps);
+        };
+
+        sim.Live.EmitterHomingDuration = (index, timeSeconds) =>
+        {
+            if (index < 0 || index >= emitters.Count) return null;
+
+            var emitter = emitters[index];
+            var frame = TimeToFrame(timeSeconds, fps, totalFrame);
+            return emitter.HomingDuration.GetValue(frame, totalFrame, fps);
+        };
+
+        sim.Live.EmitterHomingDelay = (index, timeSeconds) =>
+        {
+            if (index < 0 || index >= emitters.Count) return null;
+
+            var emitter = emitters[index];
+            var frame = TimeToFrame(timeSeconds, fps, totalFrame);
+            return emitter.HomingDelay.GetValue(frame, totalFrame, fps);
+        };
+
+        sim.Live.EmitterHitRadius = (index, timeSeconds) =>
+        {
+            if (index < 0 || index >= emitters.Count) return null;
+
+            var emitter = emitters[index];
+            var frame = TimeToFrame(timeSeconds, fps, totalFrame);
+            return emitter.HitRadius.GetValue(frame, totalFrame, fps);
+        };
+
         sim.Live.EmitterScale = (index, timeSeconds) =>
         {
             if (index < 0 || index >= emitters.Count) return null;
@@ -283,10 +454,85 @@ public sealed class DanmakuShapeSource : IShapeSource2
             return emitter.RotationVelocity.GetValue(frame, totalFrame, fps);
         };
 
+        sim.Live.EmitterOpacity = (index, timeSeconds) =>
+        {
+            if (index < 0 || index >= emitters.Count) return null;
+
+            var emitter = emitters[index];
+            var frame = TimeToFrame(timeSeconds, fps, totalFrame);
+            return emitter.Opacity.GetValue(frame, totalFrame, fps);
+        };
+
+        sim.Live.EmitterGlowIntensity = (index, timeSeconds) =>
+        {
+            if (index < 0 || index >= emitters.Count) return null;
+
+            var emitter = emitters[index];
+            var frame = TimeToFrame(timeSeconds, fps, totalFrame);
+            return emitter.GlowIntensity.GetValue(frame, totalFrame, fps);
+        };
+
+        sim.Live.EmitterSplitCount = (index, timeSeconds) =>
+        {
+            if (index < 0 || index >= emitters.Count) return null;
+
+            var emitter = emitters[index];
+            var frame = TimeToFrame(timeSeconds, fps, totalFrame);
+            return Math.Max(1, (int)Math.Round(emitter.SplitCount.GetValue(frame, totalFrame, fps)));
+        };
+
+        sim.Live.EmitterSplitSpread = (index, timeSeconds) =>
+        {
+            if (index < 0 || index >= emitters.Count) return null;
+
+            var emitter = emitters[index];
+            var frame = TimeToFrame(timeSeconds, fps, totalFrame);
+            return emitter.SplitSpread.GetValue(frame, totalFrame, fps);
+        };
+
+        sim.Live.EmitterSplitSpeed = (index, timeSeconds) =>
+        {
+            if (index < 0 || index >= emitters.Count) return null;
+
+            var emitter = emitters[index];
+            var frame = TimeToFrame(timeSeconds, fps, totalFrame);
+            return emitter.SplitSpeed.GetValue(frame, totalFrame, fps);
+        };
+
+        sim.Live.EmitterSplitScaleFactor = (index, timeSeconds) =>
+        {
+            if (index < 0 || index >= emitters.Count) return null;
+
+            var emitter = emitters[index];
+            var frame = TimeToFrame(timeSeconds, fps, totalFrame);
+            return emitter.SplitScaleFactor.GetValue(frame, totalFrame, fps);
+        };
+
+        sim.Live.EmitterSplitDelay = (index, timeSeconds) =>
+        {
+            if (index < 0 || index >= emitters.Count) return null;
+
+            var emitter = emitters[index];
+            var frame = TimeToFrame(timeSeconds, fps, totalFrame);
+            return emitter.SplitDelay.GetValue(frame, totalFrame, fps);
+        };
+
         sim.Live.GlobalOpacity = timeSeconds =>
         {
             var frame = TimeToFrame(timeSeconds, fps, totalFrame);
             return Math.Clamp(parameter.GlobalOpacity.GetValue(frame, totalFrame, fps) / 100.0, 0.0, 1.0);
+        };
+
+        sim.Live.TimeScale = timeSeconds =>
+        {
+            var frame = TimeToFrame(timeSeconds, fps, totalFrame);
+            return parameter.TimeScale.GetValue(frame, totalFrame, fps);
+        };
+
+        sim.Live.TargetRadius = timeSeconds =>
+        {
+            var frame = TimeToFrame(timeSeconds, fps, totalFrame);
+            return parameter.TargetRadius.GetValue(frame, totalFrame, fps);
         };
     }
 
