@@ -964,14 +964,29 @@ public class EmitterParameter : Animatable
     /// </summary>
     private void ApplyPatternDefaults(PatternKind kind)
     {
+        // 以前のパターンの残骸（連射数、ゆらぎ、段数、角度など）が残らないよう、まず共通のクリーン状態にリセットする
+        Stack = 1;
+        StackSpeedStep = 40;
+        StackAngleStep = 0;
+        BaseAngle.SetFirstValue(-90);
+        AngleJitter = 0;
+        SpawnRadius.SetFirstValue(0);
+        SpawnJitter = 0;
+        AimAtTarget = false;
+        BurstCount = 1;
+        BurstInterval = 0.02;
+        BurstCooldown = 0;
+        WallWidth = 1280;
+        LaserSpacing = 24;
+        WhipAmplitude = 45;
+        WhipPeriod = 1.5;
+
         switch (kind)
         {
             case PatternKind.Circle:
                 Way = 24;
                 SpreadAngle.SetFirstValue(360);
                 AngleStepPerShot.SetFirstValue(0);
-                Stack = 1;
-                AimAtTarget = false;
                 FireInterval.SetFirstValue(0.35);
                 break;
 
@@ -979,8 +994,6 @@ public class EmitterParameter : Animatable
                 Way = 5;
                 SpreadAngle.SetFirstValue(60);
                 AngleStepPerShot.SetFirstValue(0);
-                Stack = 1;
-                AimAtTarget = false;
                 FireInterval.SetFirstValue(0.25);
                 break;
 
@@ -989,8 +1002,6 @@ public class EmitterParameter : Animatable
                 SpreadAngle.SetFirstValue(360);
                 AngleStepPerShot.SetFirstValue(13);
                 FireInterval.SetFirstValue(0.08);
-                Stack = 1;
-                AimAtTarget = false;
                 break;
 
             case PatternKind.Aimed:
@@ -1006,10 +1017,10 @@ public class EmitterParameter : Animatable
             case PatternKind.Scatter:
                 Way = 6;
                 SpreadAngle.SetFirstValue(360);
+                AngleStepPerShot.SetFirstValue(0);
                 AngleJitter = 15;
                 SpawnJitter = 20;
                 FireInterval.SetFirstValue(0.06);
-                AimAtTarget = false;
                 break;
 
             case PatternKind.Wall:
@@ -1018,7 +1029,6 @@ public class EmitterParameter : Animatable
                 SpreadAngle.SetFirstValue(360);
                 AngleStepPerShot.SetFirstValue(0);
                 BaseAngle.SetFirstValue(90); // 下向きに降る
-                AimAtTarget = false;
                 FireInterval.SetFirstValue(0.28);
                 break;
 
@@ -1028,34 +1038,31 @@ public class EmitterParameter : Animatable
                 StackSpeedStep = 30;
                 SpreadAngle.SetFirstValue(360);
                 AngleStepPerShot.SetFirstValue(6);
-                AimAtTarget = false;
                 FireInterval.SetFirstValue(0.4);
                 break;
 
             case PatternKind.Rose:
                 Way = 32;
-                SpreadAngle.SetFirstValue(360);
                 StackSpeedStep = 20;
+                SpreadAngle.SetFirstValue(360);
                 AngleStepPerShot.SetFirstValue(8);
                 FireInterval.SetFirstValue(0.5);
-                AimAtTarget = false;
                 break;
 
             case PatternKind.Laser:
                 Way = 24;
                 LaserSpacing = 24;
                 SpreadAngle.SetFirstValue(360);
-                FireInterval.SetFirstValue(0.22);
                 AngleStepPerShot.SetFirstValue(20);
-                AimAtTarget = false;
+                FireInterval.SetFirstValue(0.22);
                 break;
 
             case PatternKind.Whip:
                 Way = 5;
                 SpreadAngle.SetFirstValue(60);
+                AngleStepPerShot.SetFirstValue(0);
                 WhipAmplitude = 45;
                 WhipPeriod = 1.5;
-                AimAtTarget = false;
                 FireInterval.SetFirstValue(0.05);
                 break;
         }
