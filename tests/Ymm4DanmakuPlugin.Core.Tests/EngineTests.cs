@@ -468,6 +468,29 @@ public class TrajectoryTests
     }
 
     [Fact]
+    public void 全方位弾でもAngleStepPerShotで発射ごとに回転する()
+    {
+        var pattern = TestFactory.SingleShot(4) with
+        {
+            Kind = PatternKind.Circle,
+            BaseAngle = 0,
+            SpreadAngle = 360,
+            AngleStepPerShot = 10,
+            FireInterval = 0.1,
+        };
+        var engine = TestFactory.Engine(TestFactory.Settings(TestFactory.Emitter(pattern)));
+
+        engine.Advance(0.15); // 2 shots: 0.0s (shot 0, 4 bullets) and 0.1s (shot 1, 4 bullets)
+
+        var bullets = engine.AliveBullets().OrderBy(b => b.Id).ToArray();
+        Assert.Equal(8, bullets.Length);
+
+        // Shot 0 is bullets[0..4], Shot 1 is bullets[4..8]
+        var diff = DanmakuMath.NormalizeAngle(bullets[4].Direction - bullets[0].Direction);
+        Assert.Equal(10.0, diff, 3);
+    }
+
+    [Fact]
     public void 壁弾は発射方向と直交する向きに並ぶ()
     {
         var pattern = TestFactory.SingleShot(5) with

@@ -158,7 +158,7 @@ public class DanmakuShapeParameter : ShapeParameterBase
 
     [Display(GroupName = "発射パターン", Name = "回転速度 (発射毎)", Description = "1 回撃つごとに発射方向を回転させる角度。渦巻き弾幕を作れます。")]
     [TextBoxSlider("F1", "度/発", -180, 180)]
-    [DefaultValue(7.5d)]
+    [DefaultValue(0d)]
     [Range(-100000, 100000)]
     public double AngleStepPerShot
     {

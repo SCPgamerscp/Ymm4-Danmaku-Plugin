@@ -26,7 +26,7 @@ public sealed record PatternSettings
     public double SpreadAngle { get; init; } = 360;
 
     /// <summary>1 回の発射ごとに基準角へ加算する角度 (度)。螺旋弾の要。</summary>
-    public double AngleStepPerShot { get; init; } = 7;
+    public double AngleStepPerShot { get; init; } = 0;
 
     /// <summary>基準角のランダム幅 (±度)。</summary>
     public double AngleJitter { get; init; }

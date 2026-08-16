@@ -199,10 +199,10 @@ public class EmitterParameter : Animatable
 
     [Display(GroupName = "パターン", Name = "発射ごとの回転", Description = "1 回発射するたびに基準角へ加算する角度。螺旋弾の要です。")]
     [TextBoxSlider("F2", "度", -60, 60)]
-    [DefaultValue(7d)]
+    [DefaultValue(0d)]
     [Range(-100000, 100000)]
     public double AngleStepPerShot { get => angleStepPerShot; set => Set(ref angleStepPerShot, value); }
-    private double angleStepPerShot = 7;
+    private double angleStepPerShot = 0;
 
     [Display(GroupName = "パターン", Name = "角度ゆらぎ", Description = "基準角にかけるランダム幅 (±)。")]
     [TextBoxSlider("F1", "度", 0, 90)]
