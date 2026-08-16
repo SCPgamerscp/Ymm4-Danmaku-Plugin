@@ -182,7 +182,16 @@ public sealed class PatternEmitterBehavior(EmitterSettings settings) : IEmitterB
                 var stagger = shotIndex % 2 == 0 ? 0 : step / 2;
                 var x = -width / 2 + step * index + stagger;
                 var perpendicular = Vec2.FromDegrees(baseAngle + 90, x);
-                return (baseAngle, perpendicular, 0);
+                var forward = pattern.SpawnRadius > 0 ? Vec2.FromDegrees(baseAngle, pattern.SpawnRadius) : Vec2.Zero;
+
+                // 拡散角度が 360 (既定) 以外に指定されていれば、壁の弾を扇状に広げる
+                var angleOffset = 0.0;
+                if (way > 1 && pattern.SpreadAngle > 0 && Math.Abs(pattern.SpreadAngle - 360.0) > 1e-4)
+                {
+                    angleOffset = -pattern.SpreadAngle / 2 + (pattern.SpreadAngle / (way - 1)) * index;
+                }
+
+                return (baseAngle + angleOffset, perpendicular + forward, 0);
             }
 
             case PatternKind.Rose:

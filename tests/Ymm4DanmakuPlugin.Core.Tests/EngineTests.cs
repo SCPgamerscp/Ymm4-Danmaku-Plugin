@@ -513,6 +513,27 @@ public class TrajectoryTests
     }
 
     [Fact]
+    public void 壁弾はSpawnRadiusで前方にオフセットされる()
+    {
+        var pattern = TestFactory.SingleShot(5) with
+        {
+            Kind = PatternKind.Wall,
+            BaseAngle = 90, // 真下へ撃つ (BaseAngle = 90 => +Y 方向)
+            WallWidth = 400,
+            SpawnRadius = 150, // 150px 前方 (下) に生成
+        };
+        var emitter = TestFactory.Emitter(pattern, physics: TestFactory.Straight(speed: 0));
+        var engine = TestFactory.Engine(TestFactory.Settings(emitter));
+
+        engine.Advance(0.05);
+
+        var bullets = engine.AliveBullets();
+        Assert.Equal(5, bullets.Length);
+        // 全弾の Y 座標が 150 (中心から下へ 150px) から生成されている
+        Assert.All(bullets, b => Assert.Equal(150.0, b.Position.Y, 3));
+    }
+
+    [Fact]
     public void 疑似レーザーは同方向へ距離を空けて並ぶ()
     {
         var pattern = TestFactory.SingleShot(4) with
