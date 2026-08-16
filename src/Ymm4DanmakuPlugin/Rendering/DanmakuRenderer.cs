@@ -173,30 +173,13 @@ public sealed class DanmakuRenderer : IDisposable
                 var h = size.Height / half * 0.5f;
                 var dest = new Vortice.RawRectF(-w, -h, w, h);
 
-                var isTinted = Math.Abs(instance.R - 1f) > 0.01f ||
-                               Math.Abs(instance.G - 1f) > 0.01f ||
-                               Math.Abs(instance.B - 1f) > 0.01f;
-
-                if (isTinted)
-                {
-                    brush!.Color = ColorExtensions.ToColor4(instance.R, instance.G, instance.B, instance.A, alphaScale);
-                    dc.FillOpacityMask(
-                        bitmap,
-                        brush,
-                        OpacityMaskContent.Graphics,
-                        dest,
-                        null);
-                }
-                else
-                {
-                    dc.DrawBitmap(
-                        bitmap,
-                        dest,
-                        Math.Clamp(instance.A * alphaScale, 0f, 1f),
-                        InterpolationMode.Linear,
-                        null,
-                        null);
-                }
+                dc.DrawBitmap(
+                    bitmap,
+                    dest,
+                    Math.Clamp(instance.A * alphaScale, 0f, 1f),
+                    InterpolationMode.Linear,
+                    null,
+                    null);
             }
             else if (sprite.Geometry is { } geometry)
             {
