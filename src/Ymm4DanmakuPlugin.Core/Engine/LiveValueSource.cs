@@ -37,8 +37,43 @@ public sealed class LiveValueSource
     /// </summary>
     public Func<int, double, double?>? EmitterAngle { get; set; }
 
+    // ---- 発射パターン ----
+    public Func<int, double, double?>? EmitterSpreadAngle { get; set; }
+    public Func<int, double, double?>? EmitterAngleStepPerShot { get; set; }
+    public Func<int, double, double?>? EmitterFireInterval { get; set; }
+    public Func<int, double, double?>? EmitterSpawnRadius { get; set; }
+
+    // ---- 弾の物理 ----
+    public Func<int, double, double?>? EmitterSpeed { get; set; }
+    public Func<int, double, double?>? EmitterAngularVelocity { get; set; }
+    public Func<int, double, double?>? EmitterGravity { get; set; }
+    public Func<int, double, double?>? EmitterWind { get; set; }
+
+    // ---- 見た目 & 公転 ----
+    public Func<int, double, double?>? EmitterScale { get; set; }
+    public Func<int, double, double?>? EmitterRotationVelocity { get; set; }
+    public Func<int, double, double?>? EmitterOrbitRadius { get; set; }
+    public Func<int, double, double?>? EmitterOrbitSpeed { get; set; }
+    public Func<double, double?>? GlobalOpacity { get; set; }
+
     /// <summary>いずれかの供給関数が設定されているかどうか。</summary>
-    public bool HasAny => EmitterPosition is not null || TargetPosition is not null || EmitterAngle is not null;
+    public bool HasAny =>
+        EmitterPosition is not null ||
+        TargetPosition is not null ||
+        EmitterAngle is not null ||
+        EmitterSpreadAngle is not null ||
+        EmitterAngleStepPerShot is not null ||
+        EmitterFireInterval is not null ||
+        EmitterSpawnRadius is not null ||
+        EmitterSpeed is not null ||
+        EmitterAngularVelocity is not null ||
+        EmitterGravity is not null ||
+        EmitterWind is not null ||
+        EmitterScale is not null ||
+        EmitterRotationVelocity is not null ||
+        EmitterOrbitRadius is not null ||
+        EmitterOrbitSpeed is not null ||
+        GlobalOpacity is not null;
 
     /// <summary>すべての供給関数を解除する。</summary>
     public void Clear()
@@ -46,5 +81,18 @@ public sealed class LiveValueSource
         EmitterPosition = null;
         TargetPosition = null;
         EmitterAngle = null;
+        EmitterSpreadAngle = null;
+        EmitterAngleStepPerShot = null;
+        EmitterFireInterval = null;
+        EmitterSpawnRadius = null;
+        EmitterSpeed = null;
+        EmitterAngularVelocity = null;
+        EmitterGravity = null;
+        EmitterWind = null;
+        EmitterScale = null;
+        EmitterRotationVelocity = null;
+        EmitterOrbitRadius = null;
+        EmitterOrbitSpeed = null;
+        GlobalOpacity = null;
     }
 }

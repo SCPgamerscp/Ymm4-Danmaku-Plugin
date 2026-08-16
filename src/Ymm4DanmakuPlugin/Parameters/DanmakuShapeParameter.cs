@@ -39,24 +39,12 @@ public class DanmakuShapeParameter : ShapeParameterBase
     public Animation Y => MainEmitter.Y;
 
     [Display(GroupName = "発射位置", Name = "公転半径", Description = "エミッター自体を円運動させる半径。0 で静止します。")]
-    [TextBoxSlider("F1", "px", 0, 600)]
-    [DefaultValue(0d)]
-    [Range(0, 100000)]
-    public double OrbitRadius
-    {
-        get => MainEmitter.OrbitRadius;
-        set => MainEmitter.OrbitRadius = value;
-    }
+    [AnimationSlider("F1", "px", 0, 600)]
+    public Animation OrbitRadius => MainEmitter.OrbitRadius;
 
     [Display(GroupName = "発射位置", Name = "公転速度", Description = "エミッターの円運動の速度。")]
-    [TextBoxSlider("F1", "度/秒", -360, 360)]
-    [DefaultValue(0d)]
-    [Range(-100000, 100000)]
-    public double OrbitSpeed
-    {
-        get => MainEmitter.OrbitSpeed;
-        set => MainEmitter.OrbitSpeed = value;
-    }
+    [AnimationSlider("F1", "度/秒", -360, 360)]
+    public Animation OrbitSpeed => MainEmitter.OrbitSpeed;
 
     [Display(GroupName = "発射位置", Name = "公転位相", Description = "公転の初期角度。")]
     [TextBoxSlider("F1", "度", 0, 360)]
@@ -147,24 +135,12 @@ public class DanmakuShapeParameter : ShapeParameterBase
     public Animation BaseAngle => MainEmitter.BaseAngle;
 
     [Display(GroupName = "発射パターン", Name = "拡散角度", Description = "扇形や放射で弾を広げる範囲。360 で全方位。")]
-    [TextBoxSlider("F1", "度", 0, 360)]
-    [DefaultValue(360d)]
-    [Range(0, 360)]
-    public double SpreadAngle
-    {
-        get => MainEmitter.SpreadAngle;
-        set => MainEmitter.SpreadAngle = value;
-    }
+    [AnimationSlider("F1", "度", 0, 360)]
+    public Animation SpreadAngle => MainEmitter.SpreadAngle;
 
     [Display(GroupName = "発射パターン", Name = "回転速度 (発射毎)", Description = "1 回撃つごとに発射方向を回転させる角度。渦巻き弾幕を作れます。")]
-    [TextBoxSlider("F1", "度/発", -180, 180)]
-    [DefaultValue(0d)]
-    [Range(-100000, 100000)]
-    public double AngleStepPerShot
-    {
-        get => MainEmitter.AngleStepPerShot;
-        set => MainEmitter.AngleStepPerShot = value;
-    }
+    [AnimationSlider("F1", "度/発", -180, 180)]
+    public Animation AngleStepPerShot => MainEmitter.AngleStepPerShot;
 
     [Display(GroupName = "発射パターン", Name = "角度ゆらぎ")]
     [TextBoxSlider("F1", "度", 0, 90)]
@@ -177,14 +153,8 @@ public class DanmakuShapeParameter : ShapeParameterBase
     }
 
     [Display(GroupName = "発射パターン", Name = "発射間隔", Description = "次の発射までの時間。0.1 で秒間 10 回。")]
-    [TextBoxSlider("F2", "秒", 0.01, 10)]
-    [DefaultValue(0.35d)]
-    [Range(0.001, 1000)]
-    public double FireInterval
-    {
-        get => MainEmitter.FireInterval;
-        set => MainEmitter.FireInterval = value;
-    }
+    [AnimationSlider("F3", "秒", 0.01, 2)]
+    public Animation FireInterval => MainEmitter.FireInterval;
 
     [Display(GroupName = "発射パターン", Name = "バースト発射数")]
     [TextBoxSlider("F0", "回", 1, 100)]
@@ -217,14 +187,8 @@ public class DanmakuShapeParameter : ShapeParameterBase
     }
 
     [Display(GroupName = "発射パターン", Name = "生成半径", Description = "エミッター中心から離れた円周上から弾を発生させます。")]
-    [TextBoxSlider("F1", "px", 0, 600)]
-    [DefaultValue(0d)]
-    [Range(0, 100000)]
-    public double SpawnRadius
-    {
-        get => MainEmitter.SpawnRadius;
-        set => MainEmitter.SpawnRadius = value;
-    }
+    [AnimationSlider("F1", "px", 0, 600)]
+    public Animation SpawnRadius => MainEmitter.SpawnRadius;
 
     [Display(GroupName = "発射パターン", Name = "自機狙い (ターゲット追尾)", Description = "ターゲット (自機) の方向へ向けて発射します。")]
     [ToggleSlider]
@@ -275,14 +239,8 @@ public class DanmakuShapeParameter : ShapeParameterBase
     }
 
     [Display(GroupName = "弾の見た目", Name = "大きさ")]
-    [TextBoxSlider("F2", "倍", 0.1, 10)]
-    [DefaultValue(1d)]
-    [Range(0.001, 1000)]
-    public double Scale
-    {
-        get => MainEmitter.Scale;
-        set => MainEmitter.Scale = value;
-    }
+    [AnimationSlider("F2", "倍", 0.1, 4)]
+    public Animation Scale => MainEmitter.Scale;
 
     [Display(GroupName = "弾の見た目", Name = "進行方向に向ける", Description = "弾が飛んでいく向きに合わせて弾の向き・画像を回転させます。")]
     [ToggleSlider]
@@ -359,14 +317,8 @@ public class DanmakuShapeParameter : ShapeParameterBase
     // =====================================================================
 
     [Display(GroupName = "弾の物理", Name = "弾速")]
-    [TextBoxSlider("F0", "px/秒", 0, 3000)]
-    [DefaultValue(260d)]
-    [Range(0, 100000)]
-    public double Speed
-    {
-        get => MainEmitter.Speed;
-        set => MainEmitter.Speed = value;
-    }
+    [AnimationSlider("F0", "px/秒", 0, 900)]
+    public Animation Speed => MainEmitter.Speed;
 
     [Display(GroupName = "弾の物理", Name = "加速度", Description = "1 秒あたりの速度変化。正で加速、負で減速。")]
     [TextBoxSlider("F0", "px/秒²", -2000, 2000)]
@@ -379,34 +331,16 @@ public class DanmakuShapeParameter : ShapeParameterBase
     }
 
     [Display(GroupName = "弾の物理", Name = "角速度 (カーブ)", Description = "弾の進行方向を曲げる速度。正で時計回り。")]
-    [TextBoxSlider("F1", "度/秒", -360, 360)]
-    [DefaultValue(0d)]
-    [Range(-100000, 100000)]
-    public double AngularVelocity
-    {
-        get => MainEmitter.AngularVelocity;
-        set => MainEmitter.AngularVelocity = value;
-    }
+    [AnimationSlider("F1", "度/秒", -360, 360)]
+    public Animation AngularVelocity => MainEmitter.AngularVelocity;
 
     [Display(GroupName = "弾の物理", Name = "重力", Description = "下方向への引力。")]
-    [TextBoxSlider("F0", "px/秒²", -2000, 2000)]
-    [DefaultValue(0d)]
-    [Range(-100000, 100000)]
-    public double Gravity
-    {
-        get => MainEmitter.Gravity;
-        set => MainEmitter.Gravity = value;
-    }
+    [AnimationSlider("F0", "px/秒²", -600, 600)]
+    public Animation Gravity => MainEmitter.Gravity;
 
     [Display(GroupName = "弾の物理", Name = "風 (横力)", Description = "右方向への力。")]
-    [TextBoxSlider("F0", "px/秒²", -2000, 2000)]
-    [DefaultValue(0d)]
-    [Range(-100000, 100000)]
-    public double Wind
-    {
-        get => MainEmitter.Wind;
-        set => MainEmitter.Wind = value;
-    }
+    [AnimationSlider("F0", "px/秒²", -600, 600)]
+    public Animation Wind => MainEmitter.Wind;
 
     [Display(GroupName = "弾の物理", Name = "弾の寿命")]
     [TextBoxSlider("F2", "秒", 0.1, 60)]
@@ -666,11 +600,8 @@ public class DanmakuShapeParameter : ShapeParameterBase
     private double boundsMargin = 160;
 
     [Display(GroupName = "全体", Name = "全体の不透明度")]
-    [TextBoxSlider("F2", "", 0, 1)]
-    [DefaultValue(1d)]
-    [Range(0, 1)]
-    public double GlobalOpacity { get => globalOpacity; set => Set(ref globalOpacity, value); }
-    private double globalOpacity = 1.0;
+    [AnimationSlider("F1", "%", 0, 100)]
+    public Animation GlobalOpacity { get; } = new Animation(100, 0, 100);
 
     [Display(GroupName = "全体", Name = "効果音チャンネル",
         Description = "「弾幕効果音」音声エフェクト側で同じ番号を指定すると、この弾幕に合わせて効果音が鳴ります。")]
@@ -722,8 +653,10 @@ public class DanmakuShapeParameter : ShapeParameterBase
     {
         SubscribeChildUndoRedoable(TargetX);
         SubscribeChildUndoRedoable(TargetY);
+        SubscribeChildUndoRedoable(GlobalOpacity);
         TargetX.PropertyChanged += (_, _) => OnPropertyChanged(nameof(TargetX));
         TargetY.PropertyChanged += (_, _) => OnPropertyChanged(nameof(TargetY));
+        GlobalOpacity.PropertyChanged += (_, _) => OnPropertyChanged(nameof(GlobalOpacity));
 
         SubscribeEmitters(emitters);
     }
@@ -867,6 +800,7 @@ public class DanmakuShapeParameter : ShapeParameterBase
         yield return BaseAngle;
         yield return TargetX;
         yield return TargetY;
+        yield return GlobalOpacity;
         foreach (var emitter in emitters)
         {
             yield return emitter;
@@ -890,7 +824,7 @@ public class DanmakuShapeParameter : ShapeParameterBase
         private readonly SimulationStep simulationStep;
         private readonly OutOfBoundsBehavior outOfBounds;
         private readonly double boundsMargin;
-        private readonly double globalOpacity;
+        private readonly Animation globalOpacity = new(100, 0, 100);
         private readonly int channel;
 
         private readonly bool collisionEnabled;
@@ -918,7 +852,7 @@ public class DanmakuShapeParameter : ShapeParameterBase
             simulationStep = source.SimulationStep;
             outOfBounds = source.OutOfBounds;
             boundsMargin = source.BoundsMargin;
-            globalOpacity = source.GlobalOpacity;
+            globalOpacity.CopyFrom(source.GlobalOpacity);
             channel = source.Channel;
 
             collisionEnabled = source.CollisionEnabled;
@@ -954,7 +888,7 @@ public class DanmakuShapeParameter : ShapeParameterBase
             target.SimulationStep = simulationStep;
             target.OutOfBounds = outOfBounds;
             target.BoundsMargin = boundsMargin;
-            target.GlobalOpacity = globalOpacity;
+            target.GlobalOpacity.CopyFrom(globalOpacity);
             target.Channel = channel;
 
             target.CollisionEnabled = collisionEnabled;

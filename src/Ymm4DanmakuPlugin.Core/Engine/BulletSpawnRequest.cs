@@ -47,6 +47,21 @@ public struct BulletSpawnRequest
     /// <summary>寿命の上書き (0 以下で Physics の値)。</summary>
     public double LifetimeOverride;
 
+    /// <summary>旋回角速度の上書き (null で Physics の値)。</summary>
+    public double? AngularVelocityOverride;
+
+    /// <summary>重力の上書き (null で Physics の値)。</summary>
+    public double? GravityOverride;
+
+    /// <summary>風の上書き (null で Physics の値)。</summary>
+    public double? WindOverride;
+
+    /// <summary>スケールの上書き (null で Appearance の値)。</summary>
+    public double? ScaleOverride;
+
+    /// <summary>自転速度の上書き (null で Appearance の値)。</summary>
+    public double? RotationVelocityOverride;
+
     /// <summary>分裂設定。</summary>
     public SplitSpec? Split;
 

@@ -55,7 +55,8 @@ public sealed class PatternEmitterBehavior(EmitterSettings settings) : IEmitterB
             else
             {
                 burstIndex = 0;
-                nextShotTime += Math.Max(MinInterval, pattern.FireInterval + pattern.BurstCooldown);
+                var interval = context.EmitterFireInterval(nextShotTime) ?? pattern.FireInterval;
+                nextShotTime += Math.Max(MinInterval, interval + pattern.BurstCooldown);
             }
         }
 
@@ -77,8 +78,9 @@ public sealed class PatternEmitterBehavior(EmitterSettings settings) : IEmitterB
         if (pattern.AimAtTarget || pattern.Kind == PatternKind.Aimed)
             baseAngle = context.AngleToTarget() + baseAngle;
 
-        if (pattern.AngleStepPerShot != 0)
-            baseAngle += pattern.AngleStepPerShot * shotIndex;
+        var angleStepPerShot = context.EmitterAngleStepPerShot(fireTime) ?? pattern.AngleStepPerShot;
+        if (angleStepPerShot != 0)
+            baseAngle += angleStepPerShot * shotIndex;
 
         if (pattern.AngleJitter > 0)
             baseAngle += context.Random.NextSymmetric(pattern.AngleJitter);
@@ -88,6 +90,15 @@ public sealed class PatternEmitterBehavior(EmitterSettings settings) : IEmitterB
             var period = Math.Max(0.05, pattern.WhipPeriod);
             baseAngle += pattern.WhipAmplitude * Math.Sin(DanmakuMath.Tau * fireTime / period);
         }
+
+        var spreadAngle = context.EmitterSpreadAngle(fireTime) ?? pattern.SpreadAngle;
+        var spawnRadius = context.EmitterSpawnRadius(fireTime) ?? pattern.SpawnRadius;
+        var baseSpeed = context.EmitterSpeed(fireTime) ?? physics.Speed;
+        var angularVelocity = context.EmitterAngularVelocity(fireTime) ?? physics.AngularVelocity;
+        var gravity = context.EmitterGravity(fireTime) ?? physics.Gravity;
+        var wind = context.EmitterWind(fireTime) ?? physics.Wind;
+        var scale = context.EmitterScale(fireTime) ?? appearance.Scale;
+        var rotationVelocity = context.EmitterRotationVelocity(fireTime) ?? appearance.RotationVelocity;
 
         var indexInBurst = 0;
         var fired = false;
@@ -112,14 +123,19 @@ public sealed class PatternEmitterBehavior(EmitterSettings settings) : IEmitterB
                 request.Split = settings.Split;
                 request.SplitDelay = settings.SplitDelay;
 
-                var (direction, offset, extraSpeed) = ResolveBullet(context, pattern, way, i, stackAngle);
+                var (direction, offset, extraSpeed) = ResolveBullet(context, pattern, way, i, stackAngle, spreadAngle, spawnRadius);
 
                 request.Direction = direction;
                 request.Position = context.Position + offset;
-                request.SpeedOverride = physics.Speed + stackSpeed + extraSpeed;
+                request.SpeedOverride = baseSpeed + stackSpeed + extraSpeed;
+                request.AngularVelocityOverride = angularVelocity;
+                request.GravityOverride = gravity;
+                request.WindOverride = wind;
+                request.ScaleOverride = scale;
+                request.RotationVelocityOverride = rotationVelocity;
 
-                if (pattern.SpawnRadius > 0 && pattern.Kind != PatternKind.Laser && pattern.Kind != PatternKind.Wall)
-                    request.Position += Vec2.FromDegrees(direction, pattern.SpawnRadius);
+                if (spawnRadius > 0 && pattern.Kind != PatternKind.Laser && pattern.Kind != PatternKind.Wall)
+                    request.Position += Vec2.FromDegrees(direction, spawnRadius);
 
                 if (pattern.SpawnJitter > 0)
                 {
@@ -142,7 +158,9 @@ public sealed class PatternEmitterBehavior(EmitterSettings settings) : IEmitterB
         PatternSettings pattern,
         int way,
         int index,
-        double baseAngle)
+        double baseAngle,
+        double spreadAngle,
+        double spawnRadius)
     {
         switch (pattern.Kind)
         {
@@ -150,7 +168,7 @@ public sealed class PatternEmitterBehavior(EmitterSettings settings) : IEmitterB
             case PatternKind.Bloom:
             case PatternKind.Spiral:
             {
-                var spread = Math.Abs(pattern.SpreadAngle) < 1e-6 ? 360.0 : pattern.SpreadAngle;
+                var spread = Math.Abs(spreadAngle) < 1e-6 ? 360.0 : spreadAngle;
                 var step = Math.Abs(spread - 360.0) < 1e-6 ? spread / way : spread / Math.Max(1, way - 1);
                 var offsetAngle = Math.Abs(spread - 360.0) < 1e-6
                     ? step * index
@@ -161,7 +179,7 @@ public sealed class PatternEmitterBehavior(EmitterSettings settings) : IEmitterB
             case PatternKind.Fan:
             case PatternKind.Aimed:
             {
-                var spread = pattern.SpreadAngle;
+                var spread = spreadAngle;
                 var step = way > 1 ? spread / (way - 1) : 0;
                 var offsetAngle = way > 1 ? -spread / 2 + step * index : 0;
                 return (baseAngle + offsetAngle, Vec2.Zero, 0);
@@ -169,7 +187,7 @@ public sealed class PatternEmitterBehavior(EmitterSettings settings) : IEmitterB
 
             case PatternKind.Scatter:
             {
-                var spread = pattern.SpreadAngle;
+                var spread = spreadAngle;
                 var angle = baseAngle + context.Random.NextSymmetric(spread / 2);
                 return (angle, Vec2.Zero, 0);
             }
@@ -182,13 +200,13 @@ public sealed class PatternEmitterBehavior(EmitterSettings settings) : IEmitterB
                 var stagger = shotIndex % 2 == 0 ? 0 : step / 2;
                 var x = -width / 2 + step * index + stagger;
                 var perpendicular = Vec2.FromDegrees(baseAngle + 90, x);
-                var forward = pattern.SpawnRadius > 0 ? Vec2.FromDegrees(baseAngle, pattern.SpawnRadius) : Vec2.Zero;
+                var forward = spawnRadius > 0 ? Vec2.FromDegrees(baseAngle, spawnRadius) : Vec2.Zero;
 
                 // 拡散角度が 360 (既定) 以外に指定されていれば、壁の弾を扇状に広げる
                 var angleOffset = 0.0;
-                if (way > 1 && pattern.SpreadAngle > 0 && Math.Abs(pattern.SpreadAngle - 360.0) > 1e-4)
+                if (way > 1 && spreadAngle > 0 && Math.Abs(spreadAngle - 360.0) > 1e-4)
                 {
-                    angleOffset = -pattern.SpreadAngle / 2 + (pattern.SpreadAngle / (way - 1)) * index;
+                    angleOffset = -spreadAngle / 2 + (spreadAngle / (way - 1)) * index;
                 }
 
                 return (baseAngle + angleOffset, perpendicular + forward, 0);
@@ -203,13 +221,13 @@ public sealed class PatternEmitterBehavior(EmitterSettings settings) : IEmitterB
 
             case PatternKind.Laser:
             {
-                var distance = pattern.SpawnRadius + pattern.LaserSpacing * index;
+                var distance = spawnRadius + pattern.LaserSpacing * index;
                 return (baseAngle, Vec2.FromDegrees(baseAngle, distance), 0);
             }
 
             case PatternKind.Whip:
             {
-                var spread = pattern.SpreadAngle;
+                var spread = spreadAngle;
                 var step = way > 1 ? spread / (way - 1) : 0;
                 var offsetAngle = way > 1 ? -spread / 2 + step * index : 0;
                 return (baseAngle + offsetAngle, Vec2.Zero, 0);

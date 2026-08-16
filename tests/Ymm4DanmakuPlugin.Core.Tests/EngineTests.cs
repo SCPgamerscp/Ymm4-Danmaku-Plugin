@@ -1392,4 +1392,70 @@ public class KeyframeLiveValueTests
         Assert.Equal(2, engine.AliveBullets().Length);
         Assert.Equal(9.0, engine.AliveBullets()[1].Velocity.Degrees, 1);
     }
+
+    [Fact]
+    public void EmitterSpreadAngleおよびSpeed供給関数によって扇角度と弾速が動的に変化する()
+    {
+        var pattern = new PatternSettings
+        {
+            Kind = PatternKind.Fan,
+            Way = 3,
+            FireInterval = 0.1,
+            BaseAngle = 0,
+            SpreadAngle = 30,
+        };
+        var physics = new BulletPhysics { Speed = 100 };
+
+        var settings = TestFactory.Settings(TestFactory.Emitter(pattern, physics: physics));
+        var engine = TestFactory.Engine(settings);
+
+        // 時刻 t に応じて拡散角度を 60 + 60*t、速度を 100 + 200*t に変化
+        engine.Live.EmitterSpreadAngle = (idx, t) => 60.0 + 60.0 * t;
+        engine.Live.EmitterSpeed = (idx, t) => 100.0 + 200.0 * t;
+
+        engine.Advance(0.05); // t=0: spread = 60 (±30度), speed = 100
+        var b1 = engine.AliveBullets();
+        Assert.Equal(3, b1.Length);
+        Assert.Equal(100.0, b1[0].Speed, 1);
+        Assert.Equal(-30.0, b1[0].Direction, 1);
+        Assert.Equal(0.0, b1[1].Direction, 1);
+        Assert.Equal(30.0, b1[2].Direction, 1);
+
+        engine.Advance(0.1); // t=0.1: spread = 66 (±33度), speed = 120
+        var b2 = engine.AliveBullets().Skip(3).ToArray();
+        Assert.Equal(3, b2.Length);
+        Assert.Equal(120.0, b2[0].Speed, 1);
+        Assert.Equal(-33.0, b2[0].Direction, 1);
+        Assert.Equal(0.0, b2[1].Direction, 1);
+        Assert.Equal(33.0, b2[2].Direction, 1);
+    }
+
+    [Fact]
+    public void EmitterScaleおよびGravity供給関数によって弾の大きさと重力が動的に変化する()
+    {
+        var pattern = new PatternSettings
+        {
+            Kind = PatternKind.Circle,
+            Way = 1,
+            FireInterval = 0.1,
+        };
+        var appearance = new BulletAppearance { Scale = 1.0 };
+        var physics = new BulletPhysics { Speed = 0, Gravity = 0 };
+
+        var settings = TestFactory.Settings(TestFactory.Emitter(pattern, physics: physics, appearance: appearance));
+        var engine = TestFactory.Engine(settings);
+
+        engine.Live.EmitterScale = (idx, t) => 1.0 + t * 2.0; // t=0 => scale 1.0, t=0.1 => scale 1.2
+        engine.Live.EmitterGravity = (idx, t) => t > 0.05 ? 500.0 : 0.0;
+
+        engine.Advance(0.05); // 1発目: t=0
+        var b1 = engine.AliveBullets()[0];
+        Assert.Equal(1.0, b1.Scale, 2);
+        Assert.Equal(0.0, b1.ExternalAcceleration.Y, 2);
+
+        engine.Advance(0.1); // 2発目: t=0.1
+        var b2 = engine.AliveBullets()[1];
+        Assert.Equal(1.2, b2.Scale, 2);
+        Assert.Equal(500.0, b2.ExternalAcceleration.Y, 2);
+    }
 }

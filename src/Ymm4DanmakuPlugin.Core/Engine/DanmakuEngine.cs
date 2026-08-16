@@ -211,10 +211,12 @@ public sealed class DanmakuEngine
             var position = Live.EmitterPosition?.Invoke(context.EmitterIndex, CurrentTime)
                            ?? new Vec2(settings.X, settings.Y);
 
-            if (settings.OrbitRadius > 0)
+            var orbitRadius = Live.EmitterOrbitRadius?.Invoke(context.EmitterIndex, CurrentTime) ?? settings.OrbitRadius;
+            var orbitSpeed = Live.EmitterOrbitSpeed?.Invoke(context.EmitterIndex, CurrentTime) ?? settings.OrbitSpeed;
+            if (orbitRadius > 0)
             {
-                var angle = settings.OrbitPhase + settings.OrbitSpeed * CurrentTime;
-                position += Vec2.FromDegrees(angle, settings.OrbitRadius);
+                var angle = settings.OrbitPhase + orbitSpeed * CurrentTime;
+                position += Vec2.FromDegrees(angle, orbitRadius);
             }
 
             context.Position = position;
@@ -541,6 +543,16 @@ public sealed class DanmakuEngine
             bullet.Speed = speed;
         }
 
+        if (request.AngularVelocityOverride is { } angVel)
+            bullet.AngularVelocity = angVel + (physics.AngularVelocityJitter > 0 ? Random.NextSymmetric(physics.AngularVelocityJitter) : 0);
+
+        if (request.GravityOverride is { } grav || request.WindOverride is { } wind)
+        {
+            var g = request.GravityOverride ?? physics.Gravity;
+            var w = request.WindOverride ?? physics.Wind;
+            bullet.ExternalAcceleration = new Vec2(w, g);
+        }
+
         if (request.LifetimeOverride > 0)
             bullet.Lifetime = request.LifetimeOverride;
 
@@ -549,13 +561,14 @@ public sealed class DanmakuEngine
             ? request.SpriteIndexOverride
             : ResolveSpriteIndex(appearance, request.IndexInBurst);
 
-        var scale = appearance.Scale * request.ScaleFactor;
+        var baseScale = request.ScaleOverride ?? appearance.Scale;
+        var scale = baseScale * request.ScaleFactor;
         if (appearance.ScaleJitter > 0) scale += Random.NextSymmetric(appearance.ScaleJitter);
         bullet.Scale = Math.Max(0.01, scale);
         bullet.ScaleVelocity = appearance.ScaleVelocity;
 
         bullet.Rotation = appearance.Rotation;
-        bullet.RotationVelocity = appearance.RotationVelocity;
+        bullet.RotationVelocity = request.RotationVelocityOverride ?? appearance.RotationVelocity;
         bullet.AlignToDirection = appearance.AlignToDirection;
         bullet.Additive = appearance.Additive;
         bullet.FadeInDuration = appearance.FadeInDuration;
