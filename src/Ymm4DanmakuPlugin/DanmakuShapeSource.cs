@@ -327,8 +327,8 @@ public sealed class DanmakuShapeSource : IShapeSource2
 
             var point = new ControllerPoint(position, arg =>
             {
-                captured.X.AddToEachValues(arg.Delta.X);
-                captured.Y.AddToEachValues(arg.Delta.Y);
+                ApplyControllerDrag(captured.X, arg.Delta.X, frame, totalFrame);
+                ApplyControllerDrag(captured.Y, arg.Delta.Y, frame, totalFrame);
             })
             {
                 Shape = VideoControllerPointShape.Circle,
@@ -349,8 +349,8 @@ public sealed class DanmakuShapeSource : IShapeSource2
 
         var targetPoint = new ControllerPoint(targetPosition, arg =>
         {
-            parameter.TargetX.AddToEachValues(arg.Delta.X);
-            parameter.TargetY.AddToEachValues(arg.Delta.Y);
+            ApplyControllerDrag(parameter.TargetX, arg.Delta.X, frame, totalFrame);
+            ApplyControllerDrag(parameter.TargetY, arg.Delta.Y, frame, totalFrame);
         })
         {
             Shape = VideoControllerPointShape.Square,
@@ -360,6 +360,45 @@ public sealed class DanmakuShapeSource : IShapeSource2
         {
             Connection = VideoControllerPointConnection.None,
         };
+    }
+
+    /// <summary>
+    /// プレビュー上の制御点ドラッグ時、現在フレームに応じた適切なキーフレーム値を更新する。
+    /// </summary>
+    private static void ApplyControllerDrag(Animation anim, double delta, int frame, int totalFrame)
+    {
+        if (anim.Values.Count == 0) return;
+
+        if (anim.AnimationType == AnimationType.なし)
+        {
+            // 固定値の場合は全体を加算
+            anim.AddToEachValues(delta);
+        }
+        else if (anim.Values.Count == 2)
+        {
+            // 直線移動・加減速など (From -> To)
+            if (frame <= 0)
+            {
+                // 先頭フレームでは開始位置 (From) のみを移動
+                anim.Values[0].Value += delta;
+            }
+            else if (frame >= totalFrame - 1)
+            {
+                // 末尾フレームでは終了位置 (To) のみを移動
+                anim.Values[1].Value += delta;
+            }
+            else
+            {
+                // 中間フレームでは現在比率に応じて移動
+                var ratio = (double)frame / Math.Max(1, totalFrame - 1);
+                anim.Values[0].Value += delta * (1.0 - ratio);
+                anim.Values[1].Value += delta * ratio;
+            }
+        }
+        else
+        {
+            anim.AddToEachValues(delta);
+        }
     }
 
     /// <summary>
