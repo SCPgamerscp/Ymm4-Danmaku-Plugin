@@ -109,7 +109,7 @@ public class EmitterParameter : Animatable
         get => presetName;
         set => Set(ref presetName, value ?? string.Empty);
     }
-    private string presetName = string.Empty;
+    private string presetName = "全方位リング";
 
     // =====================================================================
     // 弾幕データの供給元 (3 階層の切り替え)
@@ -160,10 +160,10 @@ public class EmitterParameter : Animatable
 
     [Display(GroupName = "パターン", Name = "way数", Description = "1 回の発射で撃つ弾の本数。")]
     [TextBoxSlider("F0", "本", 1, 72)]
-    [DefaultValue(16)]
+    [DefaultValue(24)]
     [Range(1, 2000)]
     public int Way { get => way; set => Set(ref way, value); }
-    private int way = 16;
+    private int way = 24;
 
     [Display(GroupName = "パターン", Name = "段数", Description = "速度差をつけて重ねる同心円の段数。way数 × 段数 が 1 回の発射数になります。")]
     [TextBoxSlider("F0", "段", 1, 12)]
@@ -213,10 +213,10 @@ public class EmitterParameter : Animatable
 
     [Display(GroupName = "パターン", Name = "発射間隔")]
     [TextBoxSlider("F3", "秒", 0.01, 2)]
-    [DefaultValue(0.1d)]
+    [DefaultValue(0.35d)]
     [Range(0.001, 10000)]
     public double FireInterval { get => fireInterval; set => Set(ref fireInterval, value); }
-    private double fireInterval = 0.1;
+    private double fireInterval = 0.35;
 
     [Display(GroupName = "パターン", Name = "連射数", Description = "ひとかたまり (バースト) あたりの発射回数。")]
     [TextBoxSlider("F0", "回", 1, 20)]
@@ -306,10 +306,10 @@ public class EmitterParameter : Animatable
 
     [Display(GroupName = "弾の動き", Name = "初速")]
     [TextBoxSlider("F0", "px/秒", 0, 900)]
-    [DefaultValue(220d)]
+    [DefaultValue(260d)]
     [Range(-100000, 100000)]
     public double Speed { get => speed; set => Set(ref speed, value); }
-    private double speed = 220;
+    private double speed = 260;
 
     [Display(GroupName = "弾の動き", Name = "初速ゆらぎ")]
     [TextBoxSlider("F0", "px/秒", 0, 300)]

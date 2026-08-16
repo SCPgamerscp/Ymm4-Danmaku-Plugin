@@ -104,7 +104,7 @@ public class DanmakuShapeParameter : ShapeParameterBase
 
     [Display(GroupName = "発射パターン", Name = "ウェイ数 (方向数)", Description = "同時に放つ方向の数。全方位弾なら 16〜36 程度。")]
     [TextBoxSlider("F0", "方向", 1, 128)]
-    [DefaultValue(16)]
+    [DefaultValue(24)]
     [Range(1, 1000)]
     public int Way
     {
@@ -178,7 +178,7 @@ public class DanmakuShapeParameter : ShapeParameterBase
 
     [Display(GroupName = "発射パターン", Name = "発射間隔", Description = "次の発射までの時間。0.1 で秒間 10 回。")]
     [TextBoxSlider("F2", "秒", 0.01, 10)]
-    [DefaultValue(0.12d)]
+    [DefaultValue(0.35d)]
     [Range(0.001, 1000)]
     public double FireInterval
     {
@@ -360,7 +360,7 @@ public class DanmakuShapeParameter : ShapeParameterBase
 
     [Display(GroupName = "弾の物理", Name = "弾速")]
     [TextBoxSlider("F0", "px/秒", 0, 3000)]
-    [DefaultValue(220d)]
+    [DefaultValue(260d)]
     [Range(0, 100000)]
     public double Speed
     {
@@ -410,7 +410,7 @@ public class DanmakuShapeParameter : ShapeParameterBase
 
     [Display(GroupName = "弾の物理", Name = "弾の寿命")]
     [TextBoxSlider("F2", "秒", 0.1, 60)]
-    [DefaultValue(8d)]
+    [DefaultValue(6d)]
     [Range(0.01, 1000)]
     public double Lifetime
     {
