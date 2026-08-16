@@ -153,9 +153,19 @@ public class EmitterParameter : Animatable
     // 第 1 階層: パターン形状
     // =====================================================================
 
-    [Display(GroupName = "パターン", Name = "種類", Description = "弾の並べ方。")]
+    [Display(GroupName = "パターン", Name = "種類", Description = "弾の並べ方。切り替えるとおすすめの初期値が自動でセットされます。")]
     [EnumComboBox]
-    public PatternKind PatternKind { get => patternKind; set => Set(ref patternKind, value); }
+    public PatternKind PatternKind
+    {
+        get => patternKind;
+        set
+        {
+            if (Set(ref patternKind, value))
+            {
+                ApplyPatternDefaults(value);
+            }
+        }
+    }
     private PatternKind patternKind = Core.Configuration.PatternKind.Circle;
 
     [Display(GroupName = "パターン", Name = "way数", Description = "1 回の発射で撃つ弾の本数。")]
@@ -957,6 +967,108 @@ public class EmitterParameter : Animatable
             SplitScaleFactor = split.ScaleFactor;
             SplitDestroyParent = split.DestroyParent;
             SplitMaxGeneration = split.MaxGeneration;
+        }
+    }
+
+    /// <summary>
+    /// 発射パターンの種類が変更された際、そのパターンの代表的なおすすめ数値を自動でセットする。
+    /// </summary>
+    private void ApplyPatternDefaults(PatternKind kind)
+    {
+        switch (kind)
+        {
+            case PatternKind.Circle:
+                Way = 24;
+                SpreadAngle = 360;
+                AngleStepPerShot = 0;
+                Stack = 1;
+                AimAtTarget = false;
+                FireInterval = 0.35;
+                break;
+
+            case PatternKind.Fan:
+                Way = 5;
+                SpreadAngle = 60;
+                AngleStepPerShot = 0;
+                Stack = 1;
+                AimAtTarget = false;
+                FireInterval = 0.25;
+                break;
+
+            case PatternKind.Spiral:
+                Way = 4;
+                SpreadAngle = 360;
+                AngleStepPerShot = 13;
+                FireInterval = 0.08;
+                Stack = 1;
+                AimAtTarget = false;
+                break;
+
+            case PatternKind.Aimed:
+                Way = 5;
+                SpreadAngle = 34;
+                AimAtTarget = true;
+                BurstCount = 3;
+                BurstInterval = 0.09;
+                FireInterval = 0.8;
+                AngleStepPerShot = 0;
+                break;
+
+            case PatternKind.Scatter:
+                Way = 6;
+                SpreadAngle = 360;
+                AngleJitter = 15;
+                SpawnJitter = 20;
+                FireInterval = 0.06;
+                AimAtTarget = false;
+                break;
+
+            case PatternKind.Wall:
+                Way = 16;
+                WallWidth = 1280;
+                SpreadAngle = 360;
+                AngleStepPerShot = 0;
+                BaseAngle.SetFirstValue(90); // 下向きに降る
+                AimAtTarget = false;
+                FireInterval = 0.28;
+                break;
+
+            case PatternKind.Bloom:
+                Way = 16;
+                Stack = 3;
+                StackSpeedStep = 30;
+                SpreadAngle = 360;
+                AngleStepPerShot = 6;
+                AimAtTarget = false;
+                FireInterval = 0.4;
+                break;
+
+            case PatternKind.Rose:
+                Way = 32;
+                SpreadAngle = 360;
+                StackSpeedStep = 20;
+                AngleStepPerShot = 8;
+                FireInterval = 0.5;
+                AimAtTarget = false;
+                break;
+
+            case PatternKind.Laser:
+                Way = 24;
+                LaserSpacing = 24;
+                SpreadAngle = 360;
+                FireInterval = 0.22;
+                AngleStepPerShot = 20;
+                AimAtTarget = false;
+                break;
+
+            case PatternKind.Whip:
+                Way = 5;
+                SpreadAngle = 60;
+                WhipAmplitude = 45;
+                WhipPeriod = 1.5;
+                AimAtTarget = false;
+                FireInterval = 0.05;
+                break;
         }
     }
 
