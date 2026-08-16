@@ -33,6 +33,8 @@ public class EmitterParameter : Animatable
         SubscribeChildUndoRedoable(BaseAngle);
         SubscribeChildUndoRedoable(OrbitRadius);
         SubscribeChildUndoRedoable(OrbitSpeed);
+        SubscribeChildUndoRedoable(Way);
+        SubscribeChildUndoRedoable(Stack);
         SubscribeChildUndoRedoable(SpreadAngle);
         SubscribeChildUndoRedoable(AngleStepPerShot);
         SubscribeChildUndoRedoable(FireInterval);
@@ -49,6 +51,8 @@ public class EmitterParameter : Animatable
         BaseAngle.PropertyChanged += (_, _) => OnPropertyChanged(nameof(BaseAngle));
         OrbitRadius.PropertyChanged += (_, _) => OnPropertyChanged(nameof(OrbitRadius));
         OrbitSpeed.PropertyChanged += (_, _) => OnPropertyChanged(nameof(OrbitSpeed));
+        Way.PropertyChanged += (_, _) => OnPropertyChanged(nameof(Way));
+        Stack.PropertyChanged += (_, _) => OnPropertyChanged(nameof(Stack));
         SpreadAngle.PropertyChanged += (_, _) => OnPropertyChanged(nameof(SpreadAngle));
         AngleStepPerShot.PropertyChanged += (_, _) => OnPropertyChanged(nameof(AngleStepPerShot));
         FireInterval.PropertyChanged += (_, _) => OnPropertyChanged(nameof(FireInterval));
@@ -188,18 +192,12 @@ public class EmitterParameter : Animatable
     private PatternKind patternKind = Core.Configuration.PatternKind.Circle;
 
     [Display(GroupName = "パターン", Name = "way数", Description = "1 回の発射で撃つ弾の本数。")]
-    [TextBoxSlider("F0", "本", 1, 72)]
-    [DefaultValue(24)]
-    [Range(1, 2000)]
-    public int Way { get => way; set => Set(ref way, value); }
-    private int way = 24;
+    [AnimationSlider("F0", "本", 1, 72)]
+    public Animation Way { get; } = new Animation(24, 1, 2000);
 
     [Display(GroupName = "パターン", Name = "段数", Description = "速度差をつけて重ねる同心円の段数。way数 × 段数 が 1 回の発射数になります。")]
-    [TextBoxSlider("F0", "段", 1, 12)]
-    [DefaultValue(1)]
-    [Range(1, 200)]
-    public int Stack { get => stack; set => Set(ref stack, value); }
-    private int stack = 1;
+    [AnimationSlider("F0", "段", 1, 12)]
+    public Animation Stack { get; } = new Animation(1, 1, 200);
 
     [Display(GroupName = "パターン", Name = "段ごとの速度差")]
     [TextBoxSlider("F0", "px/秒", -200, 200)]
@@ -667,8 +665,8 @@ public class EmitterParameter : Animatable
         Pattern = new PatternSettings
         {
             Kind = PatternKind,
-            Way = Way,
-            Stack = Stack,
+            Way = Math.Max(1, (int)Math.Round(Way.GetFirstValue())),
+            Stack = Math.Max(1, (int)Math.Round(Stack.GetFirstValue())),
             StackSpeedStep = StackSpeedStep,
             StackAngleStep = StackAngleStep,
             BaseAngle = BaseAngle.GetFirstValue(),
@@ -786,8 +784,8 @@ public class EmitterParameter : Animatable
         other.ScriptLoop = ScriptLoop;
 
         other.PatternKind = PatternKind;
-        other.Way = Way;
-        other.Stack = Stack;
+        other.Way.CopyFrom(Way);
+        other.Stack.CopyFrom(Stack);
         other.StackSpeedStep = StackSpeedStep;
         other.StackAngleStep = StackAngleStep;
         other.BaseAngle.CopyFrom(BaseAngle);
@@ -883,8 +881,8 @@ public class EmitterParameter : Animatable
 
         var pattern = preset.Pattern;
         PatternKind = pattern.Kind;
-        Way = pattern.Way;
-        Stack = pattern.Stack;
+        Way.SetFirstValue(pattern.Way);
+        Stack.SetFirstValue(pattern.Stack);
         StackSpeedStep = pattern.StackSpeedStep;
         StackAngleStep = pattern.StackAngleStep;
         BaseAngle.SetFirstValue(pattern.BaseAngle);
@@ -965,7 +963,7 @@ public class EmitterParameter : Animatable
     private void ApplyPatternDefaults(PatternKind kind)
     {
         // 以前のパターンの残骸（連射数、ゆらぎ、段数、角度など）が残らないよう、まず共通のクリーン状態にリセットする
-        Stack = 1;
+        Stack.SetFirstValue(1);
         StackSpeedStep = 40;
         StackAngleStep = 0;
         BaseAngle.SetFirstValue(-90);
@@ -984,28 +982,28 @@ public class EmitterParameter : Animatable
         switch (kind)
         {
             case PatternKind.Circle:
-                Way = 24;
+                Way.SetFirstValue(24);
                 SpreadAngle.SetFirstValue(360);
                 AngleStepPerShot.SetFirstValue(0);
                 FireInterval.SetFirstValue(0.35);
                 break;
 
             case PatternKind.Fan:
-                Way = 5;
+                Way.SetFirstValue(5);
                 SpreadAngle.SetFirstValue(60);
                 AngleStepPerShot.SetFirstValue(0);
                 FireInterval.SetFirstValue(0.25);
                 break;
 
             case PatternKind.Spiral:
-                Way = 4;
+                Way.SetFirstValue(4);
                 SpreadAngle.SetFirstValue(360);
                 AngleStepPerShot.SetFirstValue(13);
                 FireInterval.SetFirstValue(0.08);
                 break;
 
             case PatternKind.Aimed:
-                Way = 5;
+                Way.SetFirstValue(5);
                 SpreadAngle.SetFirstValue(34);
                 AimAtTarget = true;
                 BurstCount = 3;
@@ -1015,7 +1013,7 @@ public class EmitterParameter : Animatable
                 break;
 
             case PatternKind.Scatter:
-                Way = 6;
+                Way.SetFirstValue(6);
                 SpreadAngle.SetFirstValue(360);
                 AngleStepPerShot.SetFirstValue(0);
                 AngleJitter = 15;
@@ -1024,7 +1022,7 @@ public class EmitterParameter : Animatable
                 break;
 
             case PatternKind.Wall:
-                Way = 16;
+                Way.SetFirstValue(16);
                 WallWidth = 1280;
                 SpreadAngle.SetFirstValue(360);
                 AngleStepPerShot.SetFirstValue(0);
@@ -1033,8 +1031,8 @@ public class EmitterParameter : Animatable
                 break;
 
             case PatternKind.Bloom:
-                Way = 16;
-                Stack = 3;
+                Way.SetFirstValue(16);
+                Stack.SetFirstValue(3);
                 StackSpeedStep = 30;
                 SpreadAngle.SetFirstValue(360);
                 AngleStepPerShot.SetFirstValue(6);
@@ -1042,7 +1040,7 @@ public class EmitterParameter : Animatable
                 break;
 
             case PatternKind.Rose:
-                Way = 32;
+                Way.SetFirstValue(32);
                 StackSpeedStep = 20;
                 SpreadAngle.SetFirstValue(360);
                 AngleStepPerShot.SetFirstValue(8);
@@ -1050,7 +1048,7 @@ public class EmitterParameter : Animatable
                 break;
 
             case PatternKind.Laser:
-                Way = 24;
+                Way.SetFirstValue(24);
                 LaserSpacing = 24;
                 SpreadAngle.SetFirstValue(360);
                 AngleStepPerShot.SetFirstValue(20);
@@ -1058,7 +1056,7 @@ public class EmitterParameter : Animatable
                 break;
 
             case PatternKind.Whip:
-                Way = 5;
+                Way.SetFirstValue(5);
                 SpreadAngle.SetFirstValue(60);
                 AngleStepPerShot.SetFirstValue(0);
                 WhipAmplitude = 45;
@@ -1073,7 +1071,7 @@ public class EmitterParameter : Animatable
         => Core.Presets.DanmakuPreset.FromEmitter(ToSettings(0), name, description);
 
     protected override IEnumerable<IAnimatable> GetAnimatables() => [
-        X, Y, BaseAngle, OrbitRadius, OrbitSpeed, SpreadAngle, AngleStepPerShot,
+        X, Y, BaseAngle, OrbitRadius, OrbitSpeed, Way, Stack, SpreadAngle, AngleStepPerShot,
         FireInterval, SpawnRadius, Speed, AngularVelocity, Gravity, Wind, Scale, RotationVelocity
     ];
 }

@@ -175,6 +175,24 @@ public sealed class DanmakuShapeSource : IShapeSource2
             return emitter.OrbitSpeed.GetValue(frame, totalFrame, fps);
         };
 
+        sim.Live.EmitterWay = (index, timeSeconds) =>
+        {
+            if (index < 0 || index >= emitters.Count) return null;
+
+            var emitter = emitters[index];
+            var frame = TimeToFrame(timeSeconds, fps, totalFrame);
+            return Math.Max(1, (int)Math.Round(emitter.Way.GetValue(frame, totalFrame, fps)));
+        };
+
+        sim.Live.EmitterStack = (index, timeSeconds) =>
+        {
+            if (index < 0 || index >= emitters.Count) return null;
+
+            var emitter = emitters[index];
+            var frame = TimeToFrame(timeSeconds, fps, totalFrame);
+            return Math.Max(1, (int)Math.Round(emitter.Stack.GetValue(frame, totalFrame, fps)));
+        };
+
         sim.Live.EmitterSpreadAngle = (index, timeSeconds) =>
         {
             if (index < 0 || index >= emitters.Count) return null;

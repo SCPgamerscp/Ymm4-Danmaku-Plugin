@@ -1458,4 +1458,30 @@ public class KeyframeLiveValueTests
         Assert.Equal(1.2, b2.Scale, 2);
         Assert.Equal(500.0, b2.ExternalAcceleration.Y, 2);
     }
+
+    [Fact]
+    public void EmitterWayおよびEmitterStack供給関数によって方向数と段数が動的に変化する()
+    {
+        var pattern = new PatternSettings
+        {
+            Kind = PatternKind.Circle,
+            Way = 4,
+            Stack = 1,
+            FireInterval = 0.1,
+            SpreadAngle = 360,
+        };
+
+        var settings = TestFactory.Settings(TestFactory.Emitter(pattern));
+        var engine = TestFactory.Engine(settings);
+
+        // 時刻 t=0 では way=4, stack=1 (4発)、時刻 t=0.1 では way=8, stack=2 (16発)
+        engine.Live.EmitterWay = (idx, t) => t > 0.05 ? 8 : 4;
+        engine.Live.EmitterStack = (idx, t) => t > 0.05 ? 2 : 1;
+
+        engine.Advance(0.05); // 1回目 (t=0): 4 * 1 = 4発
+        Assert.Equal(4, engine.AliveBullets().Length);
+
+        engine.Advance(0.1); // 2回目 (t=0.1): 8 * 2 = 16発追加 (合計20発)
+        Assert.Equal(20, engine.AliveBullets().Length);
+    }
 }

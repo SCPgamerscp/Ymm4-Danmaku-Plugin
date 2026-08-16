@@ -91,24 +91,12 @@ public class DanmakuShapeParameter : ShapeParameterBase
     }
 
     [Display(GroupName = "発射パターン", Name = "ウェイ数 (方向数)", Description = "同時に放つ方向の数。全方位弾なら 16〜36 程度。")]
-    [TextBoxSlider("F0", "方向", 1, 128)]
-    [DefaultValue(24)]
-    [Range(1, 1000)]
-    public int Way
-    {
-        get => MainEmitter.Way;
-        set => MainEmitter.Way = value;
-    }
+    [AnimationSlider("F0", "方向", 1, 128)]
+    public Animation Way => MainEmitter.Way;
 
     [Display(GroupName = "発射パターン", Name = "段数 (連数)", Description = "1 方向あたりに連続して放つ弾数。")]
-    [TextBoxSlider("F0", "段", 1, 32)]
-    [DefaultValue(1)]
-    [Range(1, 100)]
-    public int Stack
-    {
-        get => MainEmitter.Stack;
-        set => MainEmitter.Stack = value;
-    }
+    [AnimationSlider("F0", "段", 1, 32)]
+    public Animation Stack => MainEmitter.Stack;
 
     [Display(GroupName = "発射パターン", Name = "段ごとの速度差")]
     [TextBoxSlider("F0", "px/秒", -200, 200)]

@@ -38,6 +38,8 @@ public sealed class LiveValueSource
     public Func<int, double, double?>? EmitterAngle { get; set; }
 
     // ---- 発射パターン ----
+    public Func<int, double, int?>? EmitterWay { get; set; }
+    public Func<int, double, int?>? EmitterStack { get; set; }
     public Func<int, double, double?>? EmitterSpreadAngle { get; set; }
     public Func<int, double, double?>? EmitterAngleStepPerShot { get; set; }
     public Func<int, double, double?>? EmitterFireInterval { get; set; }
@@ -61,6 +63,8 @@ public sealed class LiveValueSource
         EmitterPosition is not null ||
         TargetPosition is not null ||
         EmitterAngle is not null ||
+        EmitterWay is not null ||
+        EmitterStack is not null ||
         EmitterSpreadAngle is not null ||
         EmitterAngleStepPerShot is not null ||
         EmitterFireInterval is not null ||
@@ -81,6 +85,8 @@ public sealed class LiveValueSource
         EmitterPosition = null;
         TargetPosition = null;
         EmitterAngle = null;
+        EmitterWay = null;
+        EmitterStack = null;
         EmitterSpreadAngle = null;
         EmitterAngleStepPerShot = null;
         EmitterFireInterval = null;

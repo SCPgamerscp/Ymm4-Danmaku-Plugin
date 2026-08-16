@@ -71,8 +71,8 @@ public sealed class PatternEmitterBehavior(EmitterSettings settings) : IEmitterB
         var physics = settings.Physics;
         var appearance = settings.Appearance;
 
-        var way = Math.Max(1, pattern.Way);
-        var stack = Math.Max(1, pattern.Stack);
+        var way = Math.Max(1, context.EmitterWay(fireTime) ?? pattern.Way);
+        var stack = Math.Max(1, context.EmitterStack(fireTime) ?? pattern.Stack);
 
         var baseAngle = context.EmitterAngle(fireTime) ?? pattern.BaseAngle;
         if (pattern.AimAtTarget || pattern.Kind == PatternKind.Aimed)

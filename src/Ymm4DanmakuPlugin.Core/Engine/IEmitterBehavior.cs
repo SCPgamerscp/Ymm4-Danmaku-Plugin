@@ -51,6 +51,8 @@ public sealed class EmitterContext(DanmakuEngine engine, int emitterIndex)
 
     /// <summary>動的な発射基準角度 (度) を引く。未設定なら null。</summary>
     public double? EmitterAngle(double time) => Engine.Live.EmitterAngle?.Invoke(EmitterIndex, time);
+    public int? EmitterWay(double time) => Engine.Live.EmitterWay?.Invoke(EmitterIndex, time);
+    public int? EmitterStack(double time) => Engine.Live.EmitterStack?.Invoke(EmitterIndex, time);
     public double? EmitterSpreadAngle(double time) => Engine.Live.EmitterSpreadAngle?.Invoke(EmitterIndex, time);
     public double? EmitterAngleStepPerShot(double time) => Engine.Live.EmitterAngleStepPerShot?.Invoke(EmitterIndex, time);
     public double? EmitterFireInterval(double time) => Engine.Live.EmitterFireInterval?.Invoke(EmitterIndex, time);
