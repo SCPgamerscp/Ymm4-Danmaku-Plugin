@@ -100,18 +100,11 @@ public sealed class DanmakuShapeSource : IShapeSource2
         // --- ユーザー指定画像をスロットへ読み込む ---
         LoadCustomImages();
 
-        // 同じフレーム・同じキャンバスなら描き直さない
-        var needsRedraw =
-            output is null ||
-            frame != lastFrame ||
-            fps != lastFps ||
-            canvasWidth != lastCanvasWidth ||
-            canvasHeight != lastCanvasHeight;
-
+        // キーフレームやスライダーの編集が一時停止中に行われても確実に最新の弾幕状態を反映するため、
+        // 常に先頭から現在フレームまで確定的にシミュレーションを再現して描画する
+        simulator.Reset();
         simulator.SeekToFrame(frame, fps);
         LastBulletCount = simulator.Bullets.Count;
-
-        if (!needsRedraw) return;
 
         lastFrame = frame;
         lastFps = fps;
