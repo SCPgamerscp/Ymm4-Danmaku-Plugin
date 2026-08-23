@@ -5,39 +5,28 @@ namespace Ymm4DanmakuPlugin.Core.Engine;
 /// <summary>
 /// キーフレーム (YMM4 の <c>Animation</c>) によって時間変化する値をエンジンへ供給する差し込み口。
 /// <para>
-/// エミッター位置やターゲット位置をタイムラインでアニメーションさせたい場合、
-/// これらの値は「設定 (record)」ではなく「時刻の関数」として扱う必要がある。
-/// 設定に埋め込んでしまうと 1 フレーム動かすたびに設定署名が変わり、
-/// <see cref="DanmakuSimulator"/> がシミュレーションを作り直して極端に重くなる。
-/// </para>
-/// <para>
-/// <b>決定論の担保:</b> ここに渡す関数は必ず「時刻のみに依存する純粋関数」でなければならない。
-/// キーフレーム曲線の評価はまさにその条件を満たすため、
-/// どのフレームへシークしても同一の弾幕が再現される性質は保たれる。
-/// 乱数や前回値に依存する関数を渡してはならない。
+/// 弾幕の全パラメータをタイムライン上でアニメーション可能にするため、
+/// 毎ステップの時刻に応じた最新の値を関数経由で取得する。
 /// </para>
 /// </summary>
 public sealed class LiveValueSource
 {
-    /// <summary>
-    /// エミッター位置を供給する関数。引数は (エミッター番号, 時刻秒)。
-    /// null を返した場合は設定値 (<c>EmitterSettings.X/Y</c>) が使われる。
-    /// </summary>
+    // ---- エミッター位置・ターゲット位置 ----
     public Func<int, double, Vec2?>? EmitterPosition { get; set; }
-
-    /// <summary>
-    /// ターゲット (自機) 位置を供給する関数。引数は時刻秒。
-    /// null を返した場合は設定値 (<c>CollisionSettings.TargetX/Y</c>) が使われる。
-    /// </summary>
     public Func<double, Vec2?>? TargetPosition { get; set; }
 
-    /// <summary>
-    /// エミッターの発射基準角度 (度) を供給する関数。引数は (エミッター番号, 時刻秒)。
-    /// null を返した場合は設定値 (<c>PatternSettings.BaseAngle</c>) が使われる。
-    /// </summary>
-    public Func<int, double, double?>? EmitterAngle { get; set; }
+    // ---- 公転 & シード ----
+    public Func<int, double, double?>? EmitterOrbitRadius { get; set; }
+    public Func<int, double, double?>? EmitterOrbitSpeed { get; set; }
+    public Func<int, double, double?>? EmitterOrbitPhase { get; set; }
+    public Func<int, double, int?>? EmitterSeedOffset { get; set; }
+
+    // ---- 外部スクリプト ----
+    public Func<int, double, double?>? EmitterScriptSpeedScale { get; set; }
+    public Func<int, double, double?>? EmitterScriptRank { get; set; }
 
     // ---- 発射パターン ----
+    public Func<int, double, double?>? EmitterAngle { get; set; }
     public Func<int, double, int?>? EmitterWay { get; set; }
     public Func<int, double, int?>? EmitterStack { get; set; }
     public Func<int, double, double?>? EmitterStackSpeedStep { get; set; }
@@ -49,6 +38,8 @@ public sealed class LiveValueSource
     public Func<int, double, int?>? EmitterBurstCount { get; set; }
     public Func<int, double, double?>? EmitterBurstInterval { get; set; }
     public Func<int, double, double?>? EmitterBurstCooldown { get; set; }
+    public Func<int, double, double?>? EmitterStartTime { get; set; }
+    public Func<int, double, double?>? EmitterEndTime { get; set; }
     public Func<int, double, double?>? EmitterSpawnRadius { get; set; }
     public Func<int, double, double?>? EmitterSpawnJitter { get; set; }
     public Func<int, double, double?>? EmitterWallWidth { get; set; }
@@ -58,41 +49,66 @@ public sealed class LiveValueSource
 
     // ---- 弾の物理 ----
     public Func<int, double, double?>? EmitterSpeed { get; set; }
+    public Func<int, double, double?>? EmitterSpeedJitter { get; set; }
+    public Func<int, double, double?>? EmitterSpeedStep { get; set; }
     public Func<int, double, double?>? EmitterAcceleration { get; set; }
     public Func<int, double, double?>? EmitterAngularVelocity { get; set; }
+    public Func<int, double, double?>? EmitterAngularVelocityJitter { get; set; }
     public Func<int, double, double?>? EmitterDamping { get; set; }
+    public Func<int, double, double?>? EmitterMinSpeed { get; set; }
+    public Func<int, double, double?>? EmitterMaxSpeed { get; set; }
     public Func<int, double, double?>? EmitterGravity { get; set; }
     public Func<int, double, double?>? EmitterWind { get; set; }
     public Func<int, double, double?>? EmitterLifetime { get; set; }
+    public Func<int, double, double?>? EmitterLifetimeJitter { get; set; }
     public Func<int, double, double?>? EmitterHomingTurnRate { get; set; }
     public Func<int, double, double?>? EmitterHomingDuration { get; set; }
     public Func<int, double, double?>? EmitterHomingDelay { get; set; }
     public Func<int, double, double?>? EmitterHitRadius { get; set; }
 
-    // ---- 見た目 & 残像 & 分裂 & 公転 ----
+    // ---- 見た目 & 残像 ----
     public Func<int, double, double?>? EmitterScale { get; set; }
+    public Func<int, double, double?>? EmitterScaleJitter { get; set; }
+    public Func<int, double, double?>? EmitterScaleVelocity { get; set; }
     public Func<int, double, double?>? EmitterRotationVelocity { get; set; }
+    public Func<int, double, double?>? EmitterHueVelocity { get; set; }
+    public Func<int, double, double?>? EmitterHueStep { get; set; }
     public Func<int, double, double?>? EmitterOpacity { get; set; }
     public Func<int, double, double?>? EmitterGlowIntensity { get; set; }
-    public Func<int, double, double?>? EmitterOrbitRadius { get; set; }
-    public Func<int, double, double?>? EmitterOrbitSpeed { get; set; }
-    public Func<int, double, double?>? EmitterOrbitPhase { get; set; }
+    public Func<int, double, double?>? EmitterFadeInDuration { get; set; }
+    public Func<int, double, double?>? EmitterFadeOutDuration { get; set; }
+    public Func<int, double, int?>? EmitterTrailLength { get; set; }
+    public Func<int, double, double?>? EmitterTrailInterval { get; set; }
+    public Func<int, double, double?>? EmitterTrailFade { get; set; }
+    public Func<int, double, double?>? EmitterTrailScale { get; set; }
 
+    // ---- 分裂 ----
     public Func<int, double, int?>? EmitterSplitCount { get; set; }
     public Func<int, double, double?>? EmitterSplitSpread { get; set; }
     public Func<int, double, double?>? EmitterSplitSpeed { get; set; }
     public Func<int, double, double?>? EmitterSplitScaleFactor { get; set; }
     public Func<int, double, double?>? EmitterSplitDelay { get; set; }
+    public Func<int, double, int?>? EmitterSplitMaxGeneration { get; set; }
 
     // ---- 全体設定 ----
     public Func<double, double?>? GlobalOpacity { get; set; }
     public Func<double, double?>? TimeScale { get; set; }
+    public Func<double, double?>? BoundsMargin { get; set; }
     public Func<double, double?>? TargetRadius { get; set; }
+    public Func<double, int?>? HitEffectCount { get; set; }
+    public Func<double, double?>? HitEffectSpeed { get; set; }
+    public Func<double, double?>? HitEffectLifetime { get; set; }
 
     /// <summary>いずれかの供給関数が設定されているかどうか。</summary>
     public bool HasAny =>
         EmitterPosition is not null ||
         TargetPosition is not null ||
+        EmitterOrbitRadius is not null ||
+        EmitterOrbitSpeed is not null ||
+        EmitterOrbitPhase is not null ||
+        EmitterSeedOffset is not null ||
+        EmitterScriptSpeedScale is not null ||
+        EmitterScriptRank is not null ||
         EmitterAngle is not null ||
         EmitterWay is not null ||
         EmitterStack is not null ||
@@ -105,6 +121,8 @@ public sealed class LiveValueSource
         EmitterBurstCount is not null ||
         EmitterBurstInterval is not null ||
         EmitterBurstCooldown is not null ||
+        EmitterStartTime is not null ||
+        EmitterEndTime is not null ||
         EmitterSpawnRadius is not null ||
         EmitterSpawnJitter is not null ||
         EmitterWallWidth is not null ||
@@ -112,37 +130,61 @@ public sealed class LiveValueSource
         EmitterWhipAmplitude is not null ||
         EmitterWhipPeriod is not null ||
         EmitterSpeed is not null ||
+        EmitterSpeedJitter is not null ||
+        EmitterSpeedStep is not null ||
         EmitterAcceleration is not null ||
         EmitterAngularVelocity is not null ||
+        EmitterAngularVelocityJitter is not null ||
         EmitterDamping is not null ||
+        EmitterMinSpeed is not null ||
+        EmitterMaxSpeed is not null ||
         EmitterGravity is not null ||
         EmitterWind is not null ||
         EmitterLifetime is not null ||
+        EmitterLifetimeJitter is not null ||
         EmitterHomingTurnRate is not null ||
         EmitterHomingDuration is not null ||
         EmitterHomingDelay is not null ||
         EmitterHitRadius is not null ||
         EmitterScale is not null ||
+        EmitterScaleJitter is not null ||
+        EmitterScaleVelocity is not null ||
         EmitterRotationVelocity is not null ||
+        EmitterHueVelocity is not null ||
+        EmitterHueStep is not null ||
         EmitterOpacity is not null ||
         EmitterGlowIntensity is not null ||
-        EmitterOrbitRadius is not null ||
-        EmitterOrbitSpeed is not null ||
-        EmitterOrbitPhase is not null ||
+        EmitterFadeInDuration is not null ||
+        EmitterFadeOutDuration is not null ||
+        EmitterTrailLength is not null ||
+        EmitterTrailInterval is not null ||
+        EmitterTrailFade is not null ||
+        EmitterTrailScale is not null ||
         EmitterSplitCount is not null ||
         EmitterSplitSpread is not null ||
         EmitterSplitSpeed is not null ||
         EmitterSplitScaleFactor is not null ||
         EmitterSplitDelay is not null ||
+        EmitterSplitMaxGeneration is not null ||
         GlobalOpacity is not null ||
         TimeScale is not null ||
-        TargetRadius is not null;
+        BoundsMargin is not null ||
+        TargetRadius is not null ||
+        HitEffectCount is not null ||
+        HitEffectSpeed is not null ||
+        HitEffectLifetime is not null;
 
     /// <summary>すべての供給関数を解除する。</summary>
     public void Clear()
     {
         EmitterPosition = null;
         TargetPosition = null;
+        EmitterOrbitRadius = null;
+        EmitterOrbitSpeed = null;
+        EmitterOrbitPhase = null;
+        EmitterSeedOffset = null;
+        EmitterScriptSpeedScale = null;
+        EmitterScriptRank = null;
         EmitterAngle = null;
         EmitterWay = null;
         EmitterStack = null;
@@ -155,6 +197,8 @@ public sealed class LiveValueSource
         EmitterBurstCount = null;
         EmitterBurstInterval = null;
         EmitterBurstCooldown = null;
+        EmitterStartTime = null;
+        EmitterEndTime = null;
         EmitterSpawnRadius = null;
         EmitterSpawnJitter = null;
         EmitterWallWidth = null;
@@ -162,30 +206,48 @@ public sealed class LiveValueSource
         EmitterWhipAmplitude = null;
         EmitterWhipPeriod = null;
         EmitterSpeed = null;
+        EmitterSpeedJitter = null;
+        EmitterSpeedStep = null;
         EmitterAcceleration = null;
         EmitterAngularVelocity = null;
+        EmitterAngularVelocityJitter = null;
         EmitterDamping = null;
+        EmitterMinSpeed = null;
+        EmitterMaxSpeed = null;
         EmitterGravity = null;
         EmitterWind = null;
         EmitterLifetime = null;
+        EmitterLifetimeJitter = null;
         EmitterHomingTurnRate = null;
         EmitterHomingDuration = null;
         EmitterHomingDelay = null;
         EmitterHitRadius = null;
         EmitterScale = null;
+        EmitterScaleJitter = null;
+        EmitterScaleVelocity = null;
         EmitterRotationVelocity = null;
+        EmitterHueVelocity = null;
+        EmitterHueStep = null;
         EmitterOpacity = null;
         EmitterGlowIntensity = null;
-        EmitterOrbitRadius = null;
-        EmitterOrbitSpeed = null;
-        EmitterOrbitPhase = null;
+        EmitterFadeInDuration = null;
+        EmitterFadeOutDuration = null;
+        EmitterTrailLength = null;
+        EmitterTrailInterval = null;
+        EmitterTrailFade = null;
+        EmitterTrailScale = null;
         EmitterSplitCount = null;
         EmitterSplitSpread = null;
         EmitterSplitSpeed = null;
         EmitterSplitScaleFactor = null;
         EmitterSplitDelay = null;
+        EmitterSplitMaxGeneration = null;
         GlobalOpacity = null;
         TimeScale = null;
+        BoundsMargin = null;
         TargetRadius = null;
+        HitEffectCount = null;
+        HitEffectSpeed = null;
+        HitEffectLifetime = null;
     }
 }

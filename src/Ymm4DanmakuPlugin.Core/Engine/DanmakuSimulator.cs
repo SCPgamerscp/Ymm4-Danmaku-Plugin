@@ -19,6 +19,7 @@ public sealed class DanmakuSimulator
 {
     private DanmakuSettings settings;
     private string settingsSignature;
+    private double timelineTime;
 
     /// <summary>内部エンジン。</summary>
     public DanmakuEngine Engine { get; private set; }
@@ -94,14 +95,43 @@ public sealed class DanmakuSimulator
 
         const double epsilon = 1e-6;
 
-        if (timeSeconds < Engine.CurrentTime - epsilon)
+        if (timeSeconds < timelineTime - epsilon)
         {
             Engine.Reset();
+            timelineTime = 0;
             RewindCount++;
         }
 
-        var delta = timeSeconds - Engine.CurrentTime;
-        if (delta > epsilon) Engine.Advance(delta);
+        if (Live.TimeScale is null)
+        {
+            // 動的 TimeScale がない場合は一括で進める
+            var delta = timeSeconds - timelineTime;
+            if (delta > epsilon)
+            {
+                var scale = Math.Max(0.0, Settings.TimeScale);
+                if (scale > 0)
+                {
+                    Engine.Advance(delta * scale);
+                }
+                timelineTime = timeSeconds;
+            }
+        }
+        else
+        {
+            // 動的 TimeScale (キーフレーム) がある場合は格子刻みで積分する
+            var dt = Engine.StepSize;
+            while (timelineTime < timeSeconds - epsilon)
+            {
+                var chunk = Math.Min(dt, timeSeconds - timelineTime);
+                var scale = Math.Max(0.0, Live.TimeScale(timelineTime) ?? Settings.TimeScale);
+                if (scale > 0 && chunk > 0)
+                {
+                    Engine.Advance(chunk * scale);
+                }
+                timelineTime += chunk;
+            }
+            timelineTime = timeSeconds;
+        }
     }
 
     /// <summary>指定フレームまでシミュレーションを進める。</summary>
@@ -115,6 +145,7 @@ public sealed class DanmakuSimulator
     public void Reset()
     {
         Engine.Reset();
+        timelineTime = 0;
         RewindCount = 0;
     }
 

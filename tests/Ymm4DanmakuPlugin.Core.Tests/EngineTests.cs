@@ -1546,4 +1546,85 @@ public class KeyframeLiveValueTests
         Assert.Equal(8, parent.Split.Count);
         Assert.Equal(300.0, parent.Split.Speed);
     }
+
+    [Fact]
+    public void TimeScaleが0のときは弾が空中で完全静止する()
+    {
+        var settings = TestFactory.Settings(TestFactory.Emitter(TestFactory.SingleShot(4))) with
+        {
+            TimeScale = 0.0,
+        };
+        var sim = new DanmakuSimulator(settings);
+
+        sim.SeekTo(1.0);
+        Assert.Empty(sim.Bullets); // 時間が進まないため発射されない
+    }
+
+    [Fact]
+    public void LiveTimeScaleで途中で0にすると時止め演出になり空中で弾がピタッと止まる()
+    {
+        var pattern = TestFactory.SingleShot(1) with { FireInterval = 10.0 };
+        var physics = new BulletPhysics { Speed = 100.0 };
+        var settings = TestFactory.Settings(new EmitterSettings { Pattern = pattern, Physics = physics });
+        var sim = new DanmakuSimulator(settings);
+
+        // 0s〜1s は通常再生 (TimeScale=1)、1s〜3s は時止め (TimeScale=0)、3s〜4s は通常再生 (TimeScale=1)
+        sim.Live.TimeScale = t => t < 1.0 ? 1.0 : (t < 3.0 ? 0.0 : 1.0);
+
+        sim.SeekTo(1.0);
+        Assert.Single(sim.Bullets);
+        var b1 = sim.Bullets[0];
+        var posAt1s = b1.Position;
+
+        sim.SeekTo(2.0); // 時止め中 (2秒目)
+        Assert.Single(sim.Bullets);
+        var b2 = sim.Bullets[0];
+        Assert.Equal(posAt1s.X, b2.Position.X, 1e-3);
+        Assert.Equal(posAt1s.Y, b2.Position.Y, 1e-3);
+
+        sim.SeekTo(3.0); // 時止め終了直前 (3秒目)
+        Assert.Single(sim.Bullets);
+        var b3 = sim.Bullets[0];
+        Assert.Equal(posAt1s.X, b3.Position.X, 1e-3);
+        Assert.Equal(posAt1s.Y, b3.Position.Y, 1e-3);
+
+        sim.SeekTo(4.0); // 再開後 (4秒目 = 実質シミュレーション 2秒目)
+        Assert.Single(sim.Bullets);
+        var b4 = sim.Bullets[0];
+        Assert.True(Math.Abs(b4.Position.X - posAt1s.X) > 50.0);
+    }
+
+    [Fact]
+    public void WayやStackが0のときは安全に0発になる()
+    {
+        var pattern = TestFactory.SingleShot(0) with { Stack = 0 };
+        var engine = TestFactory.Engine(TestFactory.Settings(TestFactory.Emitter(pattern)));
+
+        engine.Advance(0.5);
+        Assert.Empty(engine.AliveBullets());
+    }
+
+    [Fact]
+    public void Live供給によるDampingとScaleVelocityとFadeが弾に正しく反映される()
+    {
+        var pattern = TestFactory.SingleShot(1);
+        var emitter = TestFactory.Emitter(pattern);
+        var engine = TestFactory.Engine(TestFactory.Settings(emitter));
+
+        engine.Live.EmitterDamping = (idx, t) => 0.5;
+        engine.Live.EmitterScaleVelocity = (idx, t) => 1.5;
+        engine.Live.EmitterFadeInDuration = (idx, t) => 0.2;
+        engine.Live.EmitterFadeOutDuration = (idx, t) => 0.4;
+        engine.Live.EmitterMinSpeed = (idx, t) => 10.0;
+        engine.Live.EmitterMaxSpeed = (idx, t) => 500.0;
+
+        engine.Advance(0.05);
+        var b = engine.AliveBullets()[0];
+        Assert.Equal(0.5, b.Damping);
+        Assert.Equal(1.5, b.ScaleVelocity);
+        Assert.Equal(0.2, b.FadeInDuration);
+        Assert.Equal(0.4, b.FadeOutDuration);
+        Assert.Equal(10.0, b.MinSpeed);
+        Assert.Equal(500.0, b.MaxSpeed);
+    }
 }

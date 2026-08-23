@@ -137,7 +137,7 @@ public sealed class DanmakuEngine
         if (deltaSeconds <= 0) return;
 
         var step = StepSize;
-        var target = CurrentTime + deltaSeconds * Settings.TimeScale;
+        var target = CurrentTime + deltaSeconds;
 
         // 目標時刻までに完了しているべき格子ステップ数
         var targetSteps = (long)Math.Floor(target / step + 1e-9);
@@ -560,6 +560,12 @@ public sealed class DanmakuEngine
         if (request.DampingOverride is { } damping)
             bullet.Damping = damping;
 
+        if (request.MinSpeedOverride is { } minSpeed)
+            bullet.MinSpeed = minSpeed;
+
+        if (request.MaxSpeedOverride is { } maxSpeed)
+            bullet.MaxSpeed = maxSpeed;
+
         if (request.HomingTurnRateOverride is { } homingTurn)
             bullet.HomingTurnRate = homingTurn;
 
@@ -584,18 +590,19 @@ public sealed class DanmakuEngine
         var scale = baseScale * request.ScaleFactor;
         if (appearance.ScaleJitter > 0) scale += Random.NextSymmetric(appearance.ScaleJitter);
         bullet.Scale = Math.Max(0.01, scale);
-        bullet.ScaleVelocity = appearance.ScaleVelocity;
+        bullet.ScaleVelocity = request.ScaleVelocityOverride ?? appearance.ScaleVelocity;
 
         bullet.Rotation = appearance.Rotation;
         bullet.RotationVelocity = request.RotationVelocityOverride ?? appearance.RotationVelocity;
         bullet.AlignToDirection = appearance.AlignToDirection;
         bullet.Additive = appearance.Additive;
-        bullet.FadeInDuration = appearance.FadeInDuration;
-        bullet.FadeOutDuration = appearance.FadeOutDuration;
+        bullet.FadeInDuration = request.FadeInDurationOverride ?? appearance.FadeInDuration;
+        bullet.FadeOutDuration = request.FadeOutDurationOverride ?? appearance.FadeOutDuration;
         bullet.AnimationFps = appearance.AnimationFps;
 
-        bullet.TrailLength = Math.Min(appearance.TrailLength, Bullet.MaxTrailLength);
-        bullet.TrailInterval = appearance.TrailInterval;
+        var trailLen = request.TrailLengthOverride ?? appearance.TrailLength;
+        bullet.TrailLength = Math.Min(Math.Max(0, trailLen), Bullet.MaxTrailLength);
+        bullet.TrailInterval = request.TrailIntervalOverride ?? appearance.TrailInterval;
 
         ApplyColor(bullet, appearance, request);
 

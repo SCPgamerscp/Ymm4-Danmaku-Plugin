@@ -80,6 +80,27 @@ public struct BulletSpawnRequest
     /// <summary>不透明度の上書き (null で Appearance の値)。</summary>
     public double? OpacityOverride;
 
+    /// <summary>拡縮速度の上書き (null で Appearance の値)。</summary>
+    public double? ScaleVelocityOverride;
+
+    /// <summary>フェードイン時間の上書き (null で Appearance の値)。</summary>
+    public double? FadeInDurationOverride;
+
+    /// <summary>フェードアウト時間の上書き (null で Appearance の値)。</summary>
+    public double? FadeOutDurationOverride;
+
+    /// <summary>残像長の上書き (null で Appearance の値)。</summary>
+    public int? TrailLengthOverride;
+
+    /// <summary>残像間隔の上書き (null で Appearance の値)。</summary>
+    public double? TrailIntervalOverride;
+
+    /// <summary>最低速度の上書き (null で Physics の値)。</summary>
+    public double? MinSpeedOverride;
+
+    /// <summary>最高速度の上書き (null で Physics の値)。</summary>
+    public double? MaxSpeedOverride;
+
     /// <summary>自転速度の上書き (null で Appearance の値)。</summary>
     public double? RotationVelocityOverride;
 

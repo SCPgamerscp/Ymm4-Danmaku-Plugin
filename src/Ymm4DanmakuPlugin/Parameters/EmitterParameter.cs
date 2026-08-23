@@ -179,8 +179,8 @@ public class EmitterParameter : Animatable
     private string sourceText = string.Empty;
 
     [Display(GroupName = "弾幕データ", Name = "速度換算", Description = "BulletML の速度 1 を何 px/秒 とみなすか。60 で「1px/フレーム(60fps)」相当です。")]
-    [AnimationSlider("F0", "px/秒", 1, 240)]
-    public Animation ScriptSpeedScale { get; } = new Animation(60, 0.01, 100000);
+    [AnimationSlider("F0", "px/秒", 0, 240)]
+    public Animation ScriptSpeedScale { get; } = new Animation(60, 0, 100000);
 
     [Display(GroupName = "弾幕データ", Name = "難易度($rank)", Description = "BulletML の $rank に渡す値 (0〜1)。")]
     [AnimationSlider("F2", "", 0, 1)]
@@ -210,13 +210,13 @@ public class EmitterParameter : Animatable
     }
     private PatternKind patternKind = Core.Configuration.PatternKind.Circle;
 
-    [Display(GroupName = "パターン", Name = "way数", Description = "1 回の発射で撃つ弾の本数。")]
-    [AnimationSlider("F0", "本", 1, 72)]
-    public Animation Way { get; } = new Animation(24, 1, 2000);
+    [Display(GroupName = "パターン", Name = "way数", Description = "1 回の発射で撃つ弾の本数。0 で発射しません。")]
+    [AnimationSlider("F0", "本", 0, 72)]
+    public Animation Way { get; } = new Animation(24, 0, 2000);
 
-    [Display(GroupName = "パターン", Name = "段数", Description = "速度差をつけて重ねる同心円の段数。way数 × 段数 が 1 回の発射数になります。")]
-    [AnimationSlider("F0", "段", 1, 12)]
-    public Animation Stack { get; } = new Animation(1, 1, 200);
+    [Display(GroupName = "パターン", Name = "段数", Description = "速度差をつけて重ねる同心円の段数。way数 × 段数 が 1 回の発射数になります。0 で発射しません。")]
+    [AnimationSlider("F0", "段", 0, 12)]
+    public Animation Stack { get; } = new Animation(1, 0, 200);
 
     [Display(GroupName = "パターン", Name = "段ごとの速度差")]
     [AnimationSlider("F0", "px/秒", -200, 200)]
@@ -243,16 +243,16 @@ public class EmitterParameter : Animatable
     public Animation AngleJitter { get; } = new Animation(0, 0, 100000);
 
     [Display(GroupName = "パターン", Name = "発射間隔")]
-    [AnimationSlider("F3", "秒", 0.01, 2)]
-    public Animation FireInterval { get; } = new Animation(0.35, 0.001, 10000);
+    [AnimationSlider("F3", "秒", 0, 2)]
+    public Animation FireInterval { get; } = new Animation(0.35, 0, 10000);
 
     [Display(GroupName = "パターン", Name = "連射数", Description = "ひとかたまり (バースト) あたりの発射回数。")]
-    [AnimationSlider("F0", "回", 1, 20)]
-    public Animation BurstCount { get; } = new Animation(1, 1, 1000);
+    [AnimationSlider("F0", "回", 0, 20)]
+    public Animation BurstCount { get; } = new Animation(1, 0, 1000);
 
     [Display(GroupName = "パターン", Name = "連射間隔")]
-    [AnimationSlider("F3", "秒", 0.005, 0.5)]
-    public Animation BurstInterval { get; } = new Animation(0.02, 0.001, 10000);
+    [AnimationSlider("F3", "秒", 0, 0.5)]
+    public Animation BurstInterval { get; } = new Animation(0.02, 0, 10000);
 
     [Display(GroupName = "パターン", Name = "連射後の待機")]
     [AnimationSlider("F3", "秒", 0, 3)]
@@ -280,27 +280,27 @@ public class EmitterParameter : Animatable
     private bool aimAtTarget;
 
     [Display(GroupName = "パターン", Name = "壁の横幅", Description = "「壁弾」で弾を並べる横幅。")]
-    [AnimationSlider("F0", "px", 100, 3840)]
-    public Animation WallWidth { get; } = new Animation(1280, 1, 100000);
+    [AnimationSlider("F0", "px", 0, 3840)]
+    public Animation WallWidth { get; } = new Animation(1280, 0, 100000);
 
     [Display(GroupName = "パターン", Name = "レーザー間隔", Description = "「疑似レーザー」で弾を並べる間隔。")]
-    [AnimationSlider("F1", "px", 4, 120)]
-    public Animation LaserSpacing { get; } = new Animation(24, 0.1, 100000);
+    [AnimationSlider("F1", "px", 0, 120)]
+    public Animation LaserSpacing { get; } = new Animation(24, 0, 100000);
 
     [Display(GroupName = "パターン", Name = "鞭の振れ幅")]
     [AnimationSlider("F1", "度", 0, 180)]
     public Animation WhipAmplitude { get; } = new Animation(60, 0, 100000);
 
     [Display(GroupName = "パターン", Name = "鞭の周期")]
-    [AnimationSlider("F2", "秒", 0.1, 6)]
-    public Animation WhipPeriod { get; } = new Animation(1.2, 0.01, 100000);
+    [AnimationSlider("F2", "秒", 0, 6)]
+    public Animation WhipPeriod { get; } = new Animation(1.2, 0, 100000);
 
     // =====================================================================
     // 第 2 階層: 物理
     // =====================================================================
 
     [Display(GroupName = "弾の動き", Name = "初速")]
-    [AnimationSlider("F0", "px/秒", 0, 900)]
+    [AnimationSlider("F0", "px/秒", -900, 900)]
     public Animation Speed { get; } = new Animation(260, -100000, 100000);
 
     [Display(GroupName = "弾の動き", Name = "初速ゆらぎ")]
@@ -323,7 +323,7 @@ public class EmitterParameter : Animatable
     [AnimationSlider("F1", "度/秒", 0, 180)]
     public Animation AngularVelocityJitter { get; } = new Animation(0, 0, 100000);
 
-    [Display(GroupName = "弾の動き", Name = "減速", Description = "1 秒後に残る速度の割合。1 で減速なし。")]
+    [Display(GroupName = "弾の動き", Name = "減速", Description = "1 秒後に残る速度の割合。1 で減速なし。0 で瞬時に静止。")]
     [AnimationSlider("F2", "", 0, 1)]
     public Animation Damping { get; } = new Animation(1.0, 0, 1);
 
@@ -332,7 +332,7 @@ public class EmitterParameter : Animatable
     public Animation MinSpeed { get; } = new Animation(0, 0, 100000);
 
     [Display(GroupName = "弾の動き", Name = "最高速度")]
-    [AnimationSlider("F0", "px/秒", 100, 3000)]
+    [AnimationSlider("F0", "px/秒", 0, 3000)]
     public Animation MaxSpeed { get; } = new Animation(2000, 0, 1000000);
 
     [Display(GroupName = "弾の動き", Name = "重力", Description = "正で下向き。")]
@@ -358,7 +358,7 @@ public class EmitterParameter : Animatable
     public bool HomingEnabled { get => homingEnabled; set => Set(ref homingEnabled, value); }
     private bool homingEnabled;
 
-    [Display(GroupName = "ホーミング", Name = "旋回力", Description = "大きいほど鋭く曲がります。")]
+    [Display(GroupName = "ホーミング", Name = "旋回力", Description = "大きいほど鋭く曲がります。0 で直進。")]
     [AnimationSlider("F0", "度/秒", 0, 720)]
     public Animation HomingTurnRate { get; } = new Animation(90, 0, 100000);
 
@@ -385,8 +385,8 @@ public class EmitterParameter : Animatable
     private string imagePath = string.Empty;
 
     [Display(GroupName = "見た目", Name = "大きさ")]
-    [AnimationSlider("F2", "倍", 0.1, 4)]
-    public Animation Scale { get; } = new Animation(1.0, 0.001, 1000);
+    [AnimationSlider("F2", "倍", 0, 4)]
+    public Animation Scale { get; } = new Animation(1.0, 0, 1000);
 
     [Display(GroupName = "見た目", Name = "大きさゆらぎ")]
     [AnimationSlider("F2", "倍", 0, 1)]
@@ -425,7 +425,7 @@ public class EmitterParameter : Animatable
     public Animation HueVelocity { get; } = new Animation(120, -100000, 100000);
 
     [Display(GroupName = "見た目", Name = "弾ごとの色相差")]
-    [AnimationSlider("F1", "度", 0, 180)]
+    [AnimationSlider("F1", "度", -180, 180)]
     public Animation HueStep { get; } = new Animation(15, -100000, 100000);
 
     [Display(GroupName = "見た目", Name = "発光 (加算合成)", Description = "東方風の光る弾にします。")]
@@ -456,8 +456,8 @@ public class EmitterParameter : Animatable
     public Animation TrailLength { get; } = new Animation(0, 0, 48);
 
     [Display(GroupName = "残像", Name = "残像の間隔")]
-    [AnimationSlider("F3", "秒", 0.005, 0.2)]
-    public Animation TrailInterval { get; } = new Animation(1.0 / 60.0, 0.001, 100);
+    [AnimationSlider("F3", "秒", 0, 0.2)]
+    public Animation TrailInterval { get; } = new Animation(1.0 / 60.0, 0, 100);
 
     [Display(GroupName = "残像", Name = "末端の濃さ")]
     [AnimationSlider("F2", "", 0, 1)]
@@ -477,24 +477,24 @@ public class EmitterParameter : Animatable
     private bool splitEnabled;
 
     [Display(GroupName = "分裂", Name = "分裂までの時間")]
-    [AnimationSlider("F2", "秒", 0.05, 5)]
-    public Animation SplitDelay { get; } = new Animation(0.6, 0.01, 100000);
+    [AnimationSlider("F2", "秒", 0, 5)]
+    public Animation SplitDelay { get; } = new Animation(0.6, 0, 100000);
 
     [Display(GroupName = "分裂", Name = "分裂数")]
-    [AnimationSlider("F0", "個", 1, 32)]
-    public Animation SplitCount { get; } = new Animation(8, 1, 500);
+    [AnimationSlider("F0", "個", 0, 32)]
+    public Animation SplitCount { get; } = new Animation(8, 0, 500);
 
     [Display(GroupName = "分裂", Name = "分裂の広がり角")]
     [AnimationSlider("F1", "度", 0, 360)]
     public Animation SplitSpread { get; } = new Animation(360, 0, 100000);
 
     [Display(GroupName = "分裂", Name = "分裂後の速度")]
-    [AnimationSlider("F0", "px/秒", 0, 800)]
+    [AnimationSlider("F0", "px/秒", -800, 800)]
     public Animation SplitSpeed { get; } = new Animation(180, -100000, 100000);
 
     [Display(GroupName = "分裂", Name = "分裂後の大きさ")]
-    [AnimationSlider("F2", "倍", 0.1, 2)]
-    public Animation SplitScaleFactor { get; } = new Animation(0.8, 0.001, 100);
+    [AnimationSlider("F2", "倍", 0, 2)]
+    public Animation SplitScaleFactor { get; } = new Animation(0.8, 0, 100);
 
     [Display(GroupName = "分裂", Name = "親を消す")]
     [ToggleSlider]
@@ -502,8 +502,8 @@ public class EmitterParameter : Animatable
     private bool splitDestroyParent = true;
 
     [Display(GroupName = "分裂", Name = "多段の世代数", Description = "2 以上でさらに分裂を繰り返します。")]
-    [AnimationSlider("F0", "世代", 1, 5)]
-    public Animation SplitMaxGeneration { get; } = new Animation(1, 1, 10);
+    [AnimationSlider("F0", "世代", 0, 5)]
+    public Animation SplitMaxGeneration { get; } = new Animation(1, 0, 10);
 
     // =====================================================================
     // 当たり判定
@@ -525,7 +525,6 @@ public class EmitterParameter : Animatable
     /// <summary>
     /// 編集項目をコアエンジンの設定へ変換する。
     /// </summary>
-    /// <param name="emitterIndex">このエミッターの番号 (画像スロットの決定に使用)。</param>
     public EmitterSettings ToSettings(int emitterIndex) => new()
     {
         Name = string.IsNullOrWhiteSpace(Name) ? $"エミッター{emitterIndex + 1}" : Name,
@@ -548,8 +547,8 @@ public class EmitterParameter : Animatable
         Pattern = new PatternSettings
         {
             Kind = PatternKind,
-            Way = Math.Max(1, (int)Math.Round(Way.GetFirstValue())),
-            Stack = Math.Max(1, (int)Math.Round(Stack.GetFirstValue())),
+            Way = Math.Max(0, (int)Math.Round(Way.GetFirstValue())),
+            Stack = Math.Max(0, (int)Math.Round(Stack.GetFirstValue())),
             StackSpeedStep = StackSpeedStep.GetFirstValue(),
             StackAngleStep = StackAngleStep.GetFirstValue(),
             BaseAngle = BaseAngle.GetFirstValue(),
@@ -557,7 +556,7 @@ public class EmitterParameter : Animatable
             AngleStepPerShot = AngleStepPerShot.GetFirstValue(),
             AngleJitter = AngleJitter.GetFirstValue(),
             FireInterval = FireInterval.GetFirstValue(),
-            BurstCount = Math.Max(1, (int)Math.Round(BurstCount.GetFirstValue())),
+            BurstCount = Math.Max(0, (int)Math.Round(BurstCount.GetFirstValue())),
             BurstInterval = BurstInterval.GetFirstValue(),
             BurstCooldown = BurstCooldown.GetFirstValue(),
             StartTime = StartTime.GetFirstValue(),
@@ -620,7 +619,7 @@ public class EmitterParameter : Animatable
             TrailScale = TrailScale.GetFirstValue(),
         },
 
-        Split = SplitEnabled ? BuildSplit(Math.Max(1, (int)Math.Round(SplitMaxGeneration.GetFirstValue()))) : null,
+        Split = SplitEnabled ? BuildSplit(Math.Max(0, (int)Math.Round(SplitMaxGeneration.GetFirstValue()))) : null,
         SplitDelay = SplitDelay.GetFirstValue(),
     };
 
@@ -630,10 +629,10 @@ public class EmitterParameter : Animatable
     /// <summary>多段分裂の設定を世代数ぶん入れ子にして組み立てる。</summary>
     private SplitSpec BuildSplit(int remainingGenerations)
     {
-        var generations = Math.Clamp((int)Math.Round(SplitMaxGeneration.GetFirstValue()), 1, 10);
+        var generations = Math.Clamp((int)Math.Round(SplitMaxGeneration.GetFirstValue()), 0, 10);
         return new SplitSpec
         {
-            Count = Math.Max(1, (int)Math.Round(SplitCount.GetFirstValue())),
+            Count = Math.Max(0, (int)Math.Round(SplitCount.GetFirstValue())),
             SpreadDegrees = SplitSpread.GetFirstValue(),
             Speed = SplitSpeed.GetFirstValue(),
             ScaleFactor = SplitScaleFactor.GetFirstValue(),

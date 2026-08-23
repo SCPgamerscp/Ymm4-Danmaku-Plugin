@@ -32,11 +32,12 @@ public sealed class PatternEmitterBehavior(EmitterSettings settings) : IEmitterB
     public void Update(EmitterContext context, double deltaTime)
     {
         var pattern = settings.Pattern;
-        var start = pattern.StartTime;
-        var end = pattern.EndTime > 0 ? pattern.EndTime : double.PositiveInfinity;
-
         var stepStart = context.Time;
         var stepEnd = stepStart + deltaTime;
+
+        var start = context.EmitterStartTime(stepStart) ?? pattern.StartTime;
+        var rawEnd = context.EmitterEndTime(stepStart) ?? pattern.EndTime;
+        var end = rawEnd > 0 ? rawEnd : double.PositiveInfinity;
 
         if (nextShotTime < start) nextShotTime = start;
 
@@ -76,8 +77,9 @@ public sealed class PatternEmitterBehavior(EmitterSettings settings) : IEmitterB
         var physics = settings.Physics;
         var appearance = settings.Appearance;
 
-        var way = Math.Max(1, context.EmitterWay(fireTime) ?? pattern.Way);
-        var stack = Math.Max(1, context.EmitterStack(fireTime) ?? pattern.Stack);
+        var way = Math.Max(0, context.EmitterWay(fireTime) ?? pattern.Way);
+        var stack = Math.Max(0, context.EmitterStack(fireTime) ?? pattern.Stack);
+        if (way <= 0 || stack <= 0) return;
 
         var baseAngle = context.EmitterAngle(fireTime) ?? pattern.BaseAngle;
         if (pattern.AimAtTarget || pattern.Kind == PatternKind.Aimed)
@@ -107,36 +109,52 @@ public sealed class PatternEmitterBehavior(EmitterSettings settings) : IEmitterB
         var laserSpacing = context.EmitterLaserSpacing(fireTime) ?? pattern.LaserSpacing;
 
         var baseSpeed = context.EmitterSpeed(fireTime) ?? physics.Speed;
+        var speedJitter = context.EmitterSpeedJitter(fireTime) ?? physics.SpeedJitter;
+        var speedStep = context.EmitterSpeedStep(fireTime) ?? physics.SpeedStep;
         var acceleration = context.EmitterAcceleration(fireTime);
         var angularVelocity = context.EmitterAngularVelocity(fireTime) ?? physics.AngularVelocity;
+        var angVelJitter = context.EmitterAngularVelocityJitter(fireTime) ?? physics.AngularVelocityJitter;
         var damping = context.EmitterDamping(fireTime);
+        var minSpeed = context.EmitterMinSpeed(fireTime);
+        var maxSpeed = context.EmitterMaxSpeed(fireTime);
         var gravity = context.EmitterGravity(fireTime) ?? physics.Gravity;
         var wind = context.EmitterWind(fireTime) ?? physics.Wind;
         var lifetime = context.EmitterLifetime(fireTime) ?? 0;
+        var lifetimeJitter = context.EmitterLifetimeJitter(fireTime) ?? physics.LifetimeJitter;
         var homingTurnRate = context.EmitterHomingTurnRate(fireTime);
         var homingDuration = context.EmitterHomingDuration(fireTime);
         var homingDelay = context.EmitterHomingDelay(fireTime);
         var hitRadius = context.EmitterHitRadius(fireTime);
 
         var scale = context.EmitterScale(fireTime) ?? appearance.Scale;
+        var scaleJitter = context.EmitterScaleJitter(fireTime) ?? appearance.ScaleJitter;
+        var scaleVelocity = context.EmitterScaleVelocity(fireTime);
         var opacity = context.EmitterOpacity(fireTime);
         var rotationVelocity = context.EmitterRotationVelocity(fireTime) ?? appearance.RotationVelocity;
+        var hueVelocity = context.EmitterHueVelocity(fireTime) ?? appearance.HueVelocity;
+        var hueStep = context.EmitterHueStep(fireTime) ?? appearance.HueStep;
+        var fadeIn = context.EmitterFadeInDuration(fireTime);
+        var fadeOut = context.EmitterFadeOutDuration(fireTime);
+        var trailLength = context.EmitterTrailLength(fireTime);
+        var trailInterval = context.EmitterTrailInterval(fireTime);
 
         // 分裂の動的評価
         SplitSpec? split = settings.Split;
         var splitDelay = context.EmitterSplitDelay(fireTime) ?? settings.SplitDelay;
         if (split is not null)
         {
-            var splitCount = context.EmitterSplitCount(fireTime) ?? split.Count;
+            var splitCount = Math.Max(0, context.EmitterSplitCount(fireTime) ?? split.Count);
             var splitSpread = context.EmitterSplitSpread(fireTime) ?? split.SpreadDegrees;
             var splitSpeed = context.EmitterSplitSpeed(fireTime) ?? split.Speed;
             var splitScaleFactor = context.EmitterSplitScaleFactor(fireTime) ?? split.ScaleFactor;
+            var splitMaxGen = Math.Max(0, context.EmitterSplitMaxGeneration(fireTime) ?? split.MaxGeneration);
             split = split with
             {
                 Count = splitCount,
                 SpreadDegrees = splitSpread,
                 Speed = splitSpeed,
                 ScaleFactor = splitScaleFactor,
+                MaxGeneration = splitMaxGen,
             };
         }
 
@@ -155,7 +173,20 @@ public sealed class PatternEmitterBehavior(EmitterSettings settings) : IEmitterB
 
             for (var i = 0; i < way; i++)
             {
-                var request = BulletSpawnRequest.Create(physics, appearance);
+                var curPhysics = physics with
+                {
+                    SpeedJitter = speedJitter,
+                    AngularVelocityJitter = angVelJitter,
+                    LifetimeJitter = lifetimeJitter,
+                };
+                var curAppearance = appearance with
+                {
+                    ScaleJitter = scaleJitter,
+                    HueVelocity = hueVelocity,
+                    HueStep = hueStep,
+                };
+
+                var request = BulletSpawnRequest.Create(curPhysics, curAppearance);
                 request.EmitterIndex = context.EmitterIndex;
                 request.ShotIndex = shotIndex;
                 request.IndexInBurst = indexInBurst;
@@ -165,12 +196,17 @@ public sealed class PatternEmitterBehavior(EmitterSettings settings) : IEmitterB
 
                 var (direction, offset, extraSpeed) = ResolveBullet(context, pattern, way, i, stackAngle, spreadAngle, spawnRadius, wallWidth, laserSpacing, stackSpeedStep);
 
+                // 弾ごとの速度差 (SpeedStep)
+                var speedStepOffset = (i - (way - 1) / 2.0) * speedStep;
+
                 request.Direction = direction;
                 request.Position = context.Position + offset;
-                request.SpeedOverride = baseSpeed + stackSpeed + extraSpeed;
+                request.SpeedOverride = baseSpeed + stackSpeed + extraSpeed + speedStepOffset;
                 request.AngularVelocityOverride = angularVelocity;
                 request.AccelerationOverride = acceleration;
                 request.DampingOverride = damping;
+                request.MinSpeedOverride = minSpeed;
+                request.MaxSpeedOverride = maxSpeed;
                 request.GravityOverride = gravity;
                 request.WindOverride = wind;
                 request.LifetimeOverride = lifetime;
@@ -179,8 +215,13 @@ public sealed class PatternEmitterBehavior(EmitterSettings settings) : IEmitterB
                 request.HomingDelayOverride = homingDelay;
                 request.HitRadiusOverride = hitRadius;
                 request.ScaleOverride = scale;
+                request.ScaleVelocityOverride = scaleVelocity;
                 request.OpacityOverride = opacity;
                 request.RotationVelocityOverride = rotationVelocity;
+                request.FadeInDurationOverride = fadeIn;
+                request.FadeOutDurationOverride = fadeOut;
+                request.TrailLengthOverride = trailLength;
+                request.TrailIntervalOverride = trailInterval;
 
                 if (spawnRadius > 0 && pattern.Kind != PatternKind.Laser && pattern.Kind != PatternKind.Wall)
                     request.Position += Vec2.FromDegrees(direction, spawnRadius);
