@@ -59,6 +59,7 @@ public sealed class EmitterContext(DanmakuEngine engine, int emitterIndex)
 
     // ---- 発射パターン ----
     public double? EmitterAngle(double time) => Engine.Live.EmitterAngle?.Invoke(EmitterIndex, time);
+    public double? EmitterAimRate(double time) => Engine.Live.EmitterAimRate?.Invoke(EmitterIndex, time);
     public int? EmitterWay(double time) => Engine.Live.EmitterWay?.Invoke(EmitterIndex, time);
     public int? EmitterStack(double time) => Engine.Live.EmitterStack?.Invoke(EmitterIndex, time);
     public double? EmitterStackSpeedStep(double time) => Engine.Live.EmitterStackSpeedStep?.Invoke(EmitterIndex, time);

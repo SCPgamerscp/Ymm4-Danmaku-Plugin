@@ -50,6 +50,7 @@ public class EmitterParameter : Animatable
         SubscribeAnimatable(EndTime, nameof(EndTime));
         SubscribeAnimatable(SpawnRadius, nameof(SpawnRadius));
         SubscribeAnimatable(SpawnJitter, nameof(SpawnJitter));
+        SubscribeAnimatable(AimRate, nameof(AimRate));
         SubscribeAnimatable(WallWidth, nameof(WallWidth));
         SubscribeAnimatable(LaserSpacing, nameof(LaserSpacing));
         SubscribeAnimatable(WhipAmplitude, nameof(WhipAmplitude));
@@ -274,10 +275,16 @@ public class EmitterParameter : Animatable
     [AnimationSlider("F1", "px", 0, 200)]
     public Animation SpawnJitter { get; } = new Animation(0, 0, 100000);
 
-    [Display(GroupName = "パターン", Name = "自機狙い", Description = "基準角をターゲット方向に合わせます。")]
-    [ToggleSlider]
-    public bool AimAtTarget { get => aimAtTarget; set => Set(ref aimAtTarget, value); }
-    private bool aimAtTarget;
+    [Display(GroupName = "パターン", Name = "自機狙い度", Description = "ターゲット (自機) 方向へ向ける割合。0% で固定角、100% で完全自機狙い。")]
+    [AnimationSlider("F1", "%", 0, 100)]
+    public Animation AimRate { get; } = new Animation(0, 0, 100);
+
+    /// <summary>後方互換性用ヘルパー。</summary>
+    public bool AimAtTarget
+    {
+        get => AimRate.GetFirstValue() > 0;
+        set => AimRate.SetFirstValue(value ? 100 : 0);
+    }
 
     [Display(GroupName = "パターン", Name = "壁の横幅", Description = "「壁弾」で弾を並べる横幅。")]
     [AnimationSlider("F0", "px", 0, 3840)]
@@ -563,7 +570,7 @@ public class EmitterParameter : Animatable
             EndTime = EndTime.GetFirstValue(),
             SpawnRadius = SpawnRadius.GetFirstValue(),
             SpawnJitter = SpawnJitter.GetFirstValue(),
-            AimAtTarget = AimAtTarget,
+            AimRate = AimRate.GetFirstValue(),
             WallWidth = WallWidth.GetFirstValue(),
             LaserSpacing = LaserSpacing.GetFirstValue(),
             WhipAmplitude = WhipAmplitude.GetFirstValue(),
@@ -680,7 +687,7 @@ public class EmitterParameter : Animatable
         other.EndTime.CopyFrom(EndTime);
         other.SpawnRadius.CopyFrom(SpawnRadius);
         other.SpawnJitter.CopyFrom(SpawnJitter);
-        other.AimAtTarget = AimAtTarget;
+        other.AimRate.CopyFrom(AimRate);
         other.WallWidth.CopyFrom(WallWidth);
         other.LaserSpacing.CopyFrom(LaserSpacing);
         other.WhipAmplitude.CopyFrom(WhipAmplitude);
@@ -767,7 +774,7 @@ public class EmitterParameter : Animatable
         BurstCooldown.SetFirstValue(pattern.BurstCooldown);
         SpawnRadius.SetFirstValue(pattern.SpawnRadius);
         SpawnJitter.SetFirstValue(pattern.SpawnJitter);
-        AimAtTarget = pattern.AimAtTarget;
+        AimRate.SetFirstValue(pattern.AimRate > 0 ? pattern.AimRate : (pattern.AimAtTarget ? 100 : 0));
         WallWidth.SetFirstValue(pattern.WallWidth);
         LaserSpacing.SetFirstValue(pattern.LaserSpacing);
         WhipAmplitude.SetFirstValue(pattern.WhipAmplitude);
@@ -841,7 +848,7 @@ public class EmitterParameter : Animatable
         AngleJitter.SetFirstValue(0);
         SpawnRadius.SetFirstValue(0);
         SpawnJitter.SetFirstValue(0);
-        AimAtTarget = false;
+        AimRate.SetFirstValue(0);
         BurstCount.SetFirstValue(1);
         BurstInterval.SetFirstValue(0.02);
         BurstCooldown.SetFirstValue(0);
@@ -876,7 +883,7 @@ public class EmitterParameter : Animatable
             case PatternKind.Aimed:
                 Way.SetFirstValue(5);
                 SpreadAngle.SetFirstValue(34);
-                AimAtTarget = true;
+                AimRate.SetFirstValue(100);
                 BurstCount.SetFirstValue(3);
                 BurstInterval.SetFirstValue(0.09);
                 FireInterval.SetFirstValue(0.8);
@@ -946,7 +953,7 @@ public class EmitterParameter : Animatable
         ScriptSpeedScale, ScriptRank,
         Way, Stack, StackSpeedStep, StackAngleStep, BaseAngle, SpreadAngle, AngleStepPerShot, AngleJitter,
         FireInterval, BurstCount, BurstInterval, BurstCooldown, StartTime, EndTime, SpawnRadius, SpawnJitter,
-        WallWidth, LaserSpacing, WhipAmplitude, WhipPeriod,
+        AimRate, WallWidth, LaserSpacing, WhipAmplitude, WhipPeriod,
         Speed, SpeedJitter, SpeedStep, Acceleration, AngularVelocity, AngularVelocityJitter, Damping,
         MinSpeed, MaxSpeed, Gravity, Wind, Lifetime, LifetimeJitter,
         HomingTurnRate, HomingDuration, HomingDelay,

@@ -55,8 +55,15 @@ public sealed record PatternSettings
     /// <summary>発射位置のランダム幅 (±px)。</summary>
     public double SpawnJitter { get; init; }
 
-    /// <summary>ターゲット (自機) を狙うかどうか。Aimed 以外でも基準角に加算される。</summary>
-    public bool AimAtTarget { get; init; }
+    /// <summary>自機狙い度 (0%〜100%)。0 で固定角度、100 で完全自機狙い。</summary>
+    public double AimRate { get; init; }
+
+    /// <summary>ターゲット (自機) を狙うかどうか。AimRate が 0 より大きければ true。</summary>
+    public bool AimAtTarget
+    {
+        get => AimRate > 0;
+        init => AimRate = value ? 100.0 : 0.0;
+    }
 
     /// <summary>Wall パターンで使用する横幅 (px)。</summary>
     public double WallWidth { get; init; } = 1280;

@@ -82,8 +82,11 @@ public sealed class PatternEmitterBehavior(EmitterSettings settings) : IEmitterB
         if (way <= 0 || stack <= 0) return;
 
         var baseAngle = context.EmitterAngle(fireTime) ?? pattern.BaseAngle;
-        if (pattern.AimAtTarget || pattern.Kind == PatternKind.Aimed)
-            baseAngle = context.AngleToTarget() + baseAngle;
+        var defaultAimRate = pattern.Kind == PatternKind.Aimed ? 100.0 : pattern.AimRate;
+        var rawAimRate = context.EmitterAimRate(fireTime) ?? defaultAimRate;
+        var aimRate = DanmakuMath.Clamp(rawAimRate / 100.0, 0.0, 1.0);
+        if (aimRate > 0)
+            baseAngle += context.AngleToTarget() * aimRate;
 
         var angleStepPerShot = context.EmitterAngleStepPerShot(fireTime) ?? pattern.AngleStepPerShot;
         if (angleStepPerShot != 0)

@@ -14,6 +14,9 @@ public sealed class LiveValueSource
     // ---- エミッター位置・ターゲット位置 ----
     public Func<int, double, Vec2?>? EmitterPosition { get; set; }
     public Func<double, Vec2?>? TargetPosition { get; set; }
+    public Func<double, double?>? TargetScale { get; set; }
+    public Func<double, double?>? TargetRotation { get; set; }
+    public Func<double, double?>? TargetOpacity { get; set; }
 
     // ---- 公転 & シード ----
     public Func<int, double, double?>? EmitterOrbitRadius { get; set; }
@@ -27,6 +30,7 @@ public sealed class LiveValueSource
 
     // ---- 発射パターン ----
     public Func<int, double, double?>? EmitterAngle { get; set; }
+    public Func<int, double, double?>? EmitterAimRate { get; set; }
     public Func<int, double, int?>? EmitterWay { get; set; }
     public Func<int, double, int?>? EmitterStack { get; set; }
     public Func<int, double, double?>? EmitterStackSpeedStep { get; set; }
@@ -93,6 +97,9 @@ public sealed class LiveValueSource
     // ---- 全体設定 ----
     public Func<double, double?>? GlobalOpacity { get; set; }
     public Func<double, double?>? TimeScale { get; set; }
+    public Func<double, int?>? Seed { get; set; }
+    public Func<double, int?>? MaxBullets { get; set; }
+    public Func<double, int?>? Channel { get; set; }
     public Func<double, double?>? BoundsMargin { get; set; }
     public Func<double, double?>? TargetRadius { get; set; }
     public Func<double, int?>? HitEffectCount { get; set; }
@@ -103,6 +110,9 @@ public sealed class LiveValueSource
     public bool HasAny =>
         EmitterPosition is not null ||
         TargetPosition is not null ||
+        TargetScale is not null ||
+        TargetRotation is not null ||
+        TargetOpacity is not null ||
         EmitterOrbitRadius is not null ||
         EmitterOrbitSpeed is not null ||
         EmitterOrbitPhase is not null ||
@@ -110,6 +120,7 @@ public sealed class LiveValueSource
         EmitterScriptSpeedScale is not null ||
         EmitterScriptRank is not null ||
         EmitterAngle is not null ||
+        EmitterAimRate is not null ||
         EmitterWay is not null ||
         EmitterStack is not null ||
         EmitterStackSpeedStep is not null ||
@@ -168,6 +179,9 @@ public sealed class LiveValueSource
         EmitterSplitMaxGeneration is not null ||
         GlobalOpacity is not null ||
         TimeScale is not null ||
+        Seed is not null ||
+        MaxBullets is not null ||
+        Channel is not null ||
         BoundsMargin is not null ||
         TargetRadius is not null ||
         HitEffectCount is not null ||
@@ -179,6 +193,9 @@ public sealed class LiveValueSource
     {
         EmitterPosition = null;
         TargetPosition = null;
+        TargetScale = null;
+        TargetRotation = null;
+        TargetOpacity = null;
         EmitterOrbitRadius = null;
         EmitterOrbitSpeed = null;
         EmitterOrbitPhase = null;
@@ -186,6 +203,7 @@ public sealed class LiveValueSource
         EmitterScriptSpeedScale = null;
         EmitterScriptRank = null;
         EmitterAngle = null;
+        EmitterAimRate = null;
         EmitterWay = null;
         EmitterStack = null;
         EmitterStackSpeedStep = null;
@@ -244,6 +262,9 @@ public sealed class LiveValueSource
         EmitterSplitMaxGeneration = null;
         GlobalOpacity = null;
         TimeScale = null;
+        Seed = null;
+        MaxBullets = null;
+        Channel = null;
         BoundsMargin = null;
         TargetRadius = null;
         HitEffectCount = null;

@@ -62,7 +62,7 @@ public static class DanmakuChannelBus
             foreach (var entry in Entries)
             {
                 if (!entry.TryGetTarget(out var parameter)) continue;
-                if (parameter.Channel != channel) continue;
+                if ((int)Math.Round(parameter.Channel.GetFirstValue()) != channel) continue;
 
                 return parameter.ToSettings(parameter.LastCanvasWidth, parameter.LastCanvasHeight);
             }
@@ -78,7 +78,7 @@ public static class DanmakuChannelBus
         {
             Prune();
             return Entries
-                .Select(e => e.TryGetTarget(out var p) ? p.Channel : -1)
+                .Select(e => e.TryGetTarget(out var p) ? (int)Math.Round(p.Channel.GetFirstValue()) : -1)
                 .Where(c => c >= 0)
                 .Distinct()
                 .Order()

@@ -57,8 +57,11 @@ public static class SpriteSlots
     /// <summary>ユーザー指定画像を割り当てる先頭スロット番号。</summary>
     public const int CustomBase = 64;
 
+    /// <summary>自機 (ターゲット) のユーザー画像スロット番号。</summary>
+    public const int TargetCustomSlot = CustomBase + 16;
+
     /// <summary>スプライトスロットの総数。</summary>
-    public const int Capacity = CustomBase + 16;
+    public const int Capacity = CustomBase + 32;
 
     /// <summary>エミッター番号に対応するユーザー画像スロット番号を返す。</summary>
     public static int CustomSlotOf(int emitterIndex) => CustomBase + emitterIndex;

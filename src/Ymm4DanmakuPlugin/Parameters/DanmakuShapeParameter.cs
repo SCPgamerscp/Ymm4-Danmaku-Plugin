@@ -137,13 +137,9 @@ public class DanmakuShapeParameter : ShapeParameterBase
     [AnimationSlider("F1", "px", 0, 200)]
     public Animation SpawnJitter => MainEmitter.SpawnJitter;
 
-    [Display(GroupName = "発射パターン", Name = "自機狙い (ターゲット追尾)", Description = "ターゲット (自機) の方向へ向けて発射します。")]
-    [ToggleSlider]
-    public bool AimAtTarget
-    {
-        get => MainEmitter.AimAtTarget;
-        set => MainEmitter.AimAtTarget = value;
-    }
+    [Display(GroupName = "発射パターン", Name = "自機狙い度 (ターゲット追尾)", Description = "ターゲット (自機) 方向へ向ける割合。0% で固定角、100% で完全自機狙い。")]
+    [AnimationSlider("F1", "%", 0, 100)]
+    public Animation AimRate => MainEmitter.AimRate;
 
     [Display(GroupName = "発射パターン", Name = "壁の横幅")]
     [AnimationSlider("F0", "px", 0, 3840)]
@@ -446,7 +442,7 @@ public class DanmakuShapeParameter : ShapeParameterBase
     }
 
     // =====================================================================
-    // 当たり判定 (被弾シミュレーション)
+    // 当たり判定 (被弾シミュレーション & 自機設定)
     // =====================================================================
 
     [Display(GroupName = "当たり判定", Name = "当たり判定を有効化", Description = "ターゲット (自機) との被弾判定を行います。")]
@@ -454,15 +450,38 @@ public class DanmakuShapeParameter : ShapeParameterBase
     public bool CollisionEnabled { get => collisionEnabled; set => Set(ref collisionEnabled, value); }
     private bool collisionEnabled;
 
-    [Display(GroupName = "当たり判定", Name = "ターゲット X")]
+    [Display(GroupName = "当たり判定", Name = "ターゲット X", Description = "自機の X 座標。プレビュー画面でのドラッグやキーフレーム移動が可能です。")]
     [AnimationSlider("F1", "px", -1920, 1920)]
     public Animation TargetX { get; } = new Animation(0, -100000, 100000);
 
-    [Display(GroupName = "当たり判定", Name = "ターゲット Y")]
+    [Display(GroupName = "当たり判定", Name = "ターゲット Y", Description = "自機の Y 座標。プレビュー画面でのドラッグやキーフレーム移動が可能です。")]
     [AnimationSlider("F1", "px", -1080, 1080)]
     public Animation TargetY { get; } = new Animation(250, -100000, 100000);
 
-    [Display(GroupName = "当たり判定", Name = "ターゲット半径")]
+    [Display(GroupName = "当たり判定", Name = "自機画像", Description = "自機 (ターゲット) の位置に表示するキャラクターや機体の画像。")]
+    [FileSelector(YukkuriMovieMaker.Settings.FileGroupType.ImageItem)]
+    public string TargetImagePath
+    {
+        get => targetImagePath;
+        set => Set(ref targetImagePath, value ?? string.Empty);
+    }
+    private string targetImagePath = string.Empty;
+
+    public bool HasCustomTargetImage => !string.IsNullOrWhiteSpace(TargetImagePath);
+
+    [Display(GroupName = "当たり判定", Name = "自機画像サイズ", Description = "自機画像の拡大倍率。")]
+    [AnimationSlider("F2", "倍", 0, 10)]
+    public Animation TargetScale { get; } = new Animation(1.0, 0, 1000);
+
+    [Display(GroupName = "当たり判定", Name = "自機画像の回転", Description = "自機画像の回転角度。")]
+    [AnimationSlider("F1", "度", -360, 360)]
+    public Animation TargetRotation { get; } = new Animation(0, -100000, 100000);
+
+    [Display(GroupName = "当たり判定", Name = "自機画像の不透明度")]
+    [AnimationSlider("F2", "", 0, 1)]
+    public Animation TargetOpacity { get; } = new Animation(1.0, 0, 1);
+
+    [Display(GroupName = "当たり判定", Name = "ターゲット半径", Description = "自機の被弾判定半径 (喰らい判定)。0 で無敵になります。")]
     [AnimationSlider("F1", "px", 0, 200)]
     public Animation TargetRadius { get; } = new Animation(30, 0, 10000);
 
@@ -495,10 +514,10 @@ public class DanmakuShapeParameter : ShapeParameterBase
     [AnimationSlider("F2", "秒", 0, 2)]
     public Animation HitEffectLifetime { get; } = new Animation(0.35, 0, 1000);
 
-    [Display(GroupName = "当たり判定", Name = "ターゲットを表示", Description = "確認用にターゲット位置へ枠を描きます。書き出し時も描かれるので注意してください。")]
+    [Display(GroupName = "当たり判定", Name = "ターゲットを表示", Description = "自機画像や当たり判定枠 (喰らい判定) を描画します。")]
     [ToggleSlider]
     public bool ShowTargetMarker { get => showTargetMarker; set => Set(ref showTargetMarker, value); }
-    private bool showTargetMarker;
+    private bool showTargetMarker = true;
 
     // =====================================================================
     // 効果音
@@ -529,18 +548,12 @@ public class DanmakuShapeParameter : ShapeParameterBase
     // =====================================================================
 
     [Display(GroupName = "全体", Name = "乱数シード", Description = "同じシードなら常に同じ弾幕になります。値を変えると弾のばらけ方が変わります。")]
-    [TextBoxSlider("F0", "", 0, 100000)]
-    [DefaultValue(20240101)]
-    [Range(int.MinValue, int.MaxValue)]
-    public int Seed { get => seed; set => Set(ref seed, value); }
-    private int seed = 20240101;
+    [AnimationSlider("F0", "", 0, 100000)]
+    public Animation Seed { get; } = new Animation(20240101, 0, 10000000);
 
     [Display(GroupName = "全体", Name = "最大弾数", Description = "同時に存在できる弾の上限。大きくすると重くなります。")]
-    [TextBoxSlider("F0", "発", 0, 20000)]
-    [DefaultValue(4096)]
-    [Range(0, 200000)]
-    public int MaxBullets { get => maxBullets; set => Set(ref maxBullets, value); }
-    private int maxBullets = 4096;
+    [AnimationSlider("F0", "発", 0, 20000)]
+    public Animation MaxBullets { get; } = new Animation(4096, 0, 200000);
 
     [Display(GroupName = "全体", Name = "再生速度", Description = "弾幕全体の時間倍率。0 で完全静止 (時止め)、0.5 でスローモーションになります。")]
     [AnimationSlider("F2", "倍", 0, 3)]
@@ -566,11 +579,8 @@ public class DanmakuShapeParameter : ShapeParameterBase
 
     [Display(GroupName = "全体", Name = "効果音チャンネル",
         Description = "「弾幕効果音」音声エフェクト側で同じ番号を指定すると、この弾幕に合わせて効果音が鳴ります。")]
-    [TextBoxSlider("F0", "ch", 0, 15)]
-    [DefaultValue(0)]
-    [Range(0, 255)]
-    public int Channel { get => channel; set => Set(ref channel, value); }
-    private int channel;
+    [AnimationSlider("F0", "ch", 0, 15)]
+    public Animation Channel { get; } = new Animation(0, 0, 255);
 
     /// <summary>直近の描画で使われたキャンバスサイズ。</summary>
     public int LastCanvasWidth { get; internal set; } = 1920;
@@ -606,7 +616,7 @@ public class DanmakuShapeParameter : ShapeParameterBase
     private ImmutableList<EmitterParameter> emitters = [new EmitterParameter()];
 
     /// <summary>エミッターの上限。画像スロットの数 (<see cref="SpriteSlots"/>) と揃えている。</summary>
-    public const int MaxEmitters = SpriteSlots.Capacity - SpriteSlots.CustomBase;
+    public const int MaxEmitters = 16;
 
     public DanmakuShapeParameter() : this(null) { }
 
@@ -614,13 +624,19 @@ public class DanmakuShapeParameter : ShapeParameterBase
     {
         SubscribeAnimatable(TargetX, nameof(TargetX));
         SubscribeAnimatable(TargetY, nameof(TargetY));
+        SubscribeAnimatable(TargetScale, nameof(TargetScale));
+        SubscribeAnimatable(TargetRotation, nameof(TargetRotation));
+        SubscribeAnimatable(TargetOpacity, nameof(TargetOpacity));
         SubscribeAnimatable(TargetRadius, nameof(TargetRadius));
         SubscribeAnimatable(HitEffectCount, nameof(HitEffectCount));
         SubscribeAnimatable(HitEffectSpeed, nameof(HitEffectSpeed));
         SubscribeAnimatable(HitEffectLifetime, nameof(HitEffectLifetime));
+        SubscribeAnimatable(Seed, nameof(Seed));
+        SubscribeAnimatable(MaxBullets, nameof(MaxBullets));
         SubscribeAnimatable(TimeScale, nameof(TimeScale));
         SubscribeAnimatable(BoundsMargin, nameof(BoundsMargin));
         SubscribeAnimatable(GlobalOpacity, nameof(GlobalOpacity));
+        SubscribeAnimatable(Channel, nameof(Channel));
 
         SubscribeEmitters(emitters);
     }
@@ -710,8 +726,8 @@ public class DanmakuShapeParameter : ShapeParameterBase
             CanvasHeight = canvasHeight,
             BoundsMargin = BoundsMargin.GetFirstValue(),
             OutOfBounds = OutOfBounds,
-            Seed = Seed,
-            MaxBullets = MaxBullets,
+            Seed = Math.Max(0, (int)Math.Round(Seed.GetFirstValue())),
+            MaxBullets = Math.Max(0, (int)Math.Round(MaxBullets.GetFirstValue())),
             TimeScale = TimeScale.GetFirstValue(),
             FixedTimeStep = SimulationStep.ToSeconds(),
 
@@ -769,13 +785,19 @@ public class DanmakuShapeParameter : ShapeParameterBase
     {
         yield return TargetX;
         yield return TargetY;
+        yield return TargetScale;
+        yield return TargetRotation;
+        yield return TargetOpacity;
         yield return TargetRadius;
         yield return HitEffectCount;
         yield return HitEffectSpeed;
         yield return HitEffectLifetime;
+        yield return Seed;
+        yield return MaxBullets;
         yield return TimeScale;
         yield return BoundsMargin;
         yield return GlobalOpacity;
+        yield return Channel;
         foreach (var emitter in emitters)
         {
             yield return emitter;
@@ -793,18 +815,22 @@ public class DanmakuShapeParameter : ShapeParameterBase
     /// <summary>図形の種類を切り替える間だけ設定を保持するスナップショット。</summary>
     private sealed class SharedData
     {
-        private readonly int seed;
-        private readonly int maxBullets;
+        private readonly Animation seed = new(20240101, 0, 10000000);
+        private readonly Animation maxBullets = new(4096, 0, 200000);
         private readonly Animation timeScale = new(1.0, 0, 100);
         private readonly SimulationStep simulationStep;
         private readonly OutOfBoundsBehavior outOfBounds;
         private readonly Animation boundsMargin = new(160, 0, 100000);
         private readonly Animation globalOpacity = new(100, 0, 100);
-        private readonly int channel;
+        private readonly Animation channel = new(0, 0, 255);
 
         private readonly bool collisionEnabled;
         private readonly Animation targetX = new(0, -100000, 100000);
         private readonly Animation targetY = new(250, -100000, 100000);
+        private readonly string targetImagePath = string.Empty;
+        private readonly Animation targetScale = new(1.0, 0, 1000);
+        private readonly Animation targetRotation = new(0, -100000, 100000);
+        private readonly Animation targetOpacity = new(1.0, 0, 1);
         private readonly Animation targetRadius = new(30, 0, 10000);
         private readonly bool spawnHitEffect;
         private readonly Animation hitEffectCount = new(8, 0, 500);
@@ -821,18 +847,22 @@ public class DanmakuShapeParameter : ShapeParameterBase
 
         public SharedData(DanmakuShapeParameter source)
         {
-            seed = source.Seed;
-            maxBullets = source.MaxBullets;
+            seed.CopyFrom(source.Seed);
+            maxBullets.CopyFrom(source.MaxBullets);
             timeScale.CopyFrom(source.TimeScale);
             simulationStep = source.SimulationStep;
             outOfBounds = source.OutOfBounds;
             boundsMargin.CopyFrom(source.BoundsMargin);
             globalOpacity.CopyFrom(source.GlobalOpacity);
-            channel = source.Channel;
+            channel.CopyFrom(source.Channel);
 
             collisionEnabled = source.CollisionEnabled;
             targetX.CopyFrom(source.TargetX);
             targetY.CopyFrom(source.TargetY);
+            targetImagePath = source.TargetImagePath;
+            targetScale.CopyFrom(source.TargetScale);
+            targetRotation.CopyFrom(source.TargetRotation);
+            targetOpacity.CopyFrom(source.TargetOpacity);
             targetRadius.CopyFrom(source.TargetRadius);
             spawnHitEffect = source.SpawnHitEffect;
             hitEffectCount.CopyFrom(source.HitEffectCount);
@@ -857,18 +887,22 @@ public class DanmakuShapeParameter : ShapeParameterBase
 
         public void CopyTo(DanmakuShapeParameter target)
         {
-            target.Seed = seed;
-            target.MaxBullets = maxBullets;
+            target.Seed.CopyFrom(seed);
+            target.MaxBullets.CopyFrom(maxBullets);
             target.TimeScale.CopyFrom(timeScale);
             target.SimulationStep = simulationStep;
             target.OutOfBounds = outOfBounds;
             target.BoundsMargin.CopyFrom(boundsMargin);
             target.GlobalOpacity.CopyFrom(globalOpacity);
-            target.Channel = channel;
+            target.Channel.CopyFrom(channel);
 
             target.CollisionEnabled = collisionEnabled;
             target.TargetX.CopyFrom(targetX);
             target.TargetY.CopyFrom(targetY);
+            target.TargetImagePath = targetImagePath;
+            target.TargetScale.CopyFrom(targetScale);
+            target.TargetRotation.CopyFrom(targetRotation);
+            target.TargetOpacity.CopyFrom(targetOpacity);
             target.TargetRadius.CopyFrom(targetRadius);
             target.SpawnHitEffect = spawnHitEffect;
             target.HitEffectCount.CopyFrom(hitEffectCount);

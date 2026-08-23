@@ -4,35 +4,25 @@ using Vortice.Mathematics;
 using YukkuriMovieMaker.Commons;
 using Ymm4DanmakuPlugin.Core.Rendering;
 using Ymm4DanmakuPlugin.Interop;
+using Ymm4DanmakuPlugin.Parameters;
 
 namespace Ymm4DanmakuPlugin.Rendering;
 
+/// <summary>自機 (ターゲット) の描画情報。</summary>
+public readonly record struct TargetRenderInfo(
+    bool Enabled,
+    float X,
+    float Y,
+    float Scale,
+    float Rotation,
+    float Opacity,
+    float Radius,
+    bool ShowMarker,
+    bool HasCustomImage
+);
+
 /// <summary>
-/// 弾幕を Direct2D の <see cref="ID2D1CommandList"/> へ描画する。
-/// <para>
-/// <b>速度のための工夫</b>
-/// </para>
-/// <list type="bullet">
-/// <item>
-///   コアの <see cref="RenderBatchBuilder"/> が「同一スプライト・同一合成モード」で
-///   ソート済みの配列を渡してくるため、ブラシ / 合成モードの切り替え回数が最小になる。
-/// </item>
-/// <item>
-///   ブラシは 1 本だけ作って色だけ差し替える (弾ごとにブラシを作らない)。
-/// </item>
-/// <item>
-///   形状ジオメトリは <see cref="BulletSpriteLibrary"/> でキャッシュし、毎フレーム作らない。
-/// </item>
-/// <item>
-///   <see cref="ID2D1CommandList"/> はベクター命令の記録なので、
-///   結果をそのまま YMM4 側のエフェクトチェーンへ渡せる (中間ビットマップを作らない)。
-/// </item>
-/// </list>
-/// <para>
-/// <b>CommandList の作法 (重要)</b>: Target 設定 → BeginDraw → Clear → 描画 → EndDraw →
-/// <b>Target を null に戻す</b> → <b>Close()</b> の順を守る。
-/// Target を戻す前に Close するとデバイスロストの原因になる。
-/// </para>
+/// 弾幕および自機を Direct2D の <see cref="ID2D1CommandList"/> へ描画する。
 /// </summary>
 public sealed class DanmakuRenderer : IDisposable
 {
@@ -63,18 +53,12 @@ public sealed class DanmakuRenderer : IDisposable
     public int LastSpriteCount { get; private set; }
 
     /// <summary>
-    /// 弾幕を描画し、新しい <see cref="ID2D1CommandList"/> を返す。
-    /// <para>
-    /// 呼び出しごとに CommandList を作り直す (Close 済みの CommandList は再記録できない)。
-    /// 前回のものはここで破棄されるため、呼び出し側は保持し続けてはいけない。
-    /// </para>
+    /// 弾幕および自機を描画し、新しい <see cref="ID2D1CommandList"/> を返す。
     /// </summary>
-    /// <param name="builder">ソート済みの描画データ。</param>
-    /// <param name="glowIntensityProvider">
-    /// スプライト番号からグロー (発光) の強さを引く関数。
-    /// 1.0 より大きい場合、加算合成の弾を少し大きめに重ね描きして光の滲みを作る。
-    /// </param>
-    public ID2D1CommandList Render(RenderBatchBuilder builder, Func<int, double>? glowIntensityProvider = null)
+    public ID2D1CommandList Render(
+        RenderBatchBuilder builder,
+        Func<int, double>? glowIntensityProvider = null,
+        in TargetRenderInfo targetInfo = default)
     {
         var dc = devices.DeviceContext;
 
@@ -100,6 +84,10 @@ public sealed class DanmakuRenderer : IDisposable
             dc.Clear(null);
             dc.AntialiasMode = AntialiasMode.PerPrimitive;
 
+            // --- 自機 (ターゲット) の描画 (弾幕の下に描画) ---
+            DrawTarget(dc, in targetInfo);
+
+            // --- 弾幕のバッチ描画 ---
             var instances = builder.Instances;
 
             foreach (var batch in builder.Batches)
@@ -110,7 +98,7 @@ public sealed class DanmakuRenderer : IDisposable
                 dc.PrimitiveBlend = batch.Additive ? PrimitiveBlend.Add : PrimitiveBlend.SourceOver;
 
                 var glow = glowIntensityProvider?.Invoke(batch.SpriteIndex) ?? 1.0;
-                // 加算合成のときだけグローの重ね描きを行う (通常合成では単に濃くなるだけなので無意味)
+                // 加算合成のときだけグローの重ね描きを行う
                 var glowPasses = batch.Additive && glow > 1.01 ? 2 : 1;
 
                 var end = batch.Offset + batch.Count;
@@ -135,6 +123,65 @@ public sealed class DanmakuRenderer : IDisposable
         }
 
         return commandList;
+    }
+
+    private void DrawTarget(ID2D1DeviceContext6 dc, in TargetRenderInfo target)
+    {
+        if (!target.Enabled) return;
+
+        // 1. 自機カスタム画像の描画
+        if (target.HasCustomImage && target.Opacity > 0.001f && target.Scale > 0.001f)
+        {
+            var targetSprite = sprites.Get(SpriteSlots.TargetCustomSlot);
+            if (targetSprite?.Bitmap is { } targetBitmap)
+            {
+                dc.PrimitiveBlend = PrimitiveBlend.SourceOver;
+                var transform =
+                    Matrix3x2.CreateScale(targetSprite.BaseRadius * target.Scale) *
+                    Matrix3x2.CreateRotation(target.Rotation * MathF.PI / 180f) *
+                    Matrix3x2.CreateTranslation(target.X, target.Y);
+                dc.Transform = transform;
+
+                var size = targetBitmap.Size;
+                var half = MathF.Max(size.Width, size.Height) * 0.5f;
+                var w = size.Width / half * 0.5f;
+                var h = size.Height / half * 0.5f;
+                var dest = new Vortice.RawRectF(-w, -h, w, h);
+
+                dc.DrawBitmap(
+                    targetBitmap,
+                    dest,
+                    Math.Clamp(target.Opacity, 0f, 1f),
+                    InterpolationMode.Linear,
+                    null,
+                    null);
+
+                LastDrawCallCount++;
+                LastSpriteCount++;
+            }
+        }
+
+        // 2. 当たり判定マーカー (喰らい判定サークル) の描画
+        if (target.ShowMarker && target.Radius > 0.5f)
+        {
+            dc.PrimitiveBlend = PrimitiveBlend.SourceOver;
+            dc.Transform = Matrix3x2.CreateTranslation(target.X, target.Y);
+
+            // 外側の半透明赤塗り
+            brush!.Color = new Color4(1f, 0.2f, 0.3f, 0.35f);
+            dc.FillEllipse(new Ellipse(Vector2.Zero, target.Radius, target.Radius), brush);
+
+            // 白い輪郭線
+            brush.Color = new Color4(1f, 1f, 1f, 0.9f);
+            dc.DrawEllipse(new Ellipse(Vector2.Zero, target.Radius, target.Radius), brush, 1.5f);
+
+            // 中心の赤点
+            var dotRadius = MathF.Min(3f, target.Radius * 0.35f);
+            brush.Color = new Color4(1f, 0.1f, 0.2f, 1f);
+            dc.FillEllipse(new Ellipse(Vector2.Zero, dotRadius, dotRadius), brush);
+
+            LastDrawCallCount += 3;
+        }
     }
 
     private void DrawInstance(

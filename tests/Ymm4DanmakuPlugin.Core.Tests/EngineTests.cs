@@ -1627,4 +1627,57 @@ public class KeyframeLiveValueTests
         Assert.Equal(10.0, b.MinSpeed);
         Assert.Equal(500.0, b.MaxSpeed);
     }
+
+    [Fact]
+    public void AimRateの割合に応じて発射角度が自機方向にブレンドされる()
+    {
+        // エミッター位置 (0, 0), ターゲット位置 (100, 0) => AngleToTarget = 0度
+        // BaseAngle = 90度 (下向き)
+        var collision = new CollisionSettings { IsEnabled = true, TargetX = 100, TargetY = 0 };
+
+        // AimRate = 0% => 発射角度 = 90度
+        var emitter0 = TestFactory.Emitter(TestFactory.SingleShot(1) with { BaseAngle = 90, AimRate = 0 }) with { X = 0, Y = 0 };
+        var engine0 = TestFactory.Engine(TestFactory.Settings(emitter0, collision: collision));
+        engine0.Advance(0.05);
+        var b0 = Assert.Single(engine0.AliveBullets());
+        Assert.Equal(90.0, b0.Direction, 2);
+    }
+
+    [Fact]
+    public void AimRateによる角度合成テスト()
+    {
+        // エミッター位置 (0, 0), ターゲット位置 (0, 100) => AngleToTarget = 90度
+        // BaseAngle = 0度
+        var collision = new CollisionSettings { IsEnabled = true, TargetX = 0, TargetY = 100 };
+
+        // AimRate = 0% => 0度
+        var emitter0 = TestFactory.Emitter(TestFactory.SingleShot(1) with { BaseAngle = 0, AimRate = 0 }) with { X = 0, Y = 0 };
+        var engine0 = TestFactory.Engine(TestFactory.Settings(emitter0, collision: collision));
+        engine0.Advance(0.05);
+        Assert.Equal(0.0, Assert.Single(engine0.AliveBullets()).Direction, 2);
+
+        // AimRate = 100% => 0 + 90 * 1.0 = 90度
+        var emitter100 = TestFactory.Emitter(TestFactory.SingleShot(1) with { BaseAngle = 0, AimRate = 100 }) with { X = 0, Y = 0 };
+        var engine100 = TestFactory.Engine(TestFactory.Settings(emitter100, collision: collision));
+        engine100.Advance(0.05);
+        Assert.Equal(90.0, Assert.Single(engine100.AliveBullets()).Direction, 2);
+
+        // AimRate = 50% => 0 + 90 * 0.5 = 45度
+        var emitter50 = TestFactory.Emitter(TestFactory.SingleShot(1) with { BaseAngle = 0, AimRate = 50 }) with { X = 0, Y = 0 };
+        var engine50 = TestFactory.Engine(TestFactory.Settings(emitter50, collision: collision));
+        engine50.Advance(0.05);
+        Assert.Equal(45.0, Assert.Single(engine50.AliveBullets()).Direction, 2);
+    }
+
+    [Fact]
+    public void Live供給によるEmitterAimRateが正しく反映される()
+    {
+        var collision = new CollisionSettings { IsEnabled = true, TargetX = 0, TargetY = 100 }; // 90度
+        var emitter = TestFactory.Emitter(TestFactory.SingleShot(1) with { BaseAngle = 0, AimRate = 0 }) with { X = 0, Y = 0 };
+        var engine = TestFactory.Engine(TestFactory.Settings(emitter, collision: collision));
+
+        engine.Live.EmitterAimRate = (idx, t) => 100.0;
+        engine.Advance(0.05);
+        Assert.Equal(90.0, Assert.Single(engine.AliveBullets()).Direction, 2);
+    }
 }

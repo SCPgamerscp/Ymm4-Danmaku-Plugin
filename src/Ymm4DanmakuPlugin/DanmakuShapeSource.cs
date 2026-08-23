@@ -112,9 +112,28 @@ public sealed class DanmakuShapeSource : IShapeSource2
         lastCanvasHeight = canvasHeight;
         lastTotalFrame = totalFrame;
 
+        var targetX = (float)parameter.TargetX.GetValue(frame, totalFrame, fps);
+        var targetY = (float)parameter.TargetY.GetValue(frame, totalFrame, fps);
+        var targetScale = (float)parameter.TargetScale.GetValue(frame, totalFrame, fps);
+        var targetRotation = (float)parameter.TargetRotation.GetValue(frame, totalFrame, fps);
+        var targetOpacity = (float)parameter.TargetOpacity.GetValue(frame, totalFrame, fps);
+        var targetRadius = (float)parameter.TargetRadius.GetValue(frame, totalFrame, fps);
+
+        var targetInfo = new TargetRenderInfo(
+            Enabled: parameter.CollisionEnabled && (parameter.HasCustomTargetImage || parameter.ShowTargetMarker),
+            X: targetX,
+            Y: targetY,
+            Scale: targetScale,
+            Rotation: targetRotation,
+            Opacity: targetOpacity,
+            Radius: targetRadius,
+            ShowMarker: parameter.ShowTargetMarker,
+            HasCustomImage: parameter.HasCustomTargetImage
+        );
+
         var globalOpacity = Math.Clamp(parameter.GlobalOpacity.GetValue(frame, totalFrame, fps) / 100.0, 0.0, 1.0);
         batchBuilder.Build(simulator.Bullets, GetAppearance, globalOpacity);
-        output = renderer.Render(batchBuilder, parameter.GetGlowIntensity);
+        output = renderer.Render(batchBuilder, parameter.GetGlowIntensity, in targetInfo);
     }
 
     /// <summary>
@@ -209,6 +228,15 @@ public sealed class DanmakuShapeSource : IShapeSource2
             var emitter = emitters[index];
             var frame = TimeToFrame(timeSeconds, fps, totalFrame);
             return emitter.BaseAngle.GetValue(frame, totalFrame, fps);
+        };
+
+        sim.Live.EmitterAimRate = (index, timeSeconds) =>
+        {
+            if (index < 0 || index >= emitters.Count) return null;
+
+            var emitter = emitters[index];
+            var frame = TimeToFrame(timeSeconds, fps, totalFrame);
+            return emitter.AimRate.GetValue(frame, totalFrame, fps);
         };
 
         sim.Live.EmitterWay = (index, timeSeconds) =>
@@ -727,6 +755,24 @@ public sealed class DanmakuShapeSource : IShapeSource2
             return parameter.TimeScale.GetValue(frame, totalFrame, fps);
         };
 
+        sim.Live.Seed = timeSeconds =>
+        {
+            var frame = TimeToFrame(timeSeconds, fps, totalFrame);
+            return Math.Max(0, (int)Math.Round(parameter.Seed.GetValue(frame, totalFrame, fps)));
+        };
+
+        sim.Live.MaxBullets = timeSeconds =>
+        {
+            var frame = TimeToFrame(timeSeconds, fps, totalFrame);
+            return Math.Max(0, (int)Math.Round(parameter.MaxBullets.GetValue(frame, totalFrame, fps)));
+        };
+
+        sim.Live.Channel = timeSeconds =>
+        {
+            var frame = TimeToFrame(timeSeconds, fps, totalFrame);
+            return Math.Max(0, (int)Math.Round(parameter.Channel.GetValue(frame, totalFrame, fps)));
+        };
+
         sim.Live.BoundsMargin = timeSeconds =>
         {
             var frame = TimeToFrame(timeSeconds, fps, totalFrame);
@@ -737,6 +783,24 @@ public sealed class DanmakuShapeSource : IShapeSource2
         {
             var frame = TimeToFrame(timeSeconds, fps, totalFrame);
             return parameter.TargetRadius.GetValue(frame, totalFrame, fps);
+        };
+
+        sim.Live.TargetScale = timeSeconds =>
+        {
+            var frame = TimeToFrame(timeSeconds, fps, totalFrame);
+            return parameter.TargetScale.GetValue(frame, totalFrame, fps);
+        };
+
+        sim.Live.TargetRotation = timeSeconds =>
+        {
+            var frame = TimeToFrame(timeSeconds, fps, totalFrame);
+            return parameter.TargetRotation.GetValue(frame, totalFrame, fps);
+        };
+
+        sim.Live.TargetOpacity = timeSeconds =>
+        {
+            var frame = TimeToFrame(timeSeconds, fps, totalFrame);
+            return parameter.TargetOpacity.GetValue(frame, totalFrame, fps);
         };
 
         sim.Live.HitEffectCount = timeSeconds =>
@@ -776,7 +840,7 @@ public sealed class DanmakuShapeSource : IShapeSource2
         return settings.Emitters[emitterIndex].Appearance;
     }
 
-    /// <summary>各エミッターのユーザー指定画像をスプライトスロットへ読み込む。</summary>
+    /// <summary>各エミッターおよび自機 (ターゲット) のユーザー指定画像をスプライトスロットへ読み込む。</summary>
     private void LoadCustomImages()
     {
         var emitters = parameter.Emitters;
@@ -787,6 +851,11 @@ public sealed class DanmakuShapeSource : IShapeSource2
                 SpriteSlots.CustomSlotOf(i),
                 emitter.HasCustomImage ? emitter.ImagePath : null);
         }
+
+        // 自機 (ターゲット) の画像
+        renderer.Sprites.SetCustomImage(
+            SpriteSlots.TargetCustomSlot,
+            parameter.HasCustomTargetImage ? parameter.TargetImagePath : null);
     }
 
     /// <summary>
