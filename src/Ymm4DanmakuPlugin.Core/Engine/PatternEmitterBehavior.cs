@@ -82,19 +82,25 @@ public sealed class PatternEmitterBehavior(EmitterSettings settings) : IEmitterB
         if (way <= 0 || stack <= 0) return;
 
         var baseAngle = context.EmitterAngle(fireTime) ?? pattern.BaseAngle;
-        var defaultAimRate = pattern.Kind == PatternKind.Aimed ? 100.0 : pattern.AimRate;
+        var defaultAimRate = pattern.Kind == PatternKind.Aimed ? 100.0 : (pattern.AimRate != 0 ? pattern.AimRate : (pattern.AimAtTarget ? 100.0 : 0.0));
         var rawAimRate = context.EmitterAimRate(fireTime) ?? defaultAimRate;
-        var aimRate = DanmakuMath.Clamp(rawAimRate / 100.0, 0.0, 1.0);
+        var aimRate = DanmakuMath.Clamp(rawAimRate / 100.0, -1.0, 1.0);
         if (aimRate > 0)
+        {
             baseAngle += context.AngleToTarget() * aimRate;
+        }
+        else if (aimRate < 0)
+        {
+            baseAngle += (context.AngleToTarget() + 180.0) * (-aimRate);
+        }
 
         var angleStepPerShot = context.EmitterAngleStepPerShot(fireTime) ?? pattern.AngleStepPerShot;
         if (angleStepPerShot != 0)
             baseAngle += angleStepPerShot * shotIndex;
 
         var angleJitter = context.EmitterAngleJitter(fireTime) ?? pattern.AngleJitter;
-        if (angleJitter > 0)
-            baseAngle += context.Random.NextSymmetric(angleJitter);
+        if (angleJitter != 0)
+            baseAngle += context.Random.NextSymmetric(Math.Abs(angleJitter));
 
         if (pattern.Kind == PatternKind.Whip)
         {
@@ -226,14 +232,14 @@ public sealed class PatternEmitterBehavior(EmitterSettings settings) : IEmitterB
                 request.TrailLengthOverride = trailLength;
                 request.TrailIntervalOverride = trailInterval;
 
-                if (spawnRadius > 0 && pattern.Kind != PatternKind.Laser && pattern.Kind != PatternKind.Wall)
+                if (spawnRadius != 0 && pattern.Kind != PatternKind.Laser && pattern.Kind != PatternKind.Wall)
                     request.Position += Vec2.FromDegrees(direction, spawnRadius);
 
-                if (spawnJitter > 0)
+                if (spawnJitter != 0)
                 {
                     request.Position += new Vec2(
-                        context.Random.NextSymmetric(spawnJitter),
-                        context.Random.NextSymmetric(spawnJitter));
+                        context.Random.NextSymmetric(Math.Abs(spawnJitter)),
+                        context.Random.NextSymmetric(Math.Abs(spawnJitter)));
                 }
 
                 if (context.Spawn(in request) is not null)

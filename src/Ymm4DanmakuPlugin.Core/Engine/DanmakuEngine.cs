@@ -257,8 +257,17 @@ public sealed class DanmakuEngine
                 {
                     bullet.HomingTarget = TargetPosition;
                     var desired = (bullet.HomingTarget - bullet.Position).Degrees;
-                    bullet.Direction = DanmakuMath.MoveTowardsAngle(
-                        bullet.Direction, desired, bullet.HomingTurnRate * deltaTime);
+                    if (bullet.HomingTurnRate < 0)
+                    {
+                        desired = DanmakuMath.NormalizeAngle(desired + 180.0);
+                        bullet.Direction = DanmakuMath.MoveTowardsAngle(
+                            bullet.Direction, desired, -bullet.HomingTurnRate * deltaTime);
+                    }
+                    else
+                    {
+                        bullet.Direction = DanmakuMath.MoveTowardsAngle(
+                            bullet.Direction, desired, bullet.HomingTurnRate * deltaTime);
+                    }
                     bullet.HomingRemaining -= deltaTime;
                     if (bullet.HomingRemaining <= 0) bullet.HomingEnabled = false;
                 }
@@ -292,7 +301,7 @@ public sealed class DanmakuEngine
 
             // --- 見た目の更新 ---
             bullet.Age += deltaTime;
-            bullet.Scale = Math.Max(0, bullet.Scale + bullet.ScaleVelocity * deltaTime);
+            bullet.Scale += bullet.ScaleVelocity * deltaTime;
             bullet.Rotation += bullet.RotationVelocity * deltaTime;
 
             if (bullet.HueVelocity != 0)

@@ -71,12 +71,12 @@ public sealed record BulletPhysics
     public void Apply(Bullet bullet, DeterministicRandom random, int indexInBurst)
     {
         var speed = Speed + SpeedStep * indexInBurst;
-        if (SpeedJitter > 0) speed += random.NextSymmetric(SpeedJitter);
+        if (SpeedJitter != 0) speed += random.NextSymmetric(Math.Abs(SpeedJitter));
 
         bullet.Speed = speed;
         bullet.Acceleration = Acceleration;
         bullet.AngularVelocity = AngularVelocity +
-                                 (AngularVelocityJitter > 0 ? random.NextSymmetric(AngularVelocityJitter) : 0);
+                                 (AngularVelocityJitter != 0 ? random.NextSymmetric(Math.Abs(AngularVelocityJitter)) : 0);
         bullet.Damping = DanmakuMath.Clamp(Damping, 0.0, 1.0);
         bullet.MinSpeed = MinSpeed;
         bullet.MaxSpeed = MaxSpeed <= 0 ? double.PositiveInfinity : MaxSpeed;
@@ -89,7 +89,7 @@ public sealed record BulletPhysics
         }
         else
         {
-            if (LifetimeJitter > 0) lifetime += random.NextSymmetric(LifetimeJitter);
+            if (LifetimeJitter != 0) lifetime += random.NextSymmetric(Math.Abs(LifetimeJitter));
             bullet.Lifetime = Math.Max(0.05, lifetime);
         }
 

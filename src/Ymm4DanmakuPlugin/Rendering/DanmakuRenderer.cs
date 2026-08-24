@@ -168,19 +168,19 @@ public sealed class DanmakuRenderer : IDisposable
             var enemy = enemies[i];
 
             // 1. オーラ発光の描画
-            if (enemy.AuraEnabled && enemy.AuraIntensity > 0.01f)
+            if (enemy.AuraEnabled && MathF.Abs(enemy.AuraIntensity) > 0.01f)
             {
                 DrawAura(dc, in enemy);
             }
 
             // 2. 魔法陣の描画
-            if (enemy.MagicCircleEnabled && enemy.MagicCircleOpacity > 0.001f && enemy.MagicCircleScale > 0.001f)
+            if (enemy.MagicCircleEnabled && MathF.Abs(enemy.MagicCircleOpacity) > 0.001f && MathF.Abs(enemy.MagicCircleScale) > 0.001f)
             {
                 DrawMagicCircle(dc, in enemy);
             }
 
             // 3. 奥配置のエネミー画像
-            if (enemy.EnemyEnabled && enemy.EnemyBehindBullets && enemy.EnemyOpacity > 0.001f && enemy.EnemyScale > 0.001f)
+            if (enemy.EnemyEnabled && enemy.EnemyBehindBullets && MathF.Abs(enemy.EnemyOpacity) > 0.001f && MathF.Abs(enemy.EnemyScale) > 0.001f)
             {
                 DrawEnemyImage(dc, in enemy);
             }
@@ -192,7 +192,7 @@ public sealed class DanmakuRenderer : IDisposable
         for (var i = 0; i < enemies.Count; i++)
         {
             var enemy = enemies[i];
-            if (enemy.EnemyEnabled && !enemy.EnemyBehindBullets && enemy.EnemyOpacity > 0.001f && enemy.EnemyScale > 0.001f)
+            if (enemy.EnemyEnabled && !enemy.EnemyBehindBullets && MathF.Abs(enemy.EnemyOpacity) > 0.001f && MathF.Abs(enemy.EnemyScale) > 0.001f)
             {
                 DrawEnemyImage(dc, in enemy);
             }
@@ -202,7 +202,7 @@ public sealed class DanmakuRenderer : IDisposable
     private void DrawAura(ID2D1DeviceContext6 dc, in EnemyRenderInfo enemy)
     {
         dc.PrimitiveBlend = PrimitiveBlend.Add;
-        var radius = 70f * enemy.EnemyScale * enemy.AuraIntensity;
+        var radius = 70f * MathF.Abs(enemy.EnemyScale) * MathF.Abs(enemy.AuraIntensity);
         if (radius <= 0.1f) return;
 
         dc.Transform = Matrix3x2.CreateTranslation(enemy.X, enemy.Y);
@@ -233,7 +233,8 @@ public sealed class DanmakuRenderer : IDisposable
 
             var baseRadius = outerSprite?.BaseRadius ?? 100f;
             var totalRadius = baseRadius * enemy.MagicCircleScale;
-            if (totalRadius <= 0.1f) return;
+            var absTotalRadius = MathF.Abs(totalRadius);
+            if (absTotalRadius <= 0.1f) return;
 
             // 1. 中心の柔らかな光彩
             if (enemy.MagicCircleAdditive)
@@ -243,12 +244,12 @@ public sealed class DanmakuRenderer : IDisposable
                     enemy.MagicCircleColor.R,
                     enemy.MagicCircleColor.G,
                     enemy.MagicCircleColor.B,
-                    enemy.MagicCircleColor.A * enemy.MagicCircleOpacity * 0.18f);
-                dc.FillEllipse(new Ellipse(Vector2.Zero, totalRadius * 0.45f, totalRadius * 0.45f), brush);
+                    enemy.MagicCircleColor.A * MathF.Abs(enemy.MagicCircleOpacity) * 0.18f);
+                dc.FillEllipse(new Ellipse(Vector2.Zero, absTotalRadius * 0.45f, absTotalRadius * 0.45f), brush);
                 LastDrawCallCount++;
             }
 
-            var strokeWidth = 2.0f / MathF.Max(0.1f, totalRadius);
+            var strokeWidth = 2.0f / MathF.Max(0.1f, absTotalRadius);
 
             // 2. 外周幾何学魔法陣 (正回転)
             if (outerSprite?.Geometry is { } outerGeometry)
@@ -264,7 +265,7 @@ public sealed class DanmakuRenderer : IDisposable
                     enemy.MagicCircleColor.R,
                     enemy.MagicCircleColor.G,
                     enemy.MagicCircleColor.B,
-                    enemy.MagicCircleColor.A * enemy.MagicCircleOpacity);
+                    enemy.MagicCircleColor.A * MathF.Abs(enemy.MagicCircleOpacity));
                 dc.DrawGeometry(outerGeometry, brush, strokeWidth);
                 LastDrawCallCount++;
 
@@ -275,7 +276,7 @@ public sealed class DanmakuRenderer : IDisposable
                         enemy.MagicCircleColor.R,
                         enemy.MagicCircleColor.G,
                         enemy.MagicCircleColor.B,
-                        enemy.MagicCircleColor.A * enemy.MagicCircleOpacity * 0.35f);
+                        enemy.MagicCircleColor.A * MathF.Abs(enemy.MagicCircleOpacity) * 0.35f);
                     dc.DrawGeometry(outerGeometry, brush, strokeWidth * 2.8f);
                     LastDrawCallCount++;
                 }
@@ -295,7 +296,7 @@ public sealed class DanmakuRenderer : IDisposable
                     enemy.MagicCircleColor.R,
                     enemy.MagicCircleColor.G,
                     enemy.MagicCircleColor.B,
-                    enemy.MagicCircleColor.A * enemy.MagicCircleOpacity);
+                    enemy.MagicCircleColor.A * MathF.Abs(enemy.MagicCircleOpacity));
                 dc.DrawGeometry(innerGeometry, brush, strokeWidth);
                 LastDrawCallCount++;
 
@@ -306,7 +307,7 @@ public sealed class DanmakuRenderer : IDisposable
                         enemy.MagicCircleColor.R,
                         enemy.MagicCircleColor.G,
                         enemy.MagicCircleColor.B,
-                        enemy.MagicCircleColor.A * enemy.MagicCircleOpacity * 0.35f);
+                        enemy.MagicCircleColor.A * MathF.Abs(enemy.MagicCircleOpacity) * 0.35f);
                     dc.DrawGeometry(innerGeometry, brush, strokeWidth * 2.8f);
                     LastDrawCallCount++;
                 }
@@ -332,7 +333,7 @@ public sealed class DanmakuRenderer : IDisposable
                 dc.DrawBitmap(
                     bitmap,
                     dest,
-                    Math.Clamp(enemy.MagicCircleOpacity, 0f, 1f),
+                    Math.Clamp(MathF.Abs(enemy.MagicCircleOpacity), 0f, 1f),
                     InterpolationMode.Linear,
                     null,
                     null);
@@ -362,7 +363,7 @@ public sealed class DanmakuRenderer : IDisposable
         dc.DrawBitmap(
             bitmap,
             dest,
-            Math.Clamp(enemy.EnemyOpacity, 0f, 1f),
+            Math.Clamp(MathF.Abs(enemy.EnemyOpacity), 0f, 1f),
             InterpolationMode.Linear,
             null,
             null);
@@ -376,7 +377,7 @@ public sealed class DanmakuRenderer : IDisposable
         if (!target.Enabled) return;
 
         // 1. 自機カスタム画像の描画
-        if (target.HasCustomImage && target.Opacity > 0.001f && target.Scale > 0.001f)
+        if (target.HasCustomImage && MathF.Abs(target.Opacity) > 0.001f && MathF.Abs(target.Scale) > 0.001f)
         {
             var targetSprite = sprites.Get(SpriteSlots.TargetCustomSlot);
             if (targetSprite?.Bitmap is { } targetBitmap)
@@ -397,7 +398,7 @@ public sealed class DanmakuRenderer : IDisposable
                 dc.DrawBitmap(
                     targetBitmap,
                     dest,
-                    Math.Clamp(target.Opacity, 0f, 1f),
+                    Math.Clamp(MathF.Abs(target.Opacity), 0f, 1f),
                     InterpolationMode.Linear,
                     null,
                     null);
@@ -408,21 +409,22 @@ public sealed class DanmakuRenderer : IDisposable
         }
 
         // 2. 当たり判定マーカー (喰らい判定サークル) の描画
-        if (target.ShowMarker && target.Radius > 0.5f)
+        var targetRadius = MathF.Abs(target.Radius);
+        if (target.ShowMarker && targetRadius > 0.5f)
         {
             dc.PrimitiveBlend = PrimitiveBlend.SourceOver;
             dc.Transform = Matrix3x2.CreateTranslation(target.X, target.Y);
 
             // 外側の半透明赤塗り
             brush!.Color = new Color4(1f, 0.2f, 0.3f, 0.35f);
-            dc.FillEllipse(new Ellipse(Vector2.Zero, target.Radius, target.Radius), brush);
+            dc.FillEllipse(new Ellipse(Vector2.Zero, targetRadius, targetRadius), brush);
 
             // 白い輪郭線
             brush.Color = new Color4(1f, 1f, 1f, 0.9f);
-            dc.DrawEllipse(new Ellipse(Vector2.Zero, target.Radius, target.Radius), brush, 1.5f);
+            dc.DrawEllipse(new Ellipse(Vector2.Zero, targetRadius, targetRadius), brush, 1.5f);
 
             // 中心の赤点
-            var dotRadius = MathF.Min(3f, target.Radius * 0.35f);
+            var dotRadius = MathF.Min(3f, targetRadius * 0.35f);
             brush.Color = new Color4(1f, 0.1f, 0.2f, 1f);
             dc.FillEllipse(new Ellipse(Vector2.Zero, dotRadius, dotRadius), brush);
 
@@ -437,7 +439,7 @@ public sealed class DanmakuRenderer : IDisposable
         double glow,
         int glowPasses)
     {
-        if (instance.Scale <= 0f || instance.A <= 0.001f) return;
+        if (MathF.Abs(instance.Scale) <= 0.001f || instance.A <= 0.001f) return;
 
         for (var pass = 0; pass < glowPasses; pass++)
         {
@@ -448,7 +450,7 @@ public sealed class DanmakuRenderer : IDisposable
             if (alphaScale <= 0.001f) continue;
 
             var radius = sprite.BaseRadius * instance.Scale * scaleBoost;
-            if (radius <= 0.01f) continue;
+            if (MathF.Abs(radius) <= 0.01f) continue;
 
             var transform =
                 Matrix3x2.CreateScale(radius) *

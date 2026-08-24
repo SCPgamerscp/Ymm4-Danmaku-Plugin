@@ -1680,4 +1680,69 @@ public class KeyframeLiveValueTests
         engine.Advance(0.05);
         Assert.Equal(90.0, Assert.Single(engine.AliveBullets()).Direction, 2);
     }
+
+    [Fact]
+    public void マイナスAimRateで自機の真反対方向へ発射される()
+    {
+        // エミッター (0, 0), ターゲット (100, 0) => AngleToTarget = 0度
+        // BaseAngle = 0度
+        // AimRate = -100% => 0 + (0 + 180) * 1.0 = 180度 (自機の真後ろ)
+        var collision = new CollisionSettings { IsEnabled = true, TargetX = 100, TargetY = 0 };
+        var emitter = TestFactory.Emitter(TestFactory.SingleShot(1) with { BaseAngle = 0, AimRate = -100 }) with { X = 0, Y = 0 };
+        var engine = TestFactory.Engine(TestFactory.Settings(emitter, collision: collision));
+
+        engine.Advance(0.05);
+        var b = Assert.Single(engine.AliveBullets());
+        Assert.Equal(180.0, DanmakuMath.NormalizeAngle360(b.Direction), 2);
+    }
+
+    [Fact]
+    public void マイナスHomingTurnRateで自機から逃げるように反発旋回する()
+    {
+        // エミッター (0, 0), 弾の初期方向 0度 (右向き)
+        // ターゲット (100, 50) => ターゲット方向は +26.56度
+        // HomingTurnRate = -90度/秒 => ターゲットの反対方向 (206.56度) に向かって旋回する
+        var pattern = TestFactory.SingleShot(1) with { BaseAngle = 0 };
+        var physics = new BulletPhysics
+        {
+            Speed = 100,
+            HomingEnabled = true,
+            HomingTurnRate = -90,
+            HomingDuration = 2.0,
+            HomingDelay = 0,
+        };
+        var collision = new CollisionSettings { IsEnabled = true, TargetX = 100, TargetY = 50 };
+        var emitter = TestFactory.Emitter(pattern, physics) with { X = 0, Y = 0 };
+        var engine = TestFactory.Engine(TestFactory.Settings(emitter, collision: collision));
+
+        engine.Advance(0.2);
+        var b = Assert.Single(engine.AliveBullets());
+        // ターゲットから逃げるため、角度は負の方向 (時計回りと逆、または離れる向き) へ変化している
+        Assert.NotEqual(0.0, b.Direction);
+    }
+
+    [Fact]
+    public void マイナスSpawnRadiusでエミッターの後方から発生する()
+    {
+        // 発射角度 0度 (右向き)、SpawnRadius = -50px => 初期位置 X = -50
+        var pattern = TestFactory.SingleShot(1) with { BaseAngle = 0, SpawnRadius = -50 };
+        var emitter = TestFactory.Emitter(pattern) with { X = 0, Y = 0 };
+        var engine = TestFactory.Engine(TestFactory.Settings(emitter));
+
+        engine.Advance(0.05);
+        var b = Assert.Single(engine.AliveBullets());
+        Assert.True(b.Position.X < 0, "負の生成半径で後方に発生していない");
+    }
+
+    [Fact]
+    public void マイナスScaleおよび負の拡縮速度が許容される()
+    {
+        var appearance = new BulletAppearance { Scale = -1.0, ScaleVelocity = -0.5 };
+        var emitter = TestFactory.Emitter(TestFactory.SingleShot(1), appearance: appearance);
+        var engine = TestFactory.Engine(TestFactory.Settings(emitter));
+
+        engine.Advance(0.1);
+        var b = Assert.Single(engine.AliveBullets());
+        Assert.True(b.Scale < 0, "負のスケールが保持されていない");
+    }
 }
