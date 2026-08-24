@@ -134,7 +134,6 @@ public sealed class DanmakuShapeSource : IShapeSource2
             HasCustomImage: parameter.HasCustomTargetImage
         );
 
-        var timeSeconds = (double)frame / fps;
         var enemies = new List<EnemyRenderInfo>(parameter.Emitters.Count);
         for (var i = 0; i < parameter.Emitters.Count && i < DanmakuShapeParameter.MaxEmitters; i++)
         {
@@ -145,11 +144,11 @@ public sealed class DanmakuShapeSource : IShapeSource2
             var posX = (float)emitter.X.GetValue(frame, totalFrame, fps);
             var posY = (float)emitter.Y.GetValue(frame, totalFrame, fps);
             var orbitRadius = (float)emitter.OrbitRadius.GetValue(frame, totalFrame, fps);
-            if (orbitRadius > 0.001f)
+            if (MathF.Abs(orbitRadius) > 0.001f)
             {
                 var orbitSpeed = (float)emitter.OrbitSpeed.GetValue(frame, totalFrame, fps);
                 var orbitPhase = (float)emitter.OrbitPhase.GetValue(frame, totalFrame, fps);
-                var angleRad = (orbitPhase + orbitSpeed * (float)timeSeconds) * MathF.PI / 180f;
+                var angleRad = (orbitPhase + orbitSpeed * (float)simTime) * MathF.PI / 180f;
                 posX += orbitRadius * MathF.Cos(angleRad);
                 posY += orbitRadius * MathF.Sin(angleRad);
             }
@@ -160,7 +159,7 @@ public sealed class DanmakuShapeSource : IShapeSource2
 
             var mcScale = (float)emitter.MagicCircleScale.GetValue(frame, totalFrame, fps);
             var mcRotSpeed = (float)emitter.MagicCircleRotationSpeed.GetValue(frame, totalFrame, fps);
-            var mcAngle = mcRotSpeed * (float)timeSeconds;
+            var mcAngle = mcRotSpeed * (float)simTime;
             var mcOpacity = (float)emitter.MagicCircleOpacity.GetValue(frame, totalFrame, fps);
             var mcColor4 = ColorExtensions.ToColor4(emitter.MagicCircleColor);
 

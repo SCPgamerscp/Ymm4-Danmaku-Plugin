@@ -214,7 +214,7 @@ public sealed class DanmakuEngine
             var orbitRadius = Live.EmitterOrbitRadius?.Invoke(context.EmitterIndex, CurrentTime) ?? settings.OrbitRadius;
             var orbitSpeed = Live.EmitterOrbitSpeed?.Invoke(context.EmitterIndex, CurrentTime) ?? settings.OrbitSpeed;
             var orbitPhase = Live.EmitterOrbitPhase?.Invoke(context.EmitterIndex, CurrentTime) ?? settings.OrbitPhase;
-            if (orbitRadius > 0)
+            if (orbitRadius != 0)
             {
                 var angle = orbitPhase + orbitSpeed * CurrentTime;
                 position += Vec2.FromDegrees(angle, orbitRadius);

@@ -244,7 +244,9 @@ public sealed class DanmakuAudioEffectProcessor : AudioEffectProcessorBase
                 continue;
             }
 
-            var time = e.TimeSeconds + effect.TimeOffset;
+            var time = settings.TimeScale < 0
+                ? (duration.TotalSeconds - e.TimeSeconds / Math.Max(0.01, Math.Abs(settings.TimeScale))) + effect.TimeOffset
+                : (settings.TimeScale > 0 ? e.TimeSeconds / settings.TimeScale : e.TimeSeconds) + effect.TimeOffset;
             if (time < 0) continue;
             if (time > duration.TotalSeconds) continue;
 
