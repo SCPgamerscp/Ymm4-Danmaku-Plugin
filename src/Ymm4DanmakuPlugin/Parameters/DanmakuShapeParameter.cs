@@ -62,6 +62,106 @@ public class DanmakuShapeParameter : ShapeParameterBase
     }
 
     // =====================================================================
+    // エネミー (敵) & 魔法陣 & オーラ
+    // =====================================================================
+
+    [Display(GroupName = "エネミー (敵)", Name = "エネミー画像", Description = "発射位置 (エミッター) の中心に表示するキャラクターやボスの画像。")]
+    [FileSelector(FileGroupType.ImageItem)]
+    public string EnemyImagePath
+    {
+        get => MainEmitter.EnemyImagePath;
+        set => MainEmitter.EnemyImagePath = value;
+    }
+
+    public bool HasEnemyImage => MainEmitter.HasEnemyImage;
+
+    [Display(GroupName = "エネミー (敵)", Name = "画像サイズ", Description = "エネミー画像の拡大倍率。")]
+    [AnimationSlider("F2", "倍", 0, 10)]
+    public Animation EnemyScale => MainEmitter.EnemyScale;
+
+    [Display(GroupName = "エネミー (敵)", Name = "画像の回転", Description = "エネミー画像の回転角度。")]
+    [AnimationSlider("F1", "度", -360, 360)]
+    public Animation EnemyRotation => MainEmitter.EnemyRotation;
+
+    [Display(GroupName = "エネミー (敵)", Name = "不透明度")]
+    [AnimationSlider("F2", "", 0, 1)]
+    public Animation EnemyOpacity => MainEmitter.EnemyOpacity;
+
+    [Display(GroupName = "エネミー (敵)", Name = "弾の奥に描画", Description = "オンで弾幕の背後に配置、オフで弾幕の手前に配置します。")]
+    [ToggleSlider]
+    public bool EnemyBehindBullets
+    {
+        get => MainEmitter.EnemyBehindBullets;
+        set => MainEmitter.EnemyBehindBullets = value;
+    }
+
+    [Display(GroupName = "エネミー (敵)", Name = "魔法陣を有効化", Description = "ボスの背後に東方風の魔法陣を展開します。")]
+    [ToggleSlider]
+    public bool MagicCircleEnabled
+    {
+        get => MainEmitter.MagicCircleEnabled;
+        set => MainEmitter.MagicCircleEnabled = value;
+    }
+
+    [Display(GroupName = "エネミー (敵)", Name = "魔法陣画像", Description = "カスタム魔法陣画像。未指定時は組み込みの東方風幾何学魔法陣が描かれます。")]
+    [FileSelector(FileGroupType.ImageItem)]
+    public string MagicCircleImagePath
+    {
+        get => MainEmitter.MagicCircleImagePath;
+        set => MainEmitter.MagicCircleImagePath = value;
+    }
+
+    public bool HasCustomMagicCircleImage => MainEmitter.HasCustomMagicCircleImage;
+
+    [Display(GroupName = "エネミー (敵)", Name = "魔法陣サイズ")]
+    [AnimationSlider("F2", "倍", 0, 10)]
+    public Animation MagicCircleScale => MainEmitter.MagicCircleScale;
+
+    [Display(GroupName = "エネミー (敵)", Name = "魔法陣回転速度", Description = "1 秒あたりの回転角度。正で時計回り。")]
+    [AnimationSlider("F1", "度/秒", -720, 720)]
+    public Animation MagicCircleRotationSpeed => MainEmitter.MagicCircleRotationSpeed;
+
+    [Display(GroupName = "エネミー (敵)", Name = "魔法陣の色")]
+    [ColorPicker]
+    public Color MagicCircleColor
+    {
+        get => MainEmitter.MagicCircleColor;
+        set => MainEmitter.MagicCircleColor = value;
+    }
+
+    [Display(GroupName = "エネミー (敵)", Name = "魔法陣の不透明度")]
+    [AnimationSlider("F2", "", 0, 1)]
+    public Animation MagicCircleOpacity => MainEmitter.MagicCircleOpacity;
+
+    [Display(GroupName = "エネミー (敵)", Name = "魔法陣を加算合成")]
+    [ToggleSlider]
+    public bool MagicCircleAdditive
+    {
+        get => MainEmitter.MagicCircleAdditive;
+        set => MainEmitter.MagicCircleAdditive = value;
+    }
+
+    [Display(GroupName = "エネミー (敵)", Name = "オーラを有効化", Description = "ボスの周囲に発光オーラを纏わせます。")]
+    [ToggleSlider]
+    public bool AuraEnabled
+    {
+        get => MainEmitter.AuraEnabled;
+        set => MainEmitter.AuraEnabled = value;
+    }
+
+    [Display(GroupName = "エネミー (敵)", Name = "オーラ強度")]
+    [AnimationSlider("F2", "倍", 0, 5)]
+    public Animation AuraIntensity => MainEmitter.AuraIntensity;
+
+    [Display(GroupName = "エネミー (敵)", Name = "オーラの色")]
+    [ColorPicker]
+    public Color AuraColor
+    {
+        get => MainEmitter.AuraColor;
+        set => MainEmitter.AuraColor = value;
+    }
+
+    // =====================================================================
     // 発射パターン
     // =====================================================================
 

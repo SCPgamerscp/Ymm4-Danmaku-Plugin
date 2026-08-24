@@ -96,6 +96,14 @@ public class EmitterParameter : Animatable
         SubscribeAnimatable(SplitScaleFactor, nameof(SplitScaleFactor));
         SubscribeAnimatable(SplitMaxGeneration, nameof(SplitMaxGeneration));
 
+        SubscribeAnimatable(EnemyScale, nameof(EnemyScale));
+        SubscribeAnimatable(EnemyRotation, nameof(EnemyRotation));
+        SubscribeAnimatable(EnemyOpacity, nameof(EnemyOpacity));
+        SubscribeAnimatable(MagicCircleScale, nameof(MagicCircleScale));
+        SubscribeAnimatable(MagicCircleRotationSpeed, nameof(MagicCircleRotationSpeed));
+        SubscribeAnimatable(MagicCircleOpacity, nameof(MagicCircleOpacity));
+        SubscribeAnimatable(AuraIntensity, nameof(AuraIntensity));
+
         SubscribeAnimatable(HitRadius, nameof(HitRadius));
     }
 
@@ -513,6 +521,82 @@ public class EmitterParameter : Animatable
     public Animation SplitMaxGeneration { get; } = new Animation(1, 0, 10);
 
     // =====================================================================
+    // エネミー (敵) & 魔法陣 & オーラ
+    // =====================================================================
+
+    [Display(GroupName = "エネミー (敵)", Name = "エネミー画像", Description = "発射位置 (エミッター) の中心に表示するキャラクターやボスの画像。")]
+    [FileSelector(FileGroupType.ImageItem)]
+    public string EnemyImagePath { get => enemyImagePath; set => Set(ref enemyImagePath, value ?? string.Empty); }
+    private string enemyImagePath = string.Empty;
+
+    public bool HasEnemyImage => !string.IsNullOrWhiteSpace(EnemyImagePath);
+
+    [Display(GroupName = "エネミー (敵)", Name = "画像サイズ", Description = "エネミー画像の拡大倍率。")]
+    [AnimationSlider("F2", "倍", 0, 10)]
+    public Animation EnemyScale { get; } = new Animation(1.0, 0, 1000);
+
+    [Display(GroupName = "エネミー (敵)", Name = "画像の回転", Description = "エネミー画像の回転角度。")]
+    [AnimationSlider("F1", "度", -360, 360)]
+    public Animation EnemyRotation { get; } = new Animation(0, -100000, 100000);
+
+    [Display(GroupName = "エネミー (敵)", Name = "不透明度")]
+    [AnimationSlider("F2", "", 0, 1)]
+    public Animation EnemyOpacity { get; } = new Animation(1.0, 0, 1);
+
+    [Display(GroupName = "エネミー (敵)", Name = "弾の奥に描画", Description = "オンで弾幕の背後に配置、オフで弾幕の手前に配置します。")]
+    [ToggleSlider]
+    public bool EnemyBehindBullets { get => enemyBehindBullets; set => Set(ref enemyBehindBullets, value); }
+    private bool enemyBehindBullets = true;
+
+    [Display(GroupName = "エネミー (敵)", Name = "魔法陣を有効化", Description = "ボスの背後に東方風の魔法陣を展開します。")]
+    [ToggleSlider]
+    public bool MagicCircleEnabled { get => magicCircleEnabled; set => Set(ref magicCircleEnabled, value); }
+    private bool magicCircleEnabled;
+
+    [Display(GroupName = "エネミー (敵)", Name = "魔法陣画像", Description = "カスタム魔法陣画像。未指定時は組み込みの東方風幾何学魔法陣が描かれます。")]
+    [FileSelector(FileGroupType.ImageItem)]
+    public string MagicCircleImagePath { get => magicCircleImagePath; set => Set(ref magicCircleImagePath, value ?? string.Empty); }
+    private string magicCircleImagePath = string.Empty;
+
+    public bool HasCustomMagicCircleImage => !string.IsNullOrWhiteSpace(MagicCircleImagePath);
+
+    [Display(GroupName = "エネミー (敵)", Name = "魔法陣サイズ")]
+    [AnimationSlider("F2", "倍", 0, 10)]
+    public Animation MagicCircleScale { get; } = new Animation(1.5, 0, 1000);
+
+    [Display(GroupName = "エネミー (敵)", Name = "魔法陣回転速度", Description = "1 秒あたりの回転角度。正で時計回り。")]
+    [AnimationSlider("F1", "度/秒", -720, 720)]
+    public Animation MagicCircleRotationSpeed { get; } = new Animation(45, -100000, 100000);
+
+    [Display(GroupName = "エネミー (敵)", Name = "魔法陣の色")]
+    [ColorPicker]
+    public Color MagicCircleColor { get => magicCircleColor; set => Set(ref magicCircleColor, value); }
+    private Color magicCircleColor = Color.FromRgb(150, 220, 255);
+
+    [Display(GroupName = "エネミー (敵)", Name = "魔法陣の不透明度")]
+    [AnimationSlider("F2", "", 0, 1)]
+    public Animation MagicCircleOpacity { get; } = new Animation(0.8, 0, 1);
+
+    [Display(GroupName = "エネミー (敵)", Name = "魔法陣を加算合成")]
+    [ToggleSlider]
+    public bool MagicCircleAdditive { get => magicCircleAdditive; set => Set(ref magicCircleAdditive, value); }
+    private bool magicCircleAdditive = true;
+
+    [Display(GroupName = "エネミー (敵)", Name = "オーラを有効化", Description = "ボスの周囲に発光オーラを纏わせます。")]
+    [ToggleSlider]
+    public bool AuraEnabled { get => auraEnabled; set => Set(ref auraEnabled, value); }
+    private bool auraEnabled;
+
+    [Display(GroupName = "エネミー (敵)", Name = "オーラ強度")]
+    [AnimationSlider("F2", "倍", 0, 5)]
+    public Animation AuraIntensity { get; } = new Animation(1.5, 0, 100);
+
+    [Display(GroupName = "エネミー (敵)", Name = "オーラの色")]
+    [ColorPicker]
+    public Color AuraColor { get => auraColor; set => Set(ref auraColor, value); }
+    private Color auraColor = Color.FromRgb(180, 230, 255);
+
+    // =====================================================================
     // 当たり判定
     // =====================================================================
 
@@ -744,6 +828,22 @@ public class EmitterParameter : Animatable
         other.SplitDestroyParent = SplitDestroyParent;
         other.SplitMaxGeneration.CopyFrom(SplitMaxGeneration);
 
+        other.EnemyImagePath = EnemyImagePath;
+        other.EnemyScale.CopyFrom(EnemyScale);
+        other.EnemyRotation.CopyFrom(EnemyRotation);
+        other.EnemyOpacity.CopyFrom(EnemyOpacity);
+        other.EnemyBehindBullets = EnemyBehindBullets;
+        other.MagicCircleEnabled = MagicCircleEnabled;
+        other.MagicCircleImagePath = MagicCircleImagePath;
+        other.MagicCircleScale.CopyFrom(MagicCircleScale);
+        other.MagicCircleRotationSpeed.CopyFrom(MagicCircleRotationSpeed);
+        other.MagicCircleColor = MagicCircleColor;
+        other.MagicCircleOpacity.CopyFrom(MagicCircleOpacity);
+        other.MagicCircleAdditive = MagicCircleAdditive;
+        other.AuraEnabled = AuraEnabled;
+        other.AuraIntensity.CopyFrom(AuraIntensity);
+        other.AuraColor = AuraColor;
+
         other.HitRadius.CopyFrom(HitRadius);
         other.DestroyOnHit = DestroyOnHit;
     }
@@ -960,6 +1060,7 @@ public class EmitterParameter : Animatable
         Scale, ScaleJitter, ScaleVelocity, RotationVelocity, HueVelocity, HueStep, GlowIntensity, Opacity,
         FadeInDuration, FadeOutDuration, TrailLength, TrailInterval, TrailFade, TrailScale,
         SplitDelay, SplitCount, SplitSpread, SplitSpeed, SplitScaleFactor, SplitMaxGeneration,
+        EnemyScale, EnemyRotation, EnemyOpacity, MagicCircleScale, MagicCircleRotationSpeed, MagicCircleOpacity, AuraIntensity,
         HitRadius
     ];
 }

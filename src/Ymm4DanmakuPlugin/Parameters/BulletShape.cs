@@ -54,17 +54,32 @@ public static class SpriteSlots
     /// <summary>組み込み形状の数。</summary>
     public static readonly int BuiltInCount = Enum.GetValues<BulletShape>().Length;
 
-    /// <summary>ユーザー指定画像を割り当てる先頭スロット番号。</summary>
+    /// <summary>組み込みの魔法陣スロット番号。</summary>
+    public const int BuiltInMagicCircleSlot = 12;
+
+    /// <summary>ユーザー指定弾画像を割り当てる先頭スロット番号 (64〜79)。</summary>
     public const int CustomBase = 64;
 
-    /// <summary>自機 (ターゲット) のユーザー画像スロット番号。</summary>
-    public const int TargetCustomSlot = CustomBase + 16;
+    /// <summary>自機 (ターゲット) のユーザー画像スロット番号 (80)。</summary>
+    public const int TargetCustomSlot = 80;
+
+    /// <summary>エネミー (敵) のユーザー画像スロットの先頭 (81〜96)。</summary>
+    public const int EnemyCustomBase = 81;
+
+    /// <summary>カスタム魔法陣画像の先頭スロット (97〜112)。</summary>
+    public const int MagicCircleCustomBase = 97;
 
     /// <summary>スプライトスロットの総数。</summary>
-    public const int Capacity = CustomBase + 32;
+    public const int Capacity = 128;
 
-    /// <summary>エミッター番号に対応するユーザー画像スロット番号を返す。</summary>
+    /// <summary>エミッター番号に対応する弾画像スロット番号を返す。</summary>
     public static int CustomSlotOf(int emitterIndex) => CustomBase + emitterIndex;
+
+    /// <summary>エミッター番号に対応するエネミー画像スロット番号を返す。</summary>
+    public static int EnemyCustomSlotOf(int emitterIndex) => EnemyCustomBase + emitterIndex;
+
+    /// <summary>エミッター番号に対応する魔法陣画像スロット番号を返す。</summary>
+    public static int MagicCircleCustomSlotOf(int emitterIndex) => MagicCircleCustomBase + emitterIndex;
 
     /// <summary>ユーザー画像スロット番号に対応するエミッター番号を返す。</summary>
     public static int EmitterIndexOf(int slot) => slot - CustomBase;

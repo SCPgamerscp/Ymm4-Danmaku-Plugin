@@ -55,9 +55,14 @@ public sealed class BulletSpriteLibrary : IDisposable
     /// <summary>スロット番号に対応するスプライトを取得する。組み込み形状は初回アクセス時に生成する。</summary>
     public BulletSprite? Get(int slot)
     {
-        if (slot < 0 || slot >= sprites.Length) slot = 0;
-
         if (sprites[slot] is { } cached) return cached;
+
+        if (slot == SpriteSlots.BuiltInMagicCircleSlot)
+        {
+            var created = CreateBuiltInMagicCircle();
+            sprites[slot] = created;
+            return created;
+        }
 
         // 組み込み形状の範囲なら生成する。画像スロットは SetCustomImage 経由でのみ用意される。
         if (slot < SpriteSlots.BuiltInCount)
@@ -304,6 +309,83 @@ public sealed class BulletSpriteLibrary : IDisposable
             sink.Close();
         }
 
+        return Collect(geometry);
+    }
+
+    /// <summary>東方風の幾何学魔法陣スプライト (二重同心円・八芒星・ルーン目盛り・ダイヤ) を生成する。</summary>
+    private BulletSprite CreateBuiltInMagicCircle()
+    {
+        var f = GetFactory();
+        var geometries = new List<ID2D1Geometry>();
+
+        // 1. 同心円 (外周リング)
+        geometries.Add(f.CreateEllipseGeometry(new Ellipse(Vector2.Zero, 1f, 1f)));
+        geometries.Add(f.CreateEllipseGeometry(new Ellipse(Vector2.Zero, 0.88f, 0.88f)));
+
+        // 2. 中間リング & 内周リング
+        geometries.Add(f.CreateEllipseGeometry(new Ellipse(Vector2.Zero, 0.55f, 0.55f)));
+        geometries.Add(f.CreateEllipseGeometry(new Ellipse(Vector2.Zero, 0.25f, 0.25f)));
+
+        // 3. 八芒星 (2つの正方形)
+        var starVertices1 = new Vector2[5];
+        var starVertices2 = new Vector2[5];
+        for (var i = 0; i < 4; i++)
+        {
+            var angle1 = MathF.PI * 0.5f * i;
+            var angle2 = MathF.PI * 0.5f * i + MathF.PI * 0.25f;
+            starVertices1[i] = new Vector2(MathF.Cos(angle1) * 0.88f, MathF.Sin(angle1) * 0.88f);
+            starVertices2[i] = new Vector2(MathF.Cos(angle2) * 0.88f, MathF.Sin(angle2) * 0.88f);
+        }
+        starVertices1[4] = starVertices1[0];
+        starVertices2[4] = starVertices2[0];
+        geometries.Add(CreatePolyline(f, starVertices1));
+        geometries.Add(CreatePolyline(f, starVertices2));
+
+        // 4. 外周の放射状ルーン目盛り (16 本)
+        var tickPath = f.CreatePathGeometry();
+        using (var sink = tickPath.Open())
+        {
+            for (var i = 0; i < 16; i++)
+            {
+                var angle = MathF.PI * 2f * i / 16f;
+                var cos = MathF.Cos(angle);
+                var sin = MathF.Sin(angle);
+                sink.BeginFigure(new Vector2(cos * 0.88f, sin * 0.88f), FigureBegin.Hollow);
+                sink.AddLine(new Vector2(cos * 1.0f, sin * 1.0f));
+                sink.EndFigure(FigureEnd.Open);
+            }
+            sink.Close();
+        }
+        geometries.Add(tickPath);
+
+        // 5. 中心の四芒星 / ダイヤ
+        var diamondVertices = new Vector2[5];
+        for (var i = 0; i < 4; i++)
+        {
+            var angle = MathF.PI * 0.5f * i;
+            var r = (i % 2 == 0) ? 0.45f : 0.15f;
+            diamondVertices[i] = new Vector2(MathF.Cos(angle) * r, MathF.Sin(angle) * r);
+        }
+        diamondVertices[4] = diamondVertices[0];
+        geometries.Add(CreatePolyline(f, diamondVertices));
+
+        foreach (var g in geometries) disposer.Collect(g);
+
+        var group = Collect(f.CreateGeometryGroup(FillMode.Winding, geometries.ToArray()));
+        return new BulletSprite(group, null, 100f);
+    }
+
+    private ID2D1Geometry CreatePolyline(ID2D1Factory f, Vector2[] vertices)
+    {
+        var geometry = f.CreatePathGeometry();
+        using (var sink = geometry.Open())
+        {
+            sink.SetFillMode(FillMode.Winding);
+            sink.BeginFigure(vertices[0], FigureBegin.Hollow);
+            sink.AddLines(vertices[1..]);
+            sink.EndFigure(FigureEnd.Closed);
+            sink.Close();
+        }
         return Collect(geometry);
     }
 

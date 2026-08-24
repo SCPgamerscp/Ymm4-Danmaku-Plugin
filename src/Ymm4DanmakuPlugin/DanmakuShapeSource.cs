@@ -1,11 +1,13 @@
 using System.Numerics;
 using Vortice.Direct2D1;
+using Vortice.Mathematics;
 using YukkuriMovieMaker.Commons;
 using YukkuriMovieMaker.Player.Video;
 using Ymm4DanmakuPlugin.Core.Configuration;
 using Ymm4DanmakuPlugin.Core.Engine;
 using Ymm4DanmakuPlugin.Core.Mathematics;
 using Ymm4DanmakuPlugin.Core.Rendering;
+using Ymm4DanmakuPlugin.Interop;
 using Ymm4DanmakuPlugin.Parameters;
 using Ymm4DanmakuPlugin.Rendering;
 
@@ -131,9 +133,67 @@ public sealed class DanmakuShapeSource : IShapeSource2
             HasCustomImage: parameter.HasCustomTargetImage
         );
 
+        var timeSeconds = (double)frame / fps;
+        var enemies = new List<EnemyRenderInfo>(parameter.Emitters.Count);
+        for (var i = 0; i < parameter.Emitters.Count && i < DanmakuShapeParameter.MaxEmitters; i++)
+        {
+            var emitter = parameter.Emitters[i];
+            if (!emitter.IsEnabled) continue;
+
+            // エミッター位置 (X, Y および公転)
+            var posX = (float)emitter.X.GetValue(frame, totalFrame, fps);
+            var posY = (float)emitter.Y.GetValue(frame, totalFrame, fps);
+            var orbitRadius = (float)emitter.OrbitRadius.GetValue(frame, totalFrame, fps);
+            if (orbitRadius > 0.001f)
+            {
+                var orbitSpeed = (float)emitter.OrbitSpeed.GetValue(frame, totalFrame, fps);
+                var orbitPhase = (float)emitter.OrbitPhase.GetValue(frame, totalFrame, fps);
+                var angleRad = (orbitPhase + orbitSpeed * (float)timeSeconds) * MathF.PI / 180f;
+                posX += orbitRadius * MathF.Cos(angleRad);
+                posY += orbitRadius * MathF.Sin(angleRad);
+            }
+
+            var enemyScale = (float)emitter.EnemyScale.GetValue(frame, totalFrame, fps);
+            var enemyRotation = (float)emitter.EnemyRotation.GetValue(frame, totalFrame, fps);
+            var enemyOpacity = (float)emitter.EnemyOpacity.GetValue(frame, totalFrame, fps);
+
+            var mcScale = (float)emitter.MagicCircleScale.GetValue(frame, totalFrame, fps);
+            var mcRotSpeed = (float)emitter.MagicCircleRotationSpeed.GetValue(frame, totalFrame, fps);
+            var mcAngle = mcRotSpeed * (float)timeSeconds;
+            var mcOpacity = (float)emitter.MagicCircleOpacity.GetValue(frame, totalFrame, fps);
+            var mcColor = emitter.MagicCircleColor.ToBulletColor();
+            var mcColor4 = new Color4(mcColor.R / 255f, mcColor.G / 255f, mcColor.B / 255f, mcColor.A / 255f);
+
+            var auraIntensity = (float)emitter.AuraIntensity.GetValue(frame, totalFrame, fps);
+            var auraColor = emitter.AuraColor.ToBulletColor();
+            var auraColor4 = new Color4(auraColor.R / 255f, auraColor.G / 255f, auraColor.B / 255f, auraColor.A / 255f);
+
+            enemies.Add(new EnemyRenderInfo(
+                X: posX,
+                Y: posY,
+                EnemyEnabled: emitter.HasEnemyImage,
+                EnemySlot: SpriteSlots.EnemyCustomSlotOf(i),
+                EnemyScale: enemyScale,
+                EnemyRotation: enemyRotation,
+                EnemyOpacity: enemyOpacity,
+                EnemyBehindBullets: emitter.EnemyBehindBullets,
+                MagicCircleEnabled: emitter.MagicCircleEnabled,
+                MagicCircleSlot: SpriteSlots.MagicCircleCustomSlotOf(i),
+                MagicCircleScale: mcScale,
+                MagicCircleAngle: mcAngle,
+                MagicCircleColor: mcColor4,
+                MagicCircleOpacity: mcOpacity,
+                MagicCircleAdditive: emitter.MagicCircleAdditive,
+                IsBuiltInMagicCircle: !emitter.HasCustomMagicCircleImage,
+                AuraEnabled: emitter.AuraEnabled,
+                AuraIntensity: auraIntensity,
+                AuraColor: auraColor4
+            ));
+        }
+
         var globalOpacity = Math.Clamp(parameter.GlobalOpacity.GetValue(frame, totalFrame, fps) / 100.0, 0.0, 1.0);
         batchBuilder.Build(simulator.Bullets, GetAppearance, globalOpacity);
-        output = renderer.Render(batchBuilder, parameter.GetGlowIntensity, in targetInfo);
+        output = renderer.Render(batchBuilder, parameter.GetGlowIntensity, in targetInfo, enemies);
     }
 
     /// <summary>
@@ -840,16 +900,28 @@ public sealed class DanmakuShapeSource : IShapeSource2
         return settings.Emitters[emitterIndex].Appearance;
     }
 
-    /// <summary>各エミッターおよび自機 (ターゲット) のユーザー指定画像をスプライトスロットへ読み込む。</summary>
+    /// <summary>各エミッターの弾画像・エネミー画像・魔法陣画像および自機画像をスプライトスロットへ読み込む。</summary>
     private void LoadCustomImages()
     {
         var emitters = parameter.Emitters;
         for (var i = 0; i < emitters.Count && i < DanmakuShapeParameter.MaxEmitters; i++)
         {
             var emitter = emitters[i];
+
+            // 弾画像
             renderer.Sprites.SetCustomImage(
                 SpriteSlots.CustomSlotOf(i),
                 emitter.HasCustomImage ? emitter.ImagePath : null);
+
+            // エネミー画像
+            renderer.Sprites.SetCustomImage(
+                SpriteSlots.EnemyCustomSlotOf(i),
+                emitter.HasEnemyImage ? emitter.EnemyImagePath : null);
+
+            // カスタム魔法陣画像
+            renderer.Sprites.SetCustomImage(
+                SpriteSlots.MagicCircleCustomSlotOf(i),
+                emitter.HasCustomMagicCircleImage ? emitter.MagicCircleImagePath : null);
         }
 
         // 自機 (ターゲット) の画像

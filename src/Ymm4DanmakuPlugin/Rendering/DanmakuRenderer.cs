@@ -21,8 +21,31 @@ public readonly record struct TargetRenderInfo(
     bool HasCustomImage
 );
 
+/// <summary>エネミー (敵・ボス) および魔法陣・オーラの描画情報。</summary>
+public readonly record struct EnemyRenderInfo(
+    float X,
+    float Y,
+    bool EnemyEnabled,
+    int EnemySlot,
+    float EnemyScale,
+    float EnemyRotation,
+    float EnemyOpacity,
+    bool EnemyBehindBullets,
+    bool MagicCircleEnabled,
+    int MagicCircleSlot,
+    float MagicCircleScale,
+    float MagicCircleAngle,
+    Color4 MagicCircleColor,
+    float MagicCircleOpacity,
+    bool MagicCircleAdditive,
+    bool IsBuiltInMagicCircle,
+    bool AuraEnabled,
+    float AuraIntensity,
+    Color4 AuraColor
+);
+
 /// <summary>
-/// 弾幕および自機を Direct2D の <see cref="ID2D1CommandList"/> へ描画する。
+/// 弾幕・自機・エネミー・魔法陣・オーラを Direct2D の <see cref="ID2D1CommandList"/> へ描画する。
 /// </summary>
 public sealed class DanmakuRenderer : IDisposable
 {
@@ -53,12 +76,13 @@ public sealed class DanmakuRenderer : IDisposable
     public int LastSpriteCount { get; private set; }
 
     /// <summary>
-    /// 弾幕および自機を描画し、新しい <see cref="ID2D1CommandList"/> を返す。
+    /// 弾幕・自機・エネミーを描画し、新しい <see cref="ID2D1CommandList"/> を返す。
     /// </summary>
     public ID2D1CommandList Render(
         RenderBatchBuilder builder,
         Func<int, double>? glowIntensityProvider = null,
-        in TargetRenderInfo targetInfo = default)
+        in TargetRenderInfo targetInfo = default,
+        IReadOnlyList<EnemyRenderInfo>? enemies = null)
     {
         var dc = devices.DeviceContext;
 
@@ -84,10 +108,16 @@ public sealed class DanmakuRenderer : IDisposable
             dc.Clear(null);
             dc.AntialiasMode = AntialiasMode.PerPrimitive;
 
-            // --- 自機 (ターゲット) の描画 (弾幕の下に描画) ---
+            // --- レイヤー 1: 弾の奥に描画する要素 (オーラ、魔法陣、奥配置のエネミー) ---
+            if (enemies is not null)
+            {
+                DrawEnemyBackgroundLayer(dc, enemies);
+            }
+
+            // --- レイヤー 2: 自機 (ターゲット) の描画 ---
             DrawTarget(dc, in targetInfo);
 
-            // --- 弾幕のバッチ描画 ---
+            // --- レイヤー 3: 弾幕のバッチ描画 ---
             var instances = builder.Instances;
 
             foreach (var batch in builder.Batches)
@@ -109,6 +139,12 @@ public sealed class DanmakuRenderer : IDisposable
                     LastSpriteCount++;
                 }
             }
+
+            // --- レイヤー 4: 弾の手前に描画するエネミー ---
+            if (enemies is not null)
+            {
+                DrawEnemyForegroundLayer(dc, enemies);
+            }
         }
         finally
         {
@@ -123,6 +159,164 @@ public sealed class DanmakuRenderer : IDisposable
         }
 
         return commandList;
+    }
+
+    private void DrawEnemyBackgroundLayer(ID2D1DeviceContext6 dc, IReadOnlyList<EnemyRenderInfo> enemies)
+    {
+        for (var i = 0; i < enemies.Count; i++)
+        {
+            var enemy = enemies[i];
+
+            // 1. オーラ発光の描画
+            if (enemy.AuraEnabled && enemy.AuraIntensity > 0.01f)
+            {
+                DrawAura(dc, in enemy);
+            }
+
+            // 2. 魔法陣の描画
+            if (enemy.MagicCircleEnabled && enemy.MagicCircleOpacity > 0.001f && enemy.MagicCircleScale > 0.001f)
+            {
+                DrawMagicCircle(dc, in enemy);
+            }
+
+            // 3. 奥配置のエネミー画像
+            if (enemy.EnemyEnabled && enemy.EnemyBehindBullets && enemy.EnemyOpacity > 0.001f && enemy.EnemyScale > 0.001f)
+            {
+                DrawEnemyImage(dc, in enemy);
+            }
+        }
+    }
+
+    private void DrawEnemyForegroundLayer(ID2D1DeviceContext6 dc, IReadOnlyList<EnemyRenderInfo> enemies)
+    {
+        for (var i = 0; i < enemies.Count; i++)
+        {
+            var enemy = enemies[i];
+            if (enemy.EnemyEnabled && !enemy.EnemyBehindBullets && enemy.EnemyOpacity > 0.001f && enemy.EnemyScale > 0.001f)
+            {
+                DrawEnemyImage(dc, in enemy);
+            }
+        }
+    }
+
+    private void DrawAura(ID2D1DeviceContext6 dc, in EnemyRenderInfo enemy)
+    {
+        dc.PrimitiveBlend = PrimitiveBlend.Add;
+        var radius = 70f * enemy.EnemyScale * enemy.AuraIntensity;
+        if (radius <= 0.1f) return;
+
+        dc.Transform = Matrix3x2.CreateTranslation(enemy.X, enemy.Y);
+
+        // 外側の淡いオーラ
+        brush!.Color = new Color4(enemy.AuraColor.R, enemy.AuraColor.G, enemy.AuraColor.B, enemy.AuraColor.A * 0.18f);
+        dc.FillEllipse(new Ellipse(Vector2.Zero, radius * 1.3f, radius * 1.3f), brush);
+
+        // 中間のオーラ
+        brush.Color = new Color4(enemy.AuraColor.R, enemy.AuraColor.G, enemy.AuraColor.B, enemy.AuraColor.A * 0.35f);
+        dc.FillEllipse(new Ellipse(Vector2.Zero, radius, radius), brush);
+
+        // 内側の濃いオーラ
+        brush.Color = new Color4(1f, 1f, 1f, enemy.AuraColor.A * 0.45f);
+        dc.FillEllipse(new Ellipse(Vector2.Zero, radius * 0.6f, radius * 0.6f), brush);
+
+        LastDrawCallCount += 3;
+    }
+
+    private void DrawMagicCircle(ID2D1DeviceContext6 dc, in EnemyRenderInfo enemy)
+    {
+        dc.PrimitiveBlend = enemy.MagicCircleAdditive ? PrimitiveBlend.Add : PrimitiveBlend.SourceOver;
+
+        if (enemy.IsBuiltInMagicCircle)
+        {
+            var sprite = sprites.Get(SpriteSlots.BuiltInMagicCircleSlot);
+            if (sprite?.Geometry is { } geometry)
+            {
+                var transform =
+                    Matrix3x2.CreateScale(sprite.BaseRadius * enemy.MagicCircleScale) *
+                    Matrix3x2.CreateRotation(enemy.MagicCircleAngle * MathF.PI / 180f) *
+                    Matrix3x2.CreateTranslation(enemy.X, enemy.Y);
+                dc.Transform = transform;
+
+                // 本体のシャープなライン
+                var strokeWidth = 1.6f / MathF.Max(0.1f, sprite.BaseRadius * enemy.MagicCircleScale);
+                brush!.Color = new Color4(
+                    enemy.MagicCircleColor.R,
+                    enemy.MagicCircleColor.G,
+                    enemy.MagicCircleColor.B,
+                    enemy.MagicCircleColor.A * enemy.MagicCircleOpacity);
+                dc.DrawGeometry(geometry, brush, strokeWidth);
+                LastDrawCallCount++;
+
+                // 加算合成時のブルーム発光パス
+                if (enemy.MagicCircleAdditive)
+                {
+                    brush.Color = new Color4(
+                        enemy.MagicCircleColor.R,
+                        enemy.MagicCircleColor.G,
+                        enemy.MagicCircleColor.B,
+                        enemy.MagicCircleColor.A * enemy.MagicCircleOpacity * 0.4f);
+                    dc.DrawGeometry(geometry, brush, strokeWidth * 2.5f);
+                    LastDrawCallCount++;
+                }
+            }
+        }
+        else
+        {
+            var sprite = sprites.Get(enemy.MagicCircleSlot);
+            if (sprite?.Bitmap is { } bitmap)
+            {
+                var transform =
+                    Matrix3x2.CreateScale(sprite.BaseRadius * enemy.MagicCircleScale) *
+                    Matrix3x2.CreateRotation(enemy.MagicCircleAngle * MathF.PI / 180f) *
+                    Matrix3x2.CreateTranslation(enemy.X, enemy.Y);
+                dc.Transform = transform;
+
+                var size = bitmap.Size;
+                var half = MathF.Max(size.Width, size.Height) * 0.5f;
+                var w = size.Width / half * 0.5f;
+                var h = size.Height / half * 0.5f;
+                var dest = new Vortice.RawRectF(-w, -h, w, h);
+
+                dc.DrawBitmap(
+                    bitmap,
+                    dest,
+                    Math.Clamp(enemy.MagicCircleOpacity, 0f, 1f),
+                    InterpolationMode.Linear,
+                    null,
+                    null);
+                LastDrawCallCount++;
+            }
+        }
+    }
+
+    private void DrawEnemyImage(ID2D1DeviceContext6 dc, in EnemyRenderInfo enemy)
+    {
+        var sprite = sprites.Get(enemy.EnemySlot);
+        if (sprite?.Bitmap is not { } bitmap) return;
+
+        dc.PrimitiveBlend = PrimitiveBlend.SourceOver;
+        var transform =
+            Matrix3x2.CreateScale(sprite.BaseRadius * enemy.EnemyScale) *
+            Matrix3x2.CreateRotation(enemy.EnemyRotation * MathF.PI / 180f) *
+            Matrix3x2.CreateTranslation(enemy.X, enemy.Y);
+        dc.Transform = transform;
+
+        var size = bitmap.Size;
+        var half = MathF.Max(size.Width, size.Height) * 0.5f;
+        var w = size.Width / half * 0.5f;
+        var h = size.Height / half * 0.5f;
+        var dest = new Vortice.RawRectF(-w, -h, w, h);
+
+        dc.DrawBitmap(
+            bitmap,
+            dest,
+            Math.Clamp(enemy.EnemyOpacity, 0f, 1f),
+            InterpolationMode.Linear,
+            null,
+            null);
+
+        LastDrawCallCount++;
+        LastSpriteCount++;
     }
 
     private void DrawTarget(ID2D1DeviceContext6 dc, in TargetRenderInfo target)
