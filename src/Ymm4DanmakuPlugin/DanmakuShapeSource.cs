@@ -161,12 +161,10 @@ public sealed class DanmakuShapeSource : IShapeSource2
             var mcRotSpeed = (float)emitter.MagicCircleRotationSpeed.GetValue(frame, totalFrame, fps);
             var mcAngle = mcRotSpeed * (float)timeSeconds;
             var mcOpacity = (float)emitter.MagicCircleOpacity.GetValue(frame, totalFrame, fps);
-            var mcColor = emitter.MagicCircleColor.ToBulletColor();
-            var mcColor4 = new Color4(mcColor.R / 255f, mcColor.G / 255f, mcColor.B / 255f, mcColor.A / 255f);
+            var mcColor4 = ColorExtensions.ToColor4(emitter.MagicCircleColor);
 
             var auraIntensity = (float)emitter.AuraIntensity.GetValue(frame, totalFrame, fps);
-            var auraColor = emitter.AuraColor.ToBulletColor();
-            var auraColor4 = new Color4(auraColor.R / 255f, auraColor.G / 255f, auraColor.B / 255f, auraColor.A / 255f);
+            var auraColor4 = ColorExtensions.ToColor4(emitter.AuraColor);
 
             enemies.Add(new EnemyRenderInfo(
                 X: posX,

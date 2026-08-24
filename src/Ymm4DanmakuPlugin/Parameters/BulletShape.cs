@@ -54,8 +54,14 @@ public static class SpriteSlots
     /// <summary>組み込み形状の数。</summary>
     public static readonly int BuiltInCount = Enum.GetValues<BulletShape>().Length;
 
-    /// <summary>組み込みの魔法陣スロット番号。</summary>
-    public const int BuiltInMagicCircleSlot = 12;
+    /// <summary>組み込み魔法陣の外周スロット番号 (二重外周円・八芒星・ルーン)。</summary>
+    public const int BuiltInMagicCircleOuterSlot = 12;
+
+    /// <summary>組み込み魔法陣の内周スロット番号 (二重内周円・六芒星・コアダイヤ、逆回転用)。</summary>
+    public const int BuiltInMagicCircleInnerSlot = 13;
+
+    /// <summary>後方互換用エイリアス。</summary>
+    public const int BuiltInMagicCircleSlot = BuiltInMagicCircleOuterSlot;
 
     /// <summary>ユーザー指定弾画像を割り当てる先頭スロット番号 (64〜79)。</summary>
     public const int CustomBase = 64;

@@ -228,23 +228,44 @@ public sealed class DanmakuRenderer : IDisposable
 
         if (enemy.IsBuiltInMagicCircle)
         {
-            var sprite = sprites.Get(SpriteSlots.BuiltInMagicCircleSlot);
-            if (sprite?.Geometry is { } geometry)
+            var outerSprite = sprites.Get(SpriteSlots.BuiltInMagicCircleOuterSlot);
+            var innerSprite = sprites.Get(SpriteSlots.BuiltInMagicCircleInnerSlot);
+
+            var baseRadius = outerSprite?.BaseRadius ?? 100f;
+            var totalRadius = baseRadius * enemy.MagicCircleScale;
+            if (totalRadius <= 0.1f) return;
+
+            // 1. 中心の柔らかな光彩
+            if (enemy.MagicCircleAdditive)
             {
-                var transform =
-                    Matrix3x2.CreateScale(sprite.BaseRadius * enemy.MagicCircleScale) *
+                dc.Transform = Matrix3x2.CreateTranslation(enemy.X, enemy.Y);
+                brush!.Color = new Color4(
+                    enemy.MagicCircleColor.R,
+                    enemy.MagicCircleColor.G,
+                    enemy.MagicCircleColor.B,
+                    enemy.MagicCircleColor.A * enemy.MagicCircleOpacity * 0.18f);
+                dc.FillEllipse(new Ellipse(Vector2.Zero, totalRadius * 0.45f, totalRadius * 0.45f), brush);
+                LastDrawCallCount++;
+            }
+
+            var strokeWidth = 2.0f / MathF.Max(0.1f, totalRadius);
+
+            // 2. 外周幾何学魔法陣 (正回転)
+            if (outerSprite?.Geometry is { } outerGeometry)
+            {
+                var transformOuter =
+                    Matrix3x2.CreateScale(totalRadius) *
                     Matrix3x2.CreateRotation(enemy.MagicCircleAngle * MathF.PI / 180f) *
                     Matrix3x2.CreateTranslation(enemy.X, enemy.Y);
-                dc.Transform = transform;
+                dc.Transform = transformOuter;
 
                 // 本体のシャープなライン
-                var strokeWidth = 1.6f / MathF.Max(0.1f, sprite.BaseRadius * enemy.MagicCircleScale);
                 brush!.Color = new Color4(
                     enemy.MagicCircleColor.R,
                     enemy.MagicCircleColor.G,
                     enemy.MagicCircleColor.B,
                     enemy.MagicCircleColor.A * enemy.MagicCircleOpacity);
-                dc.DrawGeometry(geometry, brush, strokeWidth);
+                dc.DrawGeometry(outerGeometry, brush, strokeWidth);
                 LastDrawCallCount++;
 
                 // 加算合成時のブルーム発光パス
@@ -254,8 +275,39 @@ public sealed class DanmakuRenderer : IDisposable
                         enemy.MagicCircleColor.R,
                         enemy.MagicCircleColor.G,
                         enemy.MagicCircleColor.B,
-                        enemy.MagicCircleColor.A * enemy.MagicCircleOpacity * 0.4f);
-                    dc.DrawGeometry(geometry, brush, strokeWidth * 2.5f);
+                        enemy.MagicCircleColor.A * enemy.MagicCircleOpacity * 0.35f);
+                    dc.DrawGeometry(outerGeometry, brush, strokeWidth * 2.8f);
+                    LastDrawCallCount++;
+                }
+            }
+
+            // 3. 内周幾何学魔法陣 (逆回転 1.25 倍速)
+            if (innerSprite?.Geometry is { } innerGeometry)
+            {
+                var transformInner =
+                    Matrix3x2.CreateScale(totalRadius) *
+                    Matrix3x2.CreateRotation(-enemy.MagicCircleAngle * 1.25f * MathF.PI / 180f) *
+                    Matrix3x2.CreateTranslation(enemy.X, enemy.Y);
+                dc.Transform = transformInner;
+
+                // 本体のシャープなライン
+                brush!.Color = new Color4(
+                    enemy.MagicCircleColor.R,
+                    enemy.MagicCircleColor.G,
+                    enemy.MagicCircleColor.B,
+                    enemy.MagicCircleColor.A * enemy.MagicCircleOpacity);
+                dc.DrawGeometry(innerGeometry, brush, strokeWidth);
+                LastDrawCallCount++;
+
+                // 加算合成時のブルーム発光パス
+                if (enemy.MagicCircleAdditive)
+                {
+                    brush.Color = new Color4(
+                        enemy.MagicCircleColor.R,
+                        enemy.MagicCircleColor.G,
+                        enemy.MagicCircleColor.B,
+                        enemy.MagicCircleColor.A * enemy.MagicCircleOpacity * 0.35f);
+                    dc.DrawGeometry(innerGeometry, brush, strokeWidth * 2.8f);
                     LastDrawCallCount++;
                 }
             }

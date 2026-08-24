@@ -57,9 +57,16 @@ public sealed class BulletSpriteLibrary : IDisposable
     {
         if (sprites[slot] is { } cached) return cached;
 
-        if (slot == SpriteSlots.BuiltInMagicCircleSlot)
+        if (slot == SpriteSlots.BuiltInMagicCircleOuterSlot)
         {
-            var created = CreateBuiltInMagicCircle();
+            var created = CreateBuiltInMagicCircleOuter();
+            sprites[slot] = created;
+            return created;
+        }
+
+        if (slot == SpriteSlots.BuiltInMagicCircleInnerSlot)
+        {
+            var created = CreateBuiltInMagicCircleInner();
             sprites[slot] = created;
             return created;
         }
@@ -312,19 +319,18 @@ public sealed class BulletSpriteLibrary : IDisposable
         return Collect(geometry);
     }
 
-    /// <summary>東方風の幾何学魔法陣スプライト (二重同心円・八芒星・ルーン目盛り・ダイヤ) を生成する。</summary>
-    private BulletSprite CreateBuiltInMagicCircle()
+    /// <summary>東方風の幾何学魔法陣スプライト (外周二重円・八芒星・16ルーン目盛り・中間リング) を生成する。</summary>
+    private BulletSprite CreateBuiltInMagicCircleOuter()
     {
         var f = GetFactory();
         var geometries = new List<ID2D1Geometry>();
 
         // 1. 同心円 (外周リング)
-        geometries.Add(f.CreateEllipseGeometry(new Ellipse(Vector2.Zero, 1f, 1f)));
+        geometries.Add(f.CreateEllipseGeometry(new Ellipse(Vector2.Zero, 1.0f, 1.0f)));
         geometries.Add(f.CreateEllipseGeometry(new Ellipse(Vector2.Zero, 0.88f, 0.88f)));
 
-        // 2. 中間リング & 内周リング
-        geometries.Add(f.CreateEllipseGeometry(new Ellipse(Vector2.Zero, 0.55f, 0.55f)));
-        geometries.Add(f.CreateEllipseGeometry(new Ellipse(Vector2.Zero, 0.25f, 0.25f)));
+        // 2. 中間リング
+        geometries.Add(f.CreateEllipseGeometry(new Ellipse(Vector2.Zero, 0.62f, 0.62f)));
 
         // 3. 八芒星 (2つの正方形)
         var starVertices1 = new Vector2[5];
@@ -358,12 +364,81 @@ public sealed class BulletSpriteLibrary : IDisposable
         }
         geometries.Add(tickPath);
 
-        // 5. 中心の四芒星 / ダイヤ
+        // 5. 中間リング上の装飾ドット / ひし形 (8 箇所)
+        var outerDiamondPath = f.CreatePathGeometry();
+        using (var sink = outerDiamondPath.Open())
+        {
+            for (var i = 0; i < 8; i++)
+            {
+                var angle = MathF.PI * 2f * i / 8f;
+                var cx = MathF.Cos(angle) * 0.62f;
+                var cy = MathF.Sin(angle) * 0.62f;
+                var dSize = 0.035f;
+                sink.BeginFigure(new Vector2(cx, cy - dSize), FigureBegin.Hollow);
+                sink.AddLine(new Vector2(cx + dSize, cy));
+                sink.AddLine(new Vector2(cx, cy + dSize));
+                sink.AddLine(new Vector2(cx - dSize, cy));
+                sink.EndFigure(FigureEnd.Closed);
+            }
+            sink.Close();
+        }
+        geometries.Add(outerDiamondPath);
+
+        foreach (var g in geometries) disposer.Collect(g);
+
+        var group = Collect(f.CreateGeometryGroup(FillMode.Winding, geometries.ToArray()));
+        return new BulletSprite(group, null, 100f);
+    }
+
+    /// <summary>東方風の幾何学魔法陣スプライト (内周二重円・六芒星・コアダイヤ、逆回転用) を生成する。</summary>
+    private BulletSprite CreateBuiltInMagicCircleInner()
+    {
+        var f = GetFactory();
+        var geometries = new List<ID2D1Geometry>();
+
+        // 1. 内周二重円
+        geometries.Add(f.CreateEllipseGeometry(new Ellipse(Vector2.Zero, 0.52f, 0.52f)));
+        geometries.Add(f.CreateEllipseGeometry(new Ellipse(Vector2.Zero, 0.44f, 0.44f)));
+        geometries.Add(f.CreateEllipseGeometry(new Ellipse(Vector2.Zero, 0.22f, 0.22f)));
+
+        // 2. 六芒星 (2つの正三角形)
+        var tri1 = new Vector2[4];
+        var tri2 = new Vector2[4];
+        for (var i = 0; i < 3; i++)
+        {
+            var angle1 = MathF.PI * 2f / 3f * i - MathF.PI * 0.5f;
+            var angle2 = MathF.PI * 2f / 3f * i + MathF.PI * 0.5f;
+            tri1[i] = new Vector2(MathF.Cos(angle1) * 0.44f, MathF.Sin(angle1) * 0.44f);
+            tri2[i] = new Vector2(MathF.Cos(angle2) * 0.44f, MathF.Sin(angle2) * 0.44f);
+        }
+        tri1[3] = tri1[0];
+        tri2[3] = tri2[0];
+        geometries.Add(CreatePolyline(f, tri1));
+        geometries.Add(CreatePolyline(f, tri2));
+
+        // 3. 内周リング間の目盛り (12 本)
+        var innerTickPath = f.CreatePathGeometry();
+        using (var sink = innerTickPath.Open())
+        {
+            for (var i = 0; i < 12; i++)
+            {
+                var angle = MathF.PI * 2f * i / 12f;
+                var cos = MathF.Cos(angle);
+                var sin = MathF.Sin(angle);
+                sink.BeginFigure(new Vector2(cos * 0.44f, sin * 0.44f), FigureBegin.Hollow);
+                sink.AddLine(new Vector2(cos * 0.52f, sin * 0.52f));
+                sink.EndFigure(FigureEnd.Open);
+            }
+            sink.Close();
+        }
+        geometries.Add(innerTickPath);
+
+        // 4. 中心の四芒星 / ダイヤ
         var diamondVertices = new Vector2[5];
         for (var i = 0; i < 4; i++)
         {
             var angle = MathF.PI * 0.5f * i;
-            var r = (i % 2 == 0) ? 0.45f : 0.15f;
+            var r = (i % 2 == 0) ? 0.22f : 0.08f;
             diamondVertices[i] = new Vector2(MathF.Cos(angle) * r, MathF.Sin(angle) * r);
         }
         diamondVertices[4] = diamondVertices[0];
