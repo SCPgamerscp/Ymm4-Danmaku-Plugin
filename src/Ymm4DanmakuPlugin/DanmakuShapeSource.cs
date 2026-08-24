@@ -83,7 +83,7 @@ public sealed class DanmakuShapeSource : IShapeSource2
         parameter.LastCanvasWidth = canvasWidth;
         parameter.LastCanvasHeight = canvasHeight;
 
-        var settings = parameter.ToSettings(canvasWidth, canvasHeight);
+        var settings = parameter.ToSettings(canvasWidth, canvasHeight) with { TimeScale = 1.0 };
 
         if (simulator is null)
         {
@@ -105,7 +105,8 @@ public sealed class DanmakuShapeSource : IShapeSource2
         // キーフレームやスライダーの編集が一時停止中に行われても確実に最新の弾幕状態を反映するため、
         // 常に先頭から現在フレームまで確定的にシミュレーションを再現して描画する
         simulator.Reset();
-        simulator.SeekToFrame(frame, fps);
+        var simTime = ComputeSimulatedTime(frame, fps, totalFrame);
+        simulator.SeekTo(simTime);
         LastBulletCount = simulator.Bullets.Count;
 
         lastFrame = frame;
@@ -807,11 +808,7 @@ public sealed class DanmakuShapeSource : IShapeSource2
             return Math.Clamp(parameter.GlobalOpacity.GetValue(frame, totalFrame, fps) / 100.0, 0.0, 1.0);
         };
 
-        sim.Live.TimeScale = timeSeconds =>
-        {
-            var frame = TimeToFrame(timeSeconds, fps, totalFrame);
-            return parameter.TimeScale.GetValue(frame, totalFrame, fps);
-        };
+        sim.Live.TimeScale = null;
 
         sim.Live.Seed = timeSeconds =>
         {
@@ -881,10 +878,60 @@ public sealed class DanmakuShapeSource : IShapeSource2
     }
 
     /// <summary>
-    /// 秒をフレーム番号へ変換する。
+    /// タイムライン上のフレーム番号から、TimeScale を考慮したシミュレーション上の経過秒数を求める。
+    /// 正の値なら通常再生、負の値ならアイテム終端からの逆再生、キーフレームなら巻き戻しを正しく計算する。
     /// </summary>
-    private static int TimeToFrame(double timeSeconds, int fps, int totalFrame) =>
-        Math.Clamp((int)Math.Round(timeSeconds * fps), 0, Math.Max(0, totalFrame - 1));
+    private double ComputeSimulatedTime(int currentFrame, int fps, int totalFrame)
+    {
+        if (fps <= 0) fps = 60;
+        if (totalFrame <= 0) totalFrame = 1;
+
+        var dt = 1.0 / fps;
+        var integralAtCurrent = 0.0;
+        var minIntegral = 0.0;
+        var runningIntegral = 0.0;
+
+        for (var f = 0; f < totalFrame; f++)
+        {
+            var scale = parameter.TimeScale.GetValue(f, totalFrame, fps);
+            runningIntegral += scale * dt;
+            if (runningIntegral < minIntegral)
+            {
+                minIntegral = runningIntegral;
+            }
+            if (f == currentFrame - 1)
+            {
+                integralAtCurrent = runningIntegral;
+            }
+        }
+
+        var baseOffset = Math.Max(0.0, -minIntegral);
+        return currentFrame <= 0 ? baseOffset : Math.Max(0.0, baseOffset + integralAtCurrent);
+    }
+
+    /// <summary>
+    /// シミュレーション秒をタイムラインフレーム番号へ逆変換する。
+    /// </summary>
+    private int TimeToFrame(double timeSeconds, int fps, int totalFrame)
+    {
+        if (fps <= 0) fps = 60;
+        if (totalFrame <= 0) totalFrame = 1;
+
+        var scale0 = parameter.TimeScale.GetValue(0, totalFrame, fps);
+        if (scale0 < 0)
+        {
+            var duration = (double)totalFrame / fps;
+            var timelineTime = duration - timeSeconds / Math.Abs(scale0);
+            return Math.Clamp((int)Math.Round(timelineTime * fps), 0, Math.Max(0, totalFrame - 1));
+        }
+        if (scale0 > 0)
+        {
+            var timelineTime = timeSeconds / scale0;
+            return Math.Clamp((int)Math.Round(timelineTime * fps), 0, Math.Max(0, totalFrame - 1));
+        }
+
+        return Math.Clamp((int)Math.Round(timeSeconds * fps), 0, Math.Max(0, totalFrame - 1));
+    }
 
     /// <summary>弾の描画用プロパティを引く (バッチ生成用)。</summary>
     private BulletAppearance GetAppearance(int emitterIndex)

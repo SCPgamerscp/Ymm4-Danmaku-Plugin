@@ -1745,4 +1745,17 @@ public class KeyframeLiveValueTests
         var b = Assert.Single(engine.AliveBullets());
         Assert.True(b.Scale < 0, "負のスケールが保持されていない");
     }
+
+    [Fact]
+    public void DanmakuSimulatorがSeekToでシミュレーションを確実に進める()
+    {
+        var pattern = TestFactory.SingleShot(1) with { BaseAngle = 0 };
+        var emitter = TestFactory.Emitter(pattern);
+        var settings = TestFactory.Settings(emitter);
+        var sim = new DanmakuSimulator(settings);
+
+        sim.SeekTo(1.0);
+        var b = Assert.Single(sim.Bullets);
+        Assert.True(b.Position.X > 0, "SeekTo(1.0) で弾が進んでいない");
+    }
 }
