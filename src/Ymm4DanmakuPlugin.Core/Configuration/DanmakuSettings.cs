@@ -40,6 +40,18 @@ public sealed record CollisionSettings
     /// <summary>ターゲットの当たり判定半径 (px)。</summary>
     public double TargetRadius { get; init; } = 8;
 
+    /// <summary>エネミー (ボス) の X 座標。</summary>
+    public double EnemyX { get; init; }
+
+    /// <summary>エネミー (ボス) の Y 座標。</summary>
+    public double EnemyY { get; init; }
+
+    /// <summary>エネミー (ボス) の被弾判定半径 (px)。</summary>
+    public double EnemyRadius { get; init; } = 32;
+
+    /// <summary>エネミーへの被弾判定を有効にするかどうか。</summary>
+    public bool EnemyHitEnabled { get; init; } = true;
+
     /// <summary>ヒット時にエフェクト (小さな飛沫弾) を出すかどうか。</summary>
     public bool SpawnHitEffect { get; init; } = true;
 
@@ -87,6 +99,9 @@ public sealed record DanmakuSettings
     public ImmutableArray<EmitterSettings> Emitters { get; init; } = [new EmitterSettings()];
 
     public CollisionSettings Collision { get; init; } = new();
+
+    /// <summary>自機 (プレイヤー) の射撃設定。</summary>
+    public PlayerShotSettings PlayerShot { get; init; } = new();
 
     public SoundSettings FireSound { get; init; } = new();
 

@@ -63,6 +63,15 @@ public static class SpriteSlots
     /// <summary>後方互換用エイリアス。</summary>
     public const int BuiltInMagicCircleSlot = BuiltInMagicCircleOuterSlot;
 
+    /// <summary>組み込み自機ショット御札スロット番号 (14)。</summary>
+    public const int BuiltInPlayerAmuletSlot = 14;
+
+    /// <summary>組み込み自機ショット高速針スロット番号 (15)。</summary>
+    public const int BuiltInPlayerNeedleSlot = 15;
+
+    /// <summary>自機ショットのカスタム画像スロット番号 (16)。</summary>
+    public const int PlayerCustomShotSlot = 16;
+
     /// <summary>ユーザー指定弾画像を割り当てる先頭スロット番号 (64〜79)。</summary>
     public const int CustomBase = 64;
 

@@ -169,6 +169,12 @@ public sealed class Bullet
     /// <summary>既に衝突済みかどうか。</summary>
     public bool HasHit;
 
+    /// <summary>自機から発射されたショット弾かどうか (true の場合エネミーと衝突判定を行う)。</summary>
+    public bool IsPlayerShot;
+
+    /// <summary>敵弾と衝突した際に敵弾を相殺・消滅させるかどうか。</summary>
+    public bool CancelEnemyBullets;
+
     // ---- トレイル ----
     /// <summary>過去位置のリングバッファ。</summary>
     public readonly Vec2[] TrailPositions = new Vec2[MaxTrailLength];
@@ -263,6 +269,8 @@ public sealed class Bullet
         HitRadius = 0;
         DestroyOnHit = true;
         HasHit = false;
+        IsPlayerShot = false;
+        CancelEnemyBullets = false;
 
         TrailHead = 0;
         TrailCount = 0;

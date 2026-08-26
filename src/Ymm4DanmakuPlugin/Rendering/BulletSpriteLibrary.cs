@@ -71,6 +71,20 @@ public sealed class BulletSpriteLibrary : IDisposable
             return created;
         }
 
+        if (slot == SpriteSlots.BuiltInPlayerAmuletSlot)
+        {
+            var created = CreateBuiltInPlayerAmulet();
+            sprites[slot] = created;
+            return created;
+        }
+
+        if (slot == SpriteSlots.BuiltInPlayerNeedleSlot)
+        {
+            var created = CreateBuiltInPlayerNeedle();
+            sprites[slot] = created;
+            return created;
+        }
+
         // 組み込み形状の範囲なら生成する。画像スロットは SetCustomImage 経由でのみ用意される。
         if (slot < SpriteSlots.BuiltInCount)
         {
@@ -89,7 +103,7 @@ public sealed class BulletSpriteLibrary : IDisposable
     /// <returns>スロットに有効な画像があるかどうか。</returns>
     public bool SetCustomImage(int slot, string? path)
     {
-        if (slot < SpriteSlots.CustomBase || slot >= sprites.Length) return false;
+        if ((slot < SpriteSlots.CustomBase || slot >= sprites.Length) && slot != SpriteSlots.PlayerCustomShotSlot) return false;
 
         var normalized = string.IsNullOrWhiteSpace(path) ? null : path;
 
@@ -448,6 +462,66 @@ public sealed class BulletSpriteLibrary : IDisposable
 
         var group = Collect(f.CreateGeometryGroup(FillMode.Winding, geometries.ToArray()));
         return new BulletSprite(group, null, 100f);
+    }
+
+    /// <summary>東方風の自機御札 (長方形・二重縁取り・中心の陰陽マーク) を生成する。</summary>
+    private BulletSprite CreateBuiltInPlayerAmulet()
+    {
+        var f = GetFactory();
+        var geometries = new List<ID2D1Geometry>();
+
+        // 進行方向 (+X) に沿った長方形 (縦横比 約 2:1)
+        // 1. 外側長方形
+        var outerRect = f.CreateRectangleGeometry(new Rect(-0.95f, -0.45f, 1.9f, 0.9f));
+        geometries.Add(outerRect);
+
+        // 2. 内側枠線 (余白を残した内枠)
+        var innerRect = f.CreateRectangleGeometry(new Rect(-0.8f, -0.32f, 1.6f, 0.64f));
+        geometries.Add(innerRect);
+
+        // 3. 中心の陰陽玉円
+        var centerCircle = f.CreateEllipseGeometry(new Ellipse(Vector2.Zero, 0.22f, 0.22f));
+        geometries.Add(centerCircle);
+
+        foreach (var g in geometries) disposer.Collect(g);
+
+        var group = Collect(f.CreateGeometryGroup(FillMode.Winding, geometries.ToArray()));
+        return new BulletSprite(group, null, 14f);
+    }
+
+    /// <summary>東方風の自機高速針 (鋭角の光線針・中心スパイン) を生成する。</summary>
+    private BulletSprite CreateBuiltInPlayerNeedle()
+    {
+        var f = GetFactory();
+        var geometries = new List<ID2D1Geometry>();
+
+        // 進行方向 (+X) に向かう細長い鋭利な針
+        // 1. 外輪郭 (先端 +X=1.0, 後端 -0.9, 幅 0.2)
+        var needleVertices = new Vector2[]
+        {
+            new(1.0f, 0.0f),
+            new(-0.7f, -0.2f),
+            new(-0.95f, 0.0f),
+            new(-0.7f, 0.2f),
+            new(1.0f, 0.0f)
+        };
+        geometries.Add(CreatePolygon(f, needleVertices));
+
+        // 2. 内部の光条スパイン (中心線)
+        var spineVertices = new Vector2[]
+        {
+            new(0.85f, 0.0f),
+            new(-0.6f, -0.06f),
+            new(-0.85f, 0.0f),
+            new(-0.6f, 0.06f),
+            new(0.85f, 0.0f)
+        };
+        geometries.Add(CreatePolygon(f, spineVertices));
+
+        foreach (var g in geometries) disposer.Collect(g);
+
+        var group = Collect(f.CreateGeometryGroup(FillMode.Winding, geometries.ToArray()));
+        return new BulletSprite(group, null, 16f);
     }
 
     private ID2D1Geometry CreatePolyline(ID2D1Factory f, Vector2[] vertices)

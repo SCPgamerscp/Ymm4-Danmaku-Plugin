@@ -1758,4 +1758,167 @@ public class KeyframeLiveValueTests
         var b = Assert.Single(sim.Bullets);
         Assert.True(b.Position.X > 0, "SeekTo(1.0) で弾が進んでいない");
     }
+
+    [Fact]
+    public void 自機ショットが正しく上向きに発射される()
+    {
+        var settings = new DanmakuSettings
+        {
+            Emitters = [],
+            PlayerShot = new PlayerShotSettings
+            {
+                IsEnabled = true,
+                Way = 2,
+                Speed = 1000,
+                FireInterval = 0.1,
+            },
+            Collision = new CollisionSettings
+            {
+                TargetX = 0,
+                TargetY = 200,
+            }
+        };
+
+        var engine = TestFactory.Engine(settings);
+        engine.Advance(0.15); // 1 burst fired
+
+        var bullets = engine.AliveBullets();
+        Assert.NotEmpty(bullets);
+        Assert.All(bullets, b =>
+        {
+            Assert.True(b.IsPlayerShot);
+            Assert.True(b.Position.Y < 200, "自機ショットが上向きに進んでいない");
+        });
+    }
+
+    [Fact]
+    public void 自機ショットがエネミーに命中して被弾判定される()
+    {
+        var settings = new DanmakuSettings
+        {
+            Emitters = [],
+            PlayerShot = new PlayerShotSettings
+            {
+                IsEnabled = true,
+                Way = 1,
+                Speed = 1000,
+                HitRadius = 10,
+                DestroyOnHit = true,
+            },
+            Collision = new CollisionSettings
+            {
+                TargetX = 0,
+                TargetY = 200,
+                EnemyX = 0,
+                EnemyY = 0,
+                EnemyRadius = 30,
+                EnemyHitEnabled = true,
+            }
+        };
+
+        var engine = TestFactory.Engine(settings);
+        engine.Advance(0.3); // bullets travel 300px from Y=200 up to Y=-100, passing Y=0 (Enemy)
+
+        Assert.True(engine.EnemyHitCount > 0, "エネミーに自機ショットが命中していない");
+    }
+
+    [Fact]
+    public void 自機ショットによる敵弾相殺が機能する()
+    {
+        var emitter = TestFactory.Emitter(
+            TestFactory.SingleShot(1) with { BaseAngle = 0 },
+            physics: TestFactory.Straight(0) with { HitRadius = 20 },
+            x: 0,
+            y: 50);
+
+        var settings = new DanmakuSettings
+        {
+            Emitters = [emitter],
+            PlayerShot = new PlayerShotSettings
+            {
+                IsEnabled = true,
+                Way = 1,
+                Speed = 1000,
+                HitRadius = 15,
+                CancelEnemyBullets = true,
+                DestroyOnHit = true,
+            },
+            Collision = new CollisionSettings
+            {
+                TargetX = 0,
+                TargetY = 100,
+                EnemyHitEnabled = false,
+                SpawnHitEffect = false,
+            }
+        };
+
+        var engine = TestFactory.Engine(settings);
+        engine.Advance(0.2); // shot goes through enemy bullet at Y=50
+
+        Assert.DoesNotContain(engine.AliveBullets(), b => !b.IsPlayerShot);
+    }
+
+    [Fact]
+    public void 誘導札ショットがエネミーに向かって自動追尾する()
+    {
+        var settings = new DanmakuSettings
+        {
+            Emitters = [],
+            PlayerShot = new PlayerShotSettings
+            {
+                IsEnabled = true,
+                ShotType = PlayerShotType.HomingAmulet,
+                Way = 1,
+                Speed = 500,
+                FireInterval = 0.05,
+            },
+            Collision = new CollisionSettings
+            {
+                TargetX = 0,
+                TargetY = 200,
+                EnemyX = 200,
+                EnemyY = 0,
+                EnemyHitEnabled = false,
+            }
+        };
+
+        var engine = TestFactory.Engine(settings);
+        engine.Advance(0.3);
+
+        var playerShot = Assert.Single(engine.AliveBullets(), b => b.IsPlayerShot && b.Age > 0.2);
+        Assert.True(playerShot.Position.X > 10, "誘導札がエネミーのX座標 (+200) 方向へ曲がっていない");
+    }
+
+    [Fact]
+    public void エネミー自動狙いショットがエネミー方向へ直接発射される()
+    {
+        var settings = new DanmakuSettings
+        {
+            Emitters = [],
+            PlayerShot = new PlayerShotSettings
+            {
+                IsEnabled = true,
+                AutoAim = true,
+                Way = 1,
+                Speed = 1000,
+                FireInterval = 0.1,
+            },
+            Collision = new CollisionSettings
+            {
+                TargetX = 0,
+                TargetY = 200,
+                EnemyX = 200,
+                EnemyY = 200, // 真右 (角度0度)
+                EnemyHitEnabled = false,
+            }
+        };
+
+        var engine = TestFactory.Engine(settings);
+        engine.Advance(0.15);
+
+        var playerShot = Assert.Single(engine.AliveBullets());
+        Assert.True(playerShot.Position.X > 50, "自動照準で真右に発射されていない");
+        Assert.Equal(200.0, playerShot.Position.Y, 1);
+    }
 }
+

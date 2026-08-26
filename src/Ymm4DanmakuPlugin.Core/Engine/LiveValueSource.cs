@@ -97,6 +97,18 @@ public sealed class LiveValueSource
     // ---- 全体設定 ----
     public Func<double, double?>? GlobalOpacity { get; set; }
     public Func<double, double?>? TimeScale { get; set; }
+    // ---- エネミー (ボス) 位置 & 当たり判定 ----
+    public Func<double, Vec2?>? EnemyPosition { get; set; }
+    public Func<double, double?>? EnemyRadius { get; set; }
+
+    // ---- 自機ショット ----
+    public Func<double, int?>? PlayerShotWay { get; set; }
+    public Func<double, double?>? PlayerShotInterval { get; set; }
+    public Func<double, double?>? PlayerShotSpeed { get; set; }
+    public Func<double, double?>? PlayerShotSpread { get; set; }
+    public Func<double, double?>? PlayerShotScale { get; set; }
+    public Func<double, double?>? PlayerShotHitRadius { get; set; }
+
     public Func<double, int?>? Seed { get; set; }
     public Func<double, int?>? MaxBullets { get; set; }
     public Func<double, int?>? Channel { get; set; }

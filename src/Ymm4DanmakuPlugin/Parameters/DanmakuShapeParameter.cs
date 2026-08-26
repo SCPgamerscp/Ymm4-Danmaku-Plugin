@@ -12,6 +12,7 @@ using YukkuriMovieMaker.Settings;
 using Ymm4DanmakuPlugin.Core.Audio;
 using Ymm4DanmakuPlugin.Core.Configuration;
 using Ymm4DanmakuPlugin.Core.Scripting;
+using Ymm4DanmakuPlugin.Interop;
 using Ymm4DanmakuPlugin.Settings;
 
 namespace Ymm4DanmakuPlugin.Parameters;
@@ -585,6 +586,15 @@ public class DanmakuShapeParameter : ShapeParameterBase
     [AnimationSlider("F1", "px", -200, 200)]
     public Animation TargetRadius { get; } = new Animation(30, -10000, 10000);
 
+    [Display(GroupName = "当たり判定", Name = "エネミー被弾判定", Description = "エネミー (ボス) への自機ショット被弾判定を行います。")]
+    [ToggleSlider]
+    public bool EnemyHitEnabled { get => enemyHitEnabled; set => Set(ref enemyHitEnabled, value); }
+    private bool enemyHitEnabled = true;
+
+    [Display(GroupName = "当たり判定", Name = "エネミー判定半径", Description = "エネミーの被弾判定半径 (px)。")]
+    [AnimationSlider("F1", "px", 0, 500)]
+    public Animation EnemyRadius { get; } = new Animation(40, 0, 10000);
+
     [Display(GroupName = "当たり判定", Name = "弾の判定半径")]
     [AnimationSlider("F1", "px", -40, 40)]
     public Animation HitRadius => MainEmitter.HitRadius;
@@ -618,6 +628,90 @@ public class DanmakuShapeParameter : ShapeParameterBase
     [ToggleSlider]
     public bool ShowTargetMarker { get => showTargetMarker; set => Set(ref showTargetMarker, value); }
     private bool showTargetMarker = true;
+
+    // =====================================================================
+    // 自機ショット
+    // =====================================================================
+
+    [Display(GroupName = "自機ショット", Name = "自機射撃を有効化", Description = "自機 (ターゲット) からショットを発射します。")]
+    [ToggleSlider]
+    public bool PlayerShotEnabled { get => playerShotEnabled; set => Set(ref playerShotEnabled, value); }
+    private bool playerShotEnabled;
+
+    [Display(GroupName = "自機ショット", Name = "ショット種別")]
+    [EnumComboBox]
+    public PlayerShotType PlayerShotType { get => playerShotType; set => Set(ref playerShotType, value); }
+    private PlayerShotType playerShotType = PlayerShotType.FocusStraight;
+
+    [Display(GroupName = "自機ショット", Name = "自機弾画像", Description = "ユーザー指定の画像 (PNG等) を自機弾として発射します。未指定時は組み込み形状になります。")]
+    [FileSelector(YukkuriMovieMaker.Settings.FileGroupType.ImageItem)]
+    public string PlayerShotImagePath
+    {
+        get => playerShotImagePath;
+        set => Set(ref playerShotImagePath, value ?? string.Empty);
+    }
+    private string playerShotImagePath = string.Empty;
+
+    public bool HasCustomPlayerShotImage => !string.IsNullOrWhiteSpace(PlayerShotImagePath);
+
+    [Display(GroupName = "自機ショット", Name = "発射数 (Way数)", Description = "同時に発射する弾数。")]
+    [AnimationSlider("F0", "本", 1, 16)]
+    public Animation PlayerShotWay { get; } = new Animation(2, 1, 128);
+
+    [Display(GroupName = "自機ショット", Name = "連射間隔", Description = "発射間隔 (秒)。0.08 で秒間約 12 回連射。")]
+    [AnimationSlider("F3", "秒", 0.01, 1.0)]
+    public Animation PlayerShotInterval { get; } = new Animation(0.08, 0.001, 10.0);
+
+    [Display(GroupName = "自機ショット", Name = "弾速")]
+    [AnimationSlider("F0", "px/秒", 100, 3000)]
+    public Animation PlayerShotSpeed { get; } = new Animation(1200, -10000, 10000);
+
+    [Display(GroupName = "自機ショット", Name = "拡散角度", Description = "発射角の広がり。0 で平行に並んで直進します。")]
+    [AnimationSlider("F1", "度", 0, 90)]
+    public Animation PlayerShotSpread { get; } = new Animation(15, -360, 360);
+
+    [Display(GroupName = "自機ショット", Name = "弾の大きさ")]
+    [AnimationSlider("F2", "倍", -10, 10)]
+    public Animation PlayerShotScale { get; } = new Animation(1.0, -1000, 1000);
+
+    [Display(GroupName = "自機ショット", Name = "進行方向に向ける")]
+    [ToggleSlider]
+    public bool PlayerShotAlignToDirection { get => playerShotAlignToDirection; set => Set(ref playerShotAlignToDirection, value); }
+    private bool playerShotAlignToDirection = true;
+
+    [Display(GroupName = "自機ショット", Name = "弾の色")]
+    [ColorPicker]
+    public Color PlayerShotColor { get => playerShotColor; set => Set(ref playerShotColor, value); }
+    private Color playerShotColor = Color.FromArgb(255, 255, 255, 255);
+
+    [Display(GroupName = "自機ショット", Name = "加算合成 (発光)")]
+    [ToggleSlider]
+    public bool PlayerShotAdditive { get => playerShotAdditive; set => Set(ref playerShotAdditive, value); }
+    private bool playerShotAdditive = true;
+
+    [Display(GroupName = "自機ショット", Name = "エネミー自動照準", Description = "ボスの方向へ自動で狙いを定めて発射します。")]
+    [ToggleSlider]
+    public bool PlayerShotAutoAim { get => playerShotAutoAim; set => Set(ref playerShotAutoAim, value); }
+    private bool playerShotAutoAim;
+
+    [Display(GroupName = "自機ショット", Name = "判定半径")]
+    [AnimationSlider("F1", "px", 1, 50)]
+    public Animation PlayerShotHitRadius { get; } = new Animation(12, 0, 500);
+
+    [Display(GroupName = "自機ショット", Name = "被弾時に消滅")]
+    [ToggleSlider]
+    public bool PlayerShotDestroyOnHit { get => playerShotDestroyOnHit; set => Set(ref playerShotDestroyOnHit, value); }
+    private bool playerShotDestroyOnHit = true;
+
+    [Display(GroupName = "自機ショット", Name = "敵弾を相殺・消去", Description = "自機ショットが敵弾と接触した際に敵弾を消滅させます。")]
+    [ToggleSlider]
+    public bool PlayerShotCancelEnemyBullets { get => playerShotCancelEnemyBullets; set => Set(ref playerShotCancelEnemyBullets, value); }
+    private bool playerShotCancelEnemyBullets;
+
+    [Display(GroupName = "自機ショット", Name = "対象チャンネル", Description = "当たり判定・自動照準の相手となる弾幕アイテムのチャンネル番号 (-1 で全チャンネル対象)。")]
+    [TextBoxSlider("F0", "ch", -1, 15)]
+    public int PlayerShotTargetChannel { get => playerShotTargetChannel; set => Set(ref playerShotTargetChannel, value); }
+    private int playerShotTargetChannel = -1;
 
     // =====================================================================
     // 効果音
@@ -835,10 +929,32 @@ public class DanmakuShapeParameter : ShapeParameterBase
             {
                 IsEnabled = CollisionEnabled,
                 TargetRadius = Math.Abs(TargetRadius.GetFirstValue()),
+                EnemyHitEnabled = EnemyHitEnabled,
+                EnemyRadius = Math.Abs(EnemyRadius.GetFirstValue()),
                 SpawnHitEffect = SpawnHitEffect,
                 HitEffectCount = Math.Max(0, (int)Math.Round(HitEffectCount.GetFirstValue())),
                 HitEffectSpeed = HitEffectSpeed.GetFirstValue(),
                 HitEffectLifetime = Math.Max(0.01, HitEffectLifetime.GetFirstValue()),
+            },
+
+            PlayerShot = new PlayerShotSettings
+            {
+                IsEnabled = PlayerShotEnabled,
+                ShotType = PlayerShotType,
+                ImagePath = PlayerShotImagePath,
+                Way = Math.Max(1, (int)Math.Round(PlayerShotWay.GetFirstValue())),
+                FireInterval = Math.Max(0.01, PlayerShotInterval.GetFirstValue()),
+                Speed = PlayerShotSpeed.GetFirstValue(),
+                SpreadAngle = PlayerShotSpread.GetFirstValue(),
+                Scale = PlayerShotScale.GetFirstValue(),
+                AlignToDirection = PlayerShotAlignToDirection,
+                Color = ColorExtensions.ToBulletColor(PlayerShotColor),
+                Additive = PlayerShotAdditive,
+                AutoAim = PlayerShotAutoAim,
+                HitRadius = Math.Abs(PlayerShotHitRadius.GetFirstValue()),
+                DestroyOnHit = PlayerShotDestroyOnHit,
+                CancelEnemyBullets = PlayerShotCancelEnemyBullets,
+                TargetChannel = PlayerShotTargetChannel,
             },
 
             FireSound = sound.Fire.ToSoundSettings(FireSoundEnabled),
@@ -889,9 +1005,16 @@ public class DanmakuShapeParameter : ShapeParameterBase
         yield return TargetRotation;
         yield return TargetOpacity;
         yield return TargetRadius;
+        yield return EnemyRadius;
         yield return HitEffectCount;
         yield return HitEffectSpeed;
         yield return HitEffectLifetime;
+        yield return PlayerShotWay;
+        yield return PlayerShotInterval;
+        yield return PlayerShotSpeed;
+        yield return PlayerShotSpread;
+        yield return PlayerShotScale;
+        yield return PlayerShotHitRadius;
         yield return Seed;
         yield return MaxBullets;
         yield return TimeScale;
@@ -932,11 +1055,30 @@ public class DanmakuShapeParameter : ShapeParameterBase
         private readonly Animation targetRotation = new(0, -100000, 100000);
         private readonly Animation targetOpacity = new(1.0, -1, 1);
         private readonly Animation targetRadius = new(30, -10000, 10000);
+        private readonly bool enemyHitEnabled = true;
+        private readonly Animation enemyRadius = new(40, 0, 10000);
         private readonly bool spawnHitEffect;
         private readonly Animation hitEffectCount = new(8, 0, 500);
         private readonly Animation hitEffectSpeed = new(160, -100000, 100000);
         private readonly Animation hitEffectLifetime = new(0.35, 0, 1000);
         private readonly bool showTargetMarker;
+
+        private readonly bool playerShotEnabled;
+        private readonly PlayerShotType playerShotType;
+        private readonly string playerShotImagePath = string.Empty;
+        private readonly Animation playerShotWay = new(2, 1, 128);
+        private readonly Animation playerShotInterval = new(0.08, 0.001, 10.0);
+        private readonly Animation playerShotSpeed = new(1200, -10000, 10000);
+        private readonly Animation playerShotSpread = new(15, -360, 360);
+        private readonly Animation playerShotScale = new(1.0, -1000, 1000);
+        private readonly bool playerShotAlignToDirection = true;
+        private readonly Color playerShotColor = Color.FromArgb(255, 255, 255, 255);
+        private readonly bool playerShotAdditive = true;
+        private readonly bool playerShotAutoAim;
+        private readonly Animation playerShotHitRadius = new(12, 0, 500);
+        private readonly bool playerShotDestroyOnHit = true;
+        private readonly bool playerShotCancelEnemyBullets;
+        private readonly int playerShotTargetChannel = -1;
 
         private readonly bool fireSoundEnabled;
         private readonly bool changeSoundEnabled;
@@ -964,11 +1106,30 @@ public class DanmakuShapeParameter : ShapeParameterBase
             targetRotation.CopyFrom(source.TargetRotation);
             targetOpacity.CopyFrom(source.TargetOpacity);
             targetRadius.CopyFrom(source.TargetRadius);
+            enemyHitEnabled = source.EnemyHitEnabled;
+            enemyRadius.CopyFrom(source.EnemyRadius);
             spawnHitEffect = source.SpawnHitEffect;
             hitEffectCount.CopyFrom(source.HitEffectCount);
             hitEffectSpeed.CopyFrom(source.HitEffectSpeed);
             hitEffectLifetime.CopyFrom(source.HitEffectLifetime);
             showTargetMarker = source.ShowTargetMarker;
+
+            playerShotEnabled = source.PlayerShotEnabled;
+            playerShotType = source.PlayerShotType;
+            playerShotImagePath = source.PlayerShotImagePath;
+            playerShotWay.CopyFrom(source.PlayerShotWay);
+            playerShotInterval.CopyFrom(source.PlayerShotInterval);
+            playerShotSpeed.CopyFrom(source.PlayerShotSpeed);
+            playerShotSpread.CopyFrom(source.PlayerShotSpread);
+            playerShotScale.CopyFrom(source.PlayerShotScale);
+            playerShotAlignToDirection = source.PlayerShotAlignToDirection;
+            playerShotColor = source.PlayerShotColor;
+            playerShotAdditive = source.PlayerShotAdditive;
+            playerShotAutoAim = source.PlayerShotAutoAim;
+            playerShotHitRadius.CopyFrom(source.PlayerShotHitRadius);
+            playerShotDestroyOnHit = source.PlayerShotDestroyOnHit;
+            playerShotCancelEnemyBullets = source.PlayerShotCancelEnemyBullets;
+            playerShotTargetChannel = source.PlayerShotTargetChannel;
 
             fireSoundEnabled = source.FireSoundEnabled;
             changeSoundEnabled = source.ChangeSoundEnabled;
@@ -1004,11 +1165,30 @@ public class DanmakuShapeParameter : ShapeParameterBase
             target.TargetRotation.CopyFrom(targetRotation);
             target.TargetOpacity.CopyFrom(targetOpacity);
             target.TargetRadius.CopyFrom(targetRadius);
+            target.EnemyHitEnabled = enemyHitEnabled;
+            target.EnemyRadius.CopyFrom(enemyRadius);
             target.SpawnHitEffect = spawnHitEffect;
             target.HitEffectCount.CopyFrom(hitEffectCount);
             target.HitEffectSpeed.CopyFrom(hitEffectSpeed);
             target.HitEffectLifetime.CopyFrom(hitEffectLifetime);
             target.ShowTargetMarker = showTargetMarker;
+
+            target.PlayerShotEnabled = playerShotEnabled;
+            target.PlayerShotType = playerShotType;
+            target.PlayerShotImagePath = playerShotImagePath;
+            target.PlayerShotWay.CopyFrom(playerShotWay);
+            target.PlayerShotInterval.CopyFrom(playerShotInterval);
+            target.PlayerShotSpeed.CopyFrom(playerShotSpeed);
+            target.PlayerShotSpread.CopyFrom(playerShotSpread);
+            target.PlayerShotScale.CopyFrom(playerShotScale);
+            target.PlayerShotAlignToDirection = playerShotAlignToDirection;
+            target.PlayerShotColor = playerShotColor;
+            target.PlayerShotAdditive = playerShotAdditive;
+            target.PlayerShotAutoAim = playerShotAutoAim;
+            target.PlayerShotHitRadius.CopyFrom(playerShotHitRadius);
+            target.PlayerShotDestroyOnHit = playerShotDestroyOnHit;
+            target.PlayerShotCancelEnemyBullets = playerShotCancelEnemyBullets;
+            target.PlayerShotTargetChannel = playerShotTargetChannel;
 
             target.FireSoundEnabled = fireSoundEnabled;
             target.ChangeSoundEnabled = changeSoundEnabled;

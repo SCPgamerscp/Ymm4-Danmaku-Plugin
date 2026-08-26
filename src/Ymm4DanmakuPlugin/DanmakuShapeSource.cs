@@ -122,6 +122,21 @@ public sealed class DanmakuShapeSource : IShapeSource2
         var targetOpacity = (float)parameter.TargetOpacity.GetValue(frame, totalFrame, fps);
         var targetRadius = (float)parameter.TargetRadius.GetValue(frame, totalFrame, fps);
 
+        var mainEmitter = parameter.Emitters.Count > 0 ? parameter.Emitters[0] : null;
+        var enemyX = mainEmitter != null ? (float)mainEmitter.X.GetValue(frame, totalFrame, fps) : 0f;
+        var enemyY = mainEmitter != null ? (float)mainEmitter.Y.GetValue(frame, totalFrame, fps) : 0f;
+        var enemyRadius = (float)parameter.EnemyRadius.GetValue(frame, totalFrame, fps);
+        var currentChannel = (int)Math.Round(parameter.Channel.GetValue(frame, totalFrame, fps));
+
+        Collision.DanmakuCollisionBus.Publish(new Collision.DanmakuLayerState(
+            SourceKey: this,
+            Channel: currentChannel,
+            EnemyPosition: new Core.Mathematics.Vec2(enemyX, enemyY),
+            EnemyRadius: enemyRadius,
+            TargetPosition: new Core.Mathematics.Vec2(targetX, targetY),
+            TargetRadius: targetRadius
+        ));
+
         var targetInfo = new TargetRenderInfo(
             Enabled: parameter.CollisionEnabled && (parameter.HasCustomTargetImage || parameter.ShowTargetMarker),
             X: targetX,
@@ -874,6 +889,63 @@ public sealed class DanmakuShapeSource : IShapeSource2
             var frame = TimeToFrame(timeSeconds, fps, totalFrame);
             return parameter.HitEffectLifetime.GetValue(frame, totalFrame, fps);
         };
+
+        // 自機ショット
+        sim.Live.PlayerShotWay = timeSeconds =>
+        {
+            var frame = TimeToFrame(timeSeconds, fps, totalFrame);
+            return Math.Max(1, (int)Math.Round(parameter.PlayerShotWay.GetValue(frame, totalFrame, fps)));
+        };
+
+        sim.Live.PlayerShotInterval = timeSeconds =>
+        {
+            var frame = TimeToFrame(timeSeconds, fps, totalFrame);
+            return Math.Max(0.001, parameter.PlayerShotInterval.GetValue(frame, totalFrame, fps));
+        };
+
+        sim.Live.PlayerShotSpeed = timeSeconds =>
+        {
+            var frame = TimeToFrame(timeSeconds, fps, totalFrame);
+            return parameter.PlayerShotSpeed.GetValue(frame, totalFrame, fps);
+        };
+
+        sim.Live.PlayerShotSpread = timeSeconds =>
+        {
+            var frame = TimeToFrame(timeSeconds, fps, totalFrame);
+            return parameter.PlayerShotSpread.GetValue(frame, totalFrame, fps);
+        };
+
+        sim.Live.PlayerShotScale = timeSeconds =>
+        {
+            var frame = TimeToFrame(timeSeconds, fps, totalFrame);
+            return parameter.PlayerShotScale.GetValue(frame, totalFrame, fps);
+        };
+
+        sim.Live.PlayerShotHitRadius = timeSeconds =>
+        {
+            var frame = TimeToFrame(timeSeconds, fps, totalFrame);
+            return parameter.PlayerShotHitRadius.GetValue(frame, totalFrame, fps);
+        };
+
+        // レイヤー間エネミー・自機連携
+        sim.Live.EnemyPosition = timeSeconds =>
+        {
+            if (Collision.DanmakuCollisionBus.TryGetEnemy(parameter.PlayerShotTargetChannel, this, out var enemyPos, out _))
+            {
+                return enemyPos;
+            }
+            return null;
+        };
+
+        sim.Live.EnemyRadius = timeSeconds =>
+        {
+            if (Collision.DanmakuCollisionBus.TryGetEnemy(parameter.PlayerShotTargetChannel, this, out _, out var radius))
+            {
+                return radius;
+            }
+            var frame = TimeToFrame(timeSeconds, fps, totalFrame);
+            return parameter.EnemyRadius.GetValue(frame, totalFrame, fps);
+        };
     }
 
     /// <summary>
@@ -972,6 +1044,11 @@ public sealed class DanmakuShapeSource : IShapeSource2
         renderer.Sprites.SetCustomImage(
             SpriteSlots.TargetCustomSlot,
             parameter.HasCustomTargetImage ? parameter.TargetImagePath : null);
+
+        // 自機ショットのカスタム画像
+        renderer.Sprites.SetCustomImage(
+            SpriteSlots.PlayerCustomShotSlot,
+            parameter.HasCustomPlayerShotImage ? parameter.PlayerShotImagePath : null);
     }
 
     /// <summary>
@@ -1100,6 +1177,7 @@ public sealed class DanmakuShapeSource : IShapeSource2
     public void Dispose()
     {
         Audio.DanmakuChannelBus.Unregister(parameter);
+        Collision.DanmakuCollisionBus.Remove(this);
         simulator = null;
         output = null;
         emptyOutput = null;
