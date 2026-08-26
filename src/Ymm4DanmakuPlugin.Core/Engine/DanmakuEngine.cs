@@ -19,7 +19,7 @@ public sealed class DanmakuEngine
     private readonly List<Bullet> pendingSplits = [];
     private readonly BulletBulletMlHost scriptHost;
 
-    public DanmakuSettings Settings { get; private set; }
+    public DanmakuSettings Settings { get; internal set; }
 
     public BulletPool Pool { get; private set; }
 
@@ -261,8 +261,10 @@ public sealed class DanmakuEngine
         var shot = Settings.PlayerShot;
         if (!shot.IsEnabled) return;
 
+        var interval = Live.PlayerShotInterval?.Invoke(CurrentTime) ?? shot.FireInterval;
+        if (interval <= 0) return;
+
         playerShotTimer += deltaTime;
-        var interval = Math.Max(0.01, Live.PlayerShotInterval?.Invoke(CurrentTime) ?? shot.FireInterval);
 
         while (playerShotTimer >= interval)
         {
@@ -273,7 +275,9 @@ public sealed class DanmakuEngine
 
     private void FirePlayerShotBurst(PlayerShotSettings shot)
     {
-        var way = Math.Max(1, Live.PlayerShotWay?.Invoke(CurrentTime) ?? shot.Way);
+        var way = Live.PlayerShotWay?.Invoke(CurrentTime) ?? shot.Way;
+        if (way <= 0) return;
+
         var speed = Live.PlayerShotSpeed?.Invoke(CurrentTime) ?? shot.Speed;
         var spread = Live.PlayerShotSpread?.Invoke(CurrentTime) ?? shot.SpreadAngle;
         var scale = Live.PlayerShotScale?.Invoke(CurrentTime) ?? shot.Scale;

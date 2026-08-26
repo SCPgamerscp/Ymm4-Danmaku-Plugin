@@ -1920,5 +1920,89 @@ public class KeyframeLiveValueTests
         Assert.True(playerShot.Position.X > 50, "自動照準で真右に発射されていない");
         Assert.Equal(200.0, playerShot.Position.Y, 1);
     }
+
+    [Fact]
+    public void DanmakuSimulatorがConfigureで自機射撃の有効化を正しく反映する()
+    {
+        var initialSettings = new DanmakuSettings
+        {
+            Emitters = [],
+            PlayerShot = new PlayerShotSettings { IsEnabled = false },
+            Collision = new CollisionSettings { TargetX = 0, TargetY = 200 }
+        };
+
+        var sim = new DanmakuSimulator(initialSettings);
+        sim.SeekTo(0.2);
+        Assert.Empty(sim.Bullets);
+
+        // 途中で自機射撃を有効化する
+        var enabledSettings = initialSettings with
+        {
+            PlayerShot = new PlayerShotSettings
+            {
+                IsEnabled = true,
+                Way = 2,
+                Speed = 1000,
+                FireInterval = 0.08
+            }
+        };
+
+        sim.Configure(enabledSettings);
+        sim.Reset();
+        sim.SeekTo(0.2);
+
+        Assert.NotEmpty(sim.Bullets);
+        Assert.All(sim.Bullets, b => Assert.True(b.IsPlayerShot));
+    }
+
+    [Fact]
+    public void 自機ショットのWay0または連射間隔0以下で射撃が休止する()
+    {
+        var settings = new DanmakuSettings
+        {
+            Emitters = [],
+            PlayerShot = new PlayerShotSettings
+            {
+                IsEnabled = true,
+                Way = 0,
+                Speed = 1000,
+                FireInterval = 0.08
+            },
+            Collision = new CollisionSettings { TargetX = 0, TargetY = 200 }
+        };
+
+        var engine = TestFactory.Engine(settings);
+        engine.Advance(0.3);
+        Assert.Empty(engine.AliveBullets());
+    }
+
+    [Fact]
+    public void 自機ショットの弾速が負の場合に逆方向へ発射される()
+    {
+        var settings = new DanmakuSettings
+        {
+            Emitters = [],
+            PlayerShot = new PlayerShotSettings
+            {
+                IsEnabled = true,
+                Way = 1,
+                Speed = -1000, // 負の速度
+                FireInterval = 0.1
+            },
+            Collision = new CollisionSettings
+            {
+                TargetX = 0,
+                TargetY = 0,
+                EnemyHitEnabled = false,
+                SpawnHitEffect = false,
+            }
+        };
+
+        var engine = TestFactory.Engine(settings);
+        engine.Advance(0.15);
+
+        var shot = Assert.Single(engine.AliveBullets());
+        Assert.True(shot.Position.Y > 0, "負の速度で下向きに進んでいない");
+    }
 }
 

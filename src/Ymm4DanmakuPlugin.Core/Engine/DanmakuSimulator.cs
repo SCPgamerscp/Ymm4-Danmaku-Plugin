@@ -75,6 +75,7 @@ public sealed class DanmakuSimulator
         if (string.Equals(signature, settingsSignature, StringComparison.Ordinal))
         {
             // 構造は同じなので、軽い項目だけ反映する
+            Engine.Settings = newSettings;
             Engine.TargetPosition = new Vec2(newSettings.Collision.TargetX, newSettings.Collision.TargetY);
             return;
         }
@@ -169,6 +170,7 @@ public sealed class DanmakuSimulator
         // ターゲット座標はプレビュー上のドラッグで頻繁に動くため署名に含めない。
         // (含めるとドラッグ中に毎回シミュレーションが作り直されて重くなる)
         hash.Add(settings.Collision with { TargetX = 0, TargetY = 0 });
+        hash.Add(settings.PlayerShot);
         hash.Add(settings.FireSound);
         hash.Add(settings.ChangeSound);
         hash.Add(settings.HitSound);

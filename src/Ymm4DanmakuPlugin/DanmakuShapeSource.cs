@@ -894,13 +894,13 @@ public sealed class DanmakuShapeSource : IShapeSource2
         sim.Live.PlayerShotWay = timeSeconds =>
         {
             var frame = TimeToFrame(timeSeconds, fps, totalFrame);
-            return Math.Max(1, (int)Math.Round(parameter.PlayerShotWay.GetValue(frame, totalFrame, fps)));
+            return (int)Math.Round(parameter.PlayerShotWay.GetValue(frame, totalFrame, fps));
         };
 
         sim.Live.PlayerShotInterval = timeSeconds =>
         {
             var frame = TimeToFrame(timeSeconds, fps, totalFrame);
-            return Math.Max(0.001, parameter.PlayerShotInterval.GetValue(frame, totalFrame, fps));
+            return parameter.PlayerShotInterval.GetValue(frame, totalFrame, fps);
         };
 
         sim.Live.PlayerShotSpeed = timeSeconds =>

@@ -592,8 +592,8 @@ public class DanmakuShapeParameter : ShapeParameterBase
     private bool enemyHitEnabled = true;
 
     [Display(GroupName = "当たり判定", Name = "エネミー判定半径", Description = "エネミーの被弾判定半径 (px)。")]
-    [AnimationSlider("F1", "px", 0, 500)]
-    public Animation EnemyRadius { get; } = new Animation(40, 0, 10000);
+    [AnimationSlider("F1", "px", -500, 500)]
+    public Animation EnemyRadius { get; } = new Animation(40, -10000, 10000);
 
     [Display(GroupName = "当たり判定", Name = "弾の判定半径")]
     [AnimationSlider("F1", "px", -40, 40)]
@@ -654,20 +654,20 @@ public class DanmakuShapeParameter : ShapeParameterBase
 
     public bool HasCustomPlayerShotImage => !string.IsNullOrWhiteSpace(PlayerShotImagePath);
 
-    [Display(GroupName = "自機ショット", Name = "発射数 (Way数)", Description = "同時に発射する弾数。")]
-    [AnimationSlider("F0", "本", 1, 16)]
-    public Animation PlayerShotWay { get; } = new Animation(2, 1, 128);
+    [Display(GroupName = "自機ショット", Name = "発射数 (Way数)", Description = "同時に発射する弾数。0 で射撃休止。")]
+    [AnimationSlider("F0", "本", -16, 128)]
+    public Animation PlayerShotWay { get; } = new Animation(2, -128, 128);
 
-    [Display(GroupName = "自機ショット", Name = "連射間隔", Description = "発射間隔 (秒)。0.08 で秒間約 12 回連射。")]
-    [AnimationSlider("F3", "秒", 0.01, 1.0)]
-    public Animation PlayerShotInterval { get; } = new Animation(0.08, 0.001, 10.0);
+    [Display(GroupName = "自機ショット", Name = "連射間隔", Description = "発射間隔 (秒)。0.08 で秒間約 12 回連射。0 以下で射撃休止。")]
+    [AnimationSlider("F3", "秒", -1.0, 10.0)]
+    public Animation PlayerShotInterval { get; } = new Animation(0.08, -100.0, 100.0);
 
     [Display(GroupName = "自機ショット", Name = "弾速")]
-    [AnimationSlider("F0", "px/秒", 100, 3000)]
+    [AnimationSlider("F0", "px/秒", -3000, 3000)]
     public Animation PlayerShotSpeed { get; } = new Animation(1200, -10000, 10000);
 
     [Display(GroupName = "自機ショット", Name = "拡散角度", Description = "発射角の広がり。0 で平行に並んで直進します。")]
-    [AnimationSlider("F1", "度", 0, 90)]
+    [AnimationSlider("F1", "度", -360, 360)]
     public Animation PlayerShotSpread { get; } = new Animation(15, -360, 360);
 
     [Display(GroupName = "自機ショット", Name = "弾の大きさ")]
@@ -695,8 +695,8 @@ public class DanmakuShapeParameter : ShapeParameterBase
     private bool playerShotAutoAim;
 
     [Display(GroupName = "自機ショット", Name = "判定半径")]
-    [AnimationSlider("F1", "px", 1, 50)]
-    public Animation PlayerShotHitRadius { get; } = new Animation(12, 0, 500);
+    [AnimationSlider("F1", "px", -100, 500)]
+    public Animation PlayerShotHitRadius { get; } = new Animation(12, -1000, 1000);
 
     [Display(GroupName = "自機ショット", Name = "被弾時に消滅")]
     [ToggleSlider]
@@ -709,7 +709,7 @@ public class DanmakuShapeParameter : ShapeParameterBase
     private bool playerShotCancelEnemyBullets;
 
     [Display(GroupName = "自機ショット", Name = "対象チャンネル", Description = "当たり判定・自動照準の相手となる弾幕アイテムのチャンネル番号 (-1 で全チャンネル対象)。")]
-    [TextBoxSlider("F0", "ch", -1, 15)]
+    [TextBoxSlider("F0", "ch", -1, 255)]
     public int PlayerShotTargetChannel { get => playerShotTargetChannel; set => Set(ref playerShotTargetChannel, value); }
     private int playerShotTargetChannel = -1;
 
@@ -772,9 +772,9 @@ public class DanmakuShapeParameter : ShapeParameterBase
     public Animation GlobalOpacity { get; } = new Animation(100, -100, 100);
 
     [Display(GroupName = "全体", Name = "効果音チャンネル",
-        Description = "「弾幕効果音」音声エフェクト側で同じ番号を指定すると、この弾幕に合わせて効果音が鳴ります。")]
-    [AnimationSlider("F0", "ch", 0, 15)]
-    public Animation Channel { get; } = new Animation(0, 0, 255);
+        Description = "「弾幕効果音」音声エフェクト側で同じ番号を指定すると、この弾幕に合わせて効果音が鳴ります。-1 で全チャンネル連動。")]
+    [AnimationSlider("F0", "ch", -1, 255)]
+    public Animation Channel { get; } = new Animation(0, -1, 255);
 
     /// <summary>直近の描画で使われたキャンバスサイズ。</summary>
     public int LastCanvasWidth { get; internal set; } = 1920;
@@ -928,9 +928,9 @@ public class DanmakuShapeParameter : ShapeParameterBase
             Collision = new CollisionSettings
             {
                 IsEnabled = CollisionEnabled,
-                TargetRadius = Math.Abs(TargetRadius.GetFirstValue()),
+                TargetRadius = TargetRadius.GetFirstValue(),
                 EnemyHitEnabled = EnemyHitEnabled,
-                EnemyRadius = Math.Abs(EnemyRadius.GetFirstValue()),
+                EnemyRadius = EnemyRadius.GetFirstValue(),
                 SpawnHitEffect = SpawnHitEffect,
                 HitEffectCount = Math.Max(0, (int)Math.Round(HitEffectCount.GetFirstValue())),
                 HitEffectSpeed = HitEffectSpeed.GetFirstValue(),
@@ -942,8 +942,8 @@ public class DanmakuShapeParameter : ShapeParameterBase
                 IsEnabled = PlayerShotEnabled,
                 ShotType = PlayerShotType,
                 ImagePath = PlayerShotImagePath,
-                Way = Math.Max(1, (int)Math.Round(PlayerShotWay.GetFirstValue())),
-                FireInterval = Math.Max(0.01, PlayerShotInterval.GetFirstValue()),
+                Way = (int)Math.Round(PlayerShotWay.GetFirstValue()),
+                FireInterval = PlayerShotInterval.GetFirstValue(),
                 Speed = PlayerShotSpeed.GetFirstValue(),
                 SpreadAngle = PlayerShotSpread.GetFirstValue(),
                 Scale = PlayerShotScale.GetFirstValue(),
@@ -951,7 +951,7 @@ public class DanmakuShapeParameter : ShapeParameterBase
                 Color = ColorExtensions.ToBulletColor(PlayerShotColor),
                 Additive = PlayerShotAdditive,
                 AutoAim = PlayerShotAutoAim,
-                HitRadius = Math.Abs(PlayerShotHitRadius.GetFirstValue()),
+                HitRadius = PlayerShotHitRadius.GetFirstValue(),
                 DestroyOnHit = PlayerShotDestroyOnHit,
                 CancelEnemyBullets = PlayerShotCancelEnemyBullets,
                 TargetChannel = PlayerShotTargetChannel,
@@ -1045,7 +1045,7 @@ public class DanmakuShapeParameter : ShapeParameterBase
         private readonly OutOfBoundsBehavior outOfBounds;
         private readonly Animation boundsMargin = new(160, -100000, 100000);
         private readonly Animation globalOpacity = new(100, -100, 100);
-        private readonly Animation channel = new(0, 0, 255);
+        private readonly Animation channel = new(0, -1, 255);
 
         private readonly bool collisionEnabled;
         private readonly Animation targetX = new(0, -100000, 100000);
@@ -1056,7 +1056,7 @@ public class DanmakuShapeParameter : ShapeParameterBase
         private readonly Animation targetOpacity = new(1.0, -1, 1);
         private readonly Animation targetRadius = new(30, -10000, 10000);
         private readonly bool enemyHitEnabled = true;
-        private readonly Animation enemyRadius = new(40, 0, 10000);
+        private readonly Animation enemyRadius = new(40, -10000, 10000);
         private readonly bool spawnHitEffect;
         private readonly Animation hitEffectCount = new(8, 0, 500);
         private readonly Animation hitEffectSpeed = new(160, -100000, 100000);
@@ -1066,8 +1066,8 @@ public class DanmakuShapeParameter : ShapeParameterBase
         private readonly bool playerShotEnabled;
         private readonly PlayerShotType playerShotType;
         private readonly string playerShotImagePath = string.Empty;
-        private readonly Animation playerShotWay = new(2, 1, 128);
-        private readonly Animation playerShotInterval = new(0.08, 0.001, 10.0);
+        private readonly Animation playerShotWay = new(2, -128, 128);
+        private readonly Animation playerShotInterval = new(0.08, -100.0, 100.0);
         private readonly Animation playerShotSpeed = new(1200, -10000, 10000);
         private readonly Animation playerShotSpread = new(15, -360, 360);
         private readonly Animation playerShotScale = new(1.0, -1000, 1000);
@@ -1075,7 +1075,7 @@ public class DanmakuShapeParameter : ShapeParameterBase
         private readonly Color playerShotColor = Color.FromArgb(255, 255, 255, 255);
         private readonly bool playerShotAdditive = true;
         private readonly bool playerShotAutoAim;
-        private readonly Animation playerShotHitRadius = new(12, 0, 500);
+        private readonly Animation playerShotHitRadius = new(12, -1000, 1000);
         private readonly bool playerShotDestroyOnHit = true;
         private readonly bool playerShotCancelEnemyBullets;
         private readonly int playerShotTargetChannel = -1;

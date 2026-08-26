@@ -409,8 +409,9 @@ public sealed class DanmakuRenderer : IDisposable
         }
 
         // 2. 当たり判定マーカー (喰らい判定サークル) の描画
+        // 自機画像が未設定のときのみ描画する (キャラクター画像の上に赤い点が重なるのを防ぐ)
         var targetRadius = MathF.Abs(target.Radius);
-        if (target.ShowMarker && targetRadius > 0.5f)
+        if (target.ShowMarker && !target.HasCustomImage && targetRadius > 0.5f)
         {
             dc.PrimitiveBlend = PrimitiveBlend.SourceOver;
             dc.Transform = Matrix3x2.CreateTranslation(target.X, target.Y);
