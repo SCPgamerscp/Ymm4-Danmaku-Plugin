@@ -62,7 +62,8 @@ public static class DanmakuChannelBus
             foreach (var entry in Entries)
             {
                 if (!entry.TryGetTarget(out var parameter)) continue;
-                if ((int)Math.Round(parameter.Channel.GetFirstValue()) != channel) continue;
+                var paramChannel = (int)Math.Round(parameter.Channel.GetFirstValue());
+                if (channel != -1 && paramChannel != -1 && paramChannel != channel) continue;
 
                 return parameter.ToSettings(parameter.LastCanvasWidth, parameter.LastCanvasHeight);
             }

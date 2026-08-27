@@ -32,10 +32,10 @@ public class DanmakuAudioEffect : AudioEffectBase
     public override string Label => $"弾幕効果音 (ch{Channel})";
 
     [Display(GroupName = "弾幕効果音", Name = "チャンネル",
-        Description = "映像側の弾幕アイテムで指定した「効果音チャンネル」と同じ番号にしてください。")]
-    [TextBoxSlider("F0", "ch", 0, 15)]
+        Description = "映像側の弾幕アイテムで指定した「効果音チャンネル」と同じ番号にしてください (-1 で全チャンネル対応)。")]
+    [TextBoxSlider("F0", "ch", -1, 255)]
     [DefaultValue(0)]
-    [Range(0, 255)]
+    [Range(-1, 255)]
     public int Channel { get => channel; set => Set(ref channel, value); }
     private int channel;
 
@@ -190,7 +190,6 @@ public sealed class DanmakuAudioEffectProcessor : AudioEffectProcessorBase
     private void Prepare()
     {
         if (isPrepared) return;
-        isPrepared = true;
 
         var settings = DanmakuChannelBus.TryGetSettings(effect.Channel);
         if (settings is null)
@@ -198,6 +197,8 @@ public sealed class DanmakuAudioEffectProcessor : AudioEffectProcessorBase
             Diagnostics = $"チャンネル {effect.Channel} の弾幕アイテムが見つかりません。";
             return;
         }
+
+        isPrepared = true;
 
         // 音声側は描画しないので、必要な長さぶんだけシミュレーションする
         var simulator = new DanmakuSimulator(settings)
