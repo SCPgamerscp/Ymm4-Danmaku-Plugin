@@ -9,7 +9,6 @@ using YukkuriMovieMaker.Project;
 using Ymm4DanmakuPlugin.Core.Audio;
 using Ymm4DanmakuPlugin.Core.Configuration;
 using Ymm4DanmakuPlugin.Core.Engine;
-using Ymm4DanmakuPlugin.Settings;
 
 namespace Ymm4DanmakuPlugin.Audio;
 
@@ -193,44 +192,15 @@ public class DanmakuAudioEffect : AudioEffectBase
     public double VanishPitchJitter { get => vanishPitchJitter; set => Set(ref vanishPitchJitter, value); }
     private double vanishPitchJitter = 2.5;
 
-    public (bool Enabled, string FilePath, double Volume, double PitchJitter) GetSoundInfo(DanmakuSoundKind kind)
+    public (bool Enabled, string FilePath, double Volume, double PitchJitter) GetSoundInfo(DanmakuSoundKind kind) => kind switch
     {
-        var soundSettings = DanmakuSoundSettings.Default;
-        return kind switch
-        {
-            DanmakuSoundKind.PlayerShot => (
-                PlayerShotEnabled,
-                !string.IsNullOrWhiteSpace(PlayerShotFilePath) ? PlayerShotFilePath : soundSettings.PlayerShot.FilePath,
-                PlayerShotVolume,
-                PlayerShotPitchJitter
-            ),
-            DanmakuSoundKind.Fire => (
-                FireEnabled,
-                !string.IsNullOrWhiteSpace(FireFilePath) ? FireFilePath : soundSettings.Fire.FilePath,
-                FireVolume,
-                FirePitchJitter
-            ),
-            DanmakuSoundKind.Change => (
-                ChangeEnabled,
-                !string.IsNullOrWhiteSpace(ChangeFilePath) ? ChangeFilePath : soundSettings.Change.FilePath,
-                ChangeVolume,
-                ChangePitchJitter
-            ),
-            DanmakuSoundKind.Hit => (
-                HitEnabled,
-                !string.IsNullOrWhiteSpace(HitFilePath) ? HitFilePath : soundSettings.Hit.FilePath,
-                HitVolume,
-                HitPitchJitter
-            ),
-            DanmakuSoundKind.Vanish => (
-                VanishEnabled,
-                !string.IsNullOrWhiteSpace(VanishFilePath) ? VanishFilePath : soundSettings.Vanish.FilePath,
-                VanishVolume,
-                VanishPitchJitter
-            ),
-            _ => (false, string.Empty, 0, 0),
-        };
-    }
+        DanmakuSoundKind.PlayerShot => (PlayerShotEnabled, PlayerShotFilePath, PlayerShotVolume, PlayerShotPitchJitter),
+        DanmakuSoundKind.Fire => (FireEnabled, FireFilePath, FireVolume, FirePitchJitter),
+        DanmakuSoundKind.Change => (ChangeEnabled, ChangeFilePath, ChangeVolume, ChangePitchJitter),
+        DanmakuSoundKind.Hit => (HitEnabled, HitFilePath, HitVolume, HitPitchJitter),
+        DanmakuSoundKind.Vanish => (VanishEnabled, VanishFilePath, VanishVolume, VanishPitchJitter),
+        _ => (false, string.Empty, 0, 0),
+    };
 
     public override IAudioEffectProcessor CreateAudioEffect(TimeSpan duration) =>
         new DanmakuAudioEffectProcessor(this, duration);

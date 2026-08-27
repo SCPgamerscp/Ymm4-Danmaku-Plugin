@@ -171,11 +171,6 @@ public sealed class DanmakuSimulator
         // (含めるとドラッグ中に毎回シミュレーションが作り直されて重くなる)
         hash.Add(settings.Collision with { TargetX = 0, TargetY = 0 });
         hash.Add(settings.PlayerShot);
-        hash.Add(settings.PlayerShotSound);
-        hash.Add(settings.FireSound);
-        hash.Add(settings.ChangeSound);
-        hash.Add(settings.HitSound);
-        hash.Add(settings.VanishSound);
 
         foreach (var emitter in settings.Emitters)
             hash.Add(emitter);

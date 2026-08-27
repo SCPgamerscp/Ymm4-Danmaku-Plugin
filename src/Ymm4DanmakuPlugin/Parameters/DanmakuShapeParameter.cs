@@ -13,7 +13,6 @@ using Ymm4DanmakuPlugin.Core.Audio;
 using Ymm4DanmakuPlugin.Core.Configuration;
 using Ymm4DanmakuPlugin.Core.Scripting;
 using Ymm4DanmakuPlugin.Interop;
-using Ymm4DanmakuPlugin.Settings;
 
 namespace Ymm4DanmakuPlugin.Parameters;
 
@@ -882,8 +881,6 @@ public class DanmakuShapeParameter : ShapeParameterBase
     /// </summary>
     public DanmakuSettings ToSettings(int canvasWidth, int canvasHeight)
     {
-        var sound = DanmakuSoundSettings.Default;
-
         var builder = ImmutableArray.CreateBuilder<EmitterSettings>(emitters.Count);
         for (var i = 0; i < emitters.Count; i++)
         {

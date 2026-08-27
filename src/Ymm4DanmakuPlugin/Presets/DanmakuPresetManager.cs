@@ -1,6 +1,5 @@
 using Ymm4DanmakuPlugin.Core.Presets;
 using Ymm4DanmakuPlugin.Parameters;
-using Ymm4DanmakuPlugin.Settings;
 
 namespace Ymm4DanmakuPlugin.Presets;
 
@@ -26,7 +25,10 @@ public static class DanmakuPresetManager
     private static string? cachedDirectory;
 
     /// <summary>ユーザープリセットの保存先フォルダ。</summary>
-    public static string UserDirectory => DanmakuSoundSettings.Default.ResolvePresetDirectory();
+    public static string UserDirectory => Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+        "YukkuriMovieMaker",
+        "DanmakuPresets");
 
     /// <summary>プリセット一覧 (組み込み + ユーザーフォルダ)。</summary>
     public static IReadOnlyList<DanmakuPreset> All => Catalog.Presets;
