@@ -7,9 +7,6 @@ public sealed record SoundSettings
 {
     public bool IsEnabled { get; init; } = true;
 
-    /// <summary>音声ファイルのパス。</summary>
-    public string? FilePath { get; init; }
-
     /// <summary>音量 (0〜1)。</summary>
     public double Volume { get; init; } = 0.6;
 
