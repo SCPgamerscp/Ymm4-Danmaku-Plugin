@@ -5,7 +5,7 @@ namespace Ymm4DanmakuPlugin.Core.Configuration;
 /// <summary>効果音 1 種類あたりの設定。YMM4 の設定画面からユーザーが自由に変更できる。</summary>
 public sealed record SoundSettings
 {
-    public bool IsEnabled { get; init; }
+    public bool IsEnabled { get; init; } = true;
 
     /// <summary>音声ファイルのパス。</summary>
     public string? FilePath { get; init; }
