@@ -23,7 +23,7 @@ public sealed class DanmakuSoundBuffer
     /// <summary>
     /// YMM4 の音声ストリーム (Input) からサンプルを読み取ってバッファを生成する。
     /// </summary>
-    public static DanmakuSoundBuffer? FromAudioStream(YukkuriMovieMaker.Player.Audio.Effects.IAudioStream? stream, int maxSeconds = 10)
+    public static DanmakuSoundBuffer? FromAudioStream(YukkuriMovieMaker.Player.Audio.Effects.IAudioStream? stream, int maxSeconds = 60)
     {
         if (stream is null) return null;
         var hz = stream.Hz;

@@ -64,6 +64,30 @@ public abstract class DanmakuSingleSoundAudioEffectBase : AudioEffectBase
     public int MaxVoices { get => maxVoices; set => Set(ref maxVoices, value); }
     private int maxVoices = 32;
 
+    [Display(GroupName = "再生範囲", Name = "開始位置",
+        Description = "音源の何秒目から再生するかを指定します (先頭の無音カット等に便利)。")]
+    [TextBoxSlider("F3", "秒", 0, 5)]
+    [DefaultValue(0d)]
+    [Range(0, 60)]
+    public double TrimStart { get => trimStart; set => Set(ref trimStart, value); }
+    private double trimStart;
+
+    [Display(GroupName = "再生範囲", Name = "再生時間",
+        Description = "1音あたりの最大再生時間 (0 で音源の最後まで再生)。長すぎる音のカットに便利です。")]
+    [TextBoxSlider("F3", "秒", 0, 5)]
+    [DefaultValue(0d)]
+    [Range(0, 60)]
+    public double PlayDuration { get => playDuration; set => Set(ref playDuration, value); }
+    private double playDuration;
+
+    [Display(GroupName = "再生範囲", Name = "フェードアウト",
+        Description = "再生時間の末尾で音が急に途切れてプチプチ鳴るのを防ぐフェード時間です。")]
+    [TextBoxSlider("F3", "秒", 0, 0.5)]
+    [DefaultValue(0.02d)]
+    [Range(0, 5)]
+    public double FadeOut { get => fadeOut; set => Set(ref fadeOut, value); }
+    private double fadeOut = 0.02;
+
     public override IAudioEffectProcessor CreateAudioEffect(TimeSpan duration) =>
         new DanmakuSingleSoundProcessor(this, SoundKind, duration);
 
@@ -121,7 +145,14 @@ public sealed class DanmakuVanishAudioEffect : DanmakuSingleSoundAudioEffectBase
 /// </summary>
 public sealed class DanmakuSingleSoundProcessor : AudioEffectProcessorBase
 {
-    private readonly record struct Voice(DanmakuSoundBuffer Buffer, long StartPosition, double PitchRatio, double Volume);
+    private readonly record struct Voice(
+        DanmakuSoundBuffer Buffer,
+        long StartPosition,
+        double PitchRatio,
+        double Volume,
+        double StartFrame,
+        double MaxFrames,
+        double FadeOutFrames);
 
     private readonly DanmakuSingleSoundAudioEffectBase effect;
     private readonly DanmakuSoundKind soundKind;
@@ -159,7 +190,7 @@ public sealed class DanmakuSingleSoundProcessor : AudioEffectProcessorBase
 
         foreach (var voice in voices)
         {
-            var voiceLength = (long)(voice.Buffer.FrameCount / Math.Max(0.01, voice.PitchRatio)) * 2;
+            var voiceLength = (long)(voice.MaxFrames / Math.Max(0.01, voice.PitchRatio)) * 2;
             var voiceEnd = voice.StartPosition + voiceLength;
 
             if (voiceEnd <= regionStart || voice.StartPosition >= regionEnd) continue;
@@ -180,21 +211,40 @@ public sealed class DanmakuSingleSoundProcessor : AudioEffectProcessorBase
     {
         var buffer = voice.Buffer;
         var volume = (float)voice.Volume * gain;
-        if (volume <= 0f) return;
+        if (volume <= 0f || voice.MaxFrames <= 0) return;
 
         var frames = count / 2;
+        var startFrame = voice.StartFrame;
+        var maxFrames = voice.MaxFrames;
+        var fadeOutFrames = voice.FadeOutFrames;
+
         for (var i = 0; i < frames; i++)
         {
             var elementPosition = regionStart + i * 2;
             var elapsedElements = elementPosition - voice.StartPosition;
             if (elapsedElements < 0) continue;
 
-            var sourceFrame = elapsedElements / 2.0 * voice.PitchRatio;
+            var sourceFramesElapsed = elapsedElements / 2.0 * voice.PitchRatio;
+            if (sourceFramesElapsed >= maxFrames) break;
+
+            var sourceFrame = startFrame + sourceFramesElapsed;
             if (sourceFrame >= buffer.FrameCount) break;
 
+            // フェードアウト計算 (末尾付近で 1.0 -> 0.0 へ線形減衰)
+            var fadeMultiplier = 1.0f;
+            if (fadeOutFrames > 0)
+            {
+                var remainingFrames = maxFrames - sourceFramesElapsed;
+                if (remainingFrames < fadeOutFrames)
+                {
+                    fadeMultiplier = (float)Math.Clamp(remainingFrames / fadeOutFrames, 0.0, 1.0);
+                }
+            }
+
+            var currentVol = volume * fadeMultiplier;
             var index = offset + i * 2;
-            destBuffer[index] += buffer.SampleAt(sourceFrame, 0) * volume;
-            destBuffer[index + 1] += buffer.SampleAt(sourceFrame, 1) * volume;
+            destBuffer[index] += buffer.SampleAt(sourceFrame, 0) * currentVol;
+            destBuffer[index + 1] += buffer.SampleAt(sourceFrame, 1) * currentVol;
         }
     }
 
@@ -231,6 +281,13 @@ public sealed class DanmakuSingleSoundProcessor : AudioEffectProcessorBase
         var hz = Hz;
         var random = new DeterministicRandom(settings.Seed + (int)soundKind * 1000);
 
+        var startFrame = Math.Max(0.0, effect.TrimStart * hz);
+        var totalAvailableFrames = Math.Max(0.0, buffer.FrameCount - startFrame);
+        var maxFrames = effect.PlayDuration > 0
+            ? Math.Min(totalAvailableFrames, effect.PlayDuration * hz)
+            : totalAvailableFrames;
+        var fadeOutFrames = Math.Max(0.0, effect.FadeOut * hz);
+
         foreach (var e in log.Events)
         {
             if (e.Kind != soundKind) continue;
@@ -245,7 +302,7 @@ public sealed class DanmakuSingleSoundProcessor : AudioEffectProcessorBase
             var semitones = effect.PitchJitter > 0 ? random.NextSymmetric(effect.PitchJitter) : 0;
             var pitchRatio = e.PitchRatio * DanmakuMath.SemitoneToRatio(semitones);
 
-            voices.Add(new Voice(buffer, startPosition, pitchRatio, e.Volume));
+            voices.Add(new Voice(buffer, startPosition, pitchRatio, e.Volume, startFrame, maxFrames, fadeOutFrames));
 
             if (voices.Count >= effect.MaxVoices * 64) break;
         }
