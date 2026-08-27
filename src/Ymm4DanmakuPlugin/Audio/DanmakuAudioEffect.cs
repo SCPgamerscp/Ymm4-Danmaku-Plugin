@@ -64,12 +64,6 @@ public abstract class DanmakuSingleSoundAudioEffectBase : AudioEffectBase
     public int MaxVoices { get => maxVoices; set => Set(ref maxVoices, value); }
     private int maxVoices = 32;
 
-    [Display(GroupName = "詳細設定", Name = "カスタム音声ファイル",
-        Description = "空欄のときは音声アイテム自体の音を鳴らします。別の音を鳴らしたい場合のみ指定してください。")]
-    [FileSelector(YukkuriMovieMaker.Settings.FileGroupType.AudioItem)]
-    public string CustomFilePath { get => customFilePath; set => Set(ref customFilePath, value ?? string.Empty); }
-    private string customFilePath = string.Empty;
-
     public override IAudioEffectProcessor CreateAudioEffect(TimeSpan duration) =>
         new DanmakuSingleSoundProcessor(this, SoundKind, duration);
 
@@ -215,20 +209,11 @@ public sealed class DanmakuSingleSoundProcessor : AudioEffectProcessorBase
             return;
         }
 
-        // 音声バッファの取得: カスタムファイル指定があれば優先、なければ音声アイテム (Input) から自動取得
-        DanmakuSoundBuffer? buffer = null;
-        if (!string.IsNullOrWhiteSpace(effect.CustomFilePath))
-        {
-            buffer = DanmakuSoundBuffer.Load(effect.CustomFilePath);
-        }
-        else if (Input is not null)
-        {
-            buffer = DanmakuSoundBuffer.FromAudioStream(Input);
-        }
-
+        // 音声バッファの取得: 音声アイテム (Input) から自動取得
+        var buffer = Input is not null ? DanmakuSoundBuffer.FromAudioStream(Input) : null;
         if (buffer is null)
         {
-            Diagnostics = "音声ソースを取得できませんでした。音声アイテムに音源をセットするか、カスタム音声ファイルを指定してください。";
+            Diagnostics = "音声ソースを取得できませんでした。音声アイテムに音源をセットしてください。";
             return;
         }
 
