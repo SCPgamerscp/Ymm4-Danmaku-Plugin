@@ -9,26 +9,21 @@ using YukkuriMovieMaker.Project;
 using Ymm4DanmakuPlugin.Core.Audio;
 using Ymm4DanmakuPlugin.Core.Configuration;
 using Ymm4DanmakuPlugin.Core.Engine;
+using Ymm4DanmakuPlugin.Core.Mathematics;
 
 namespace Ymm4DanmakuPlugin.Audio;
 
 /// <summary>
-/// 弾幕に合わせて効果音を重ねる音声エフェクト。
+/// 単機能弾幕効果音エフェクトの共通基底クラス。
 /// <para>
-/// 音声アイテム (無音の音声でもよい) にこのエフェクトを追加し、
-/// 映像側の弾幕アイテムと同じ「効果音チャンネル」を指定すると、
-/// 発射・分裂・被弾・消滅のタイミングで効果音が鳴る。
-/// </para>
-/// <para>
-/// <b>音ズレしない仕組み:</b> 映像側の計算結果を受け取るのではなく、
-/// 同じ設定・同じシードで<b>自前にシミュレーションをやり直す</b>。
-/// コアエンジンは決定論的なので必ず同じ効果音イベント列が得られる。
+/// 音声アイテムにこのエフェクトを追加すると、その音声アイテム自身の音源ファイルを使って、
+/// 弾幕の各イベント（ショット・発射・被弾等）のタイミングに合わせて自動で効果音を鳴らします。
+/// エフェクト側で音声ファイルを二重に選び直す必要がありません。
 /// </para>
 /// </summary>
-[AudioEffect("弾幕効果音", ["弾幕"], ["danmaku", "弾幕", "効果音", "東方"], isAviUtlSupported: false)]
-public class DanmakuAudioEffect : AudioEffectBase
+public abstract class DanmakuSingleSoundAudioEffectBase : AudioEffectBase
 {
-    public override string Label => $"弾幕効果音 (ch{Channel})";
+    public abstract DanmakuSoundKind SoundKind { get; }
 
     [Display(GroupName = "基本設定", Name = "チャンネル",
         Description = "映像側の弾幕アイテムで指定した「効果音チャンネル」と同じ番号にしてください (-1 で全チャンネル対応)。")]
@@ -38,12 +33,20 @@ public class DanmakuAudioEffect : AudioEffectBase
     public int Channel { get => channel; set => Set(ref channel, value); }
     private int channel;
 
-    [Display(GroupName = "基本設定", Name = "マスター音量")]
+    [Display(GroupName = "基本設定", Name = "音量")]
     [TextBoxSlider("F2", "倍", 0, 2)]
     [DefaultValue(1d)]
     [Range(0, 4)]
     public double Volume { get => volume; set => Set(ref volume, value); }
     private double volume = 1.0;
+
+    [Display(GroupName = "基本設定", Name = "ピッチ変調",
+        Description = "±この半音幅でランダムに変調して音の単調さを防ぎます。")]
+    [TextBoxSlider("F2", "半音", 0, 6)]
+    [DefaultValue(1.0d)]
+    [Range(0, 12)]
+    public double PitchJitter { get => pitchJitter; set => Set(ref pitchJitter, value); }
+    private double pitchJitter = 1.0;
 
     [Display(GroupName = "基本設定", Name = "時間オフセット",
         Description = "効果音を前後にずらします。負で早く鳴ります。")]
@@ -61,151 +64,15 @@ public class DanmakuAudioEffect : AudioEffectBase
     public int MaxVoices { get => maxVoices; set => Set(ref maxVoices, value); }
     private int maxVoices = 32;
 
-    [Display(GroupName = "基本設定", Name = "元の音を残す",
-        Description = "オフにすると元の音声を消し、効果音だけを出力します。")]
-    [ToggleSlider]
-    public bool KeepInput { get => keepInput; set => Set(ref keepInput, value); }
-    private bool keepInput = true;
-
-    // ---- 自機ショット発射音 ----
-    [Display(GroupName = "自機ショット発射音", Name = "射撃音を鳴らす")]
-    [ToggleSlider]
-    public bool PlayerShotEnabled { get => playerShotEnabled; set => Set(ref playerShotEnabled, value); }
-    private bool playerShotEnabled = true;
-
-    [Display(GroupName = "自機ショット発射音", Name = "音声ファイル", Description = "自機がショットを発射した瞬間に鳴る音 (WAV/MP3等)。")]
+    [Display(GroupName = "詳細設定", Name = "カスタム音声ファイル",
+        Description = "空欄のときは音声アイテム自体の音を鳴らします。別の音を鳴らしたい場合のみ指定してください。")]
     [FileSelector(YukkuriMovieMaker.Settings.FileGroupType.AudioItem)]
-    public string PlayerShotFilePath { get => playerShotFilePath; set => Set(ref playerShotFilePath, value ?? string.Empty); }
-    private string playerShotFilePath = string.Empty;
-
-    [Display(GroupName = "自機ショット発射音", Name = "音量")]
-    [TextBoxSlider("F2", "", 0, 1)]
-    [DefaultValue(0.5d)]
-    [Range(0, 1)]
-    public double PlayerShotVolume { get => playerShotVolume; set => Set(ref playerShotVolume, value); }
-    private double playerShotVolume = 0.5;
-
-    [Display(GroupName = "自機ショット発射音", Name = "ピッチ変調", Description = "±この半音幅でランダムに変調します。")]
-    [TextBoxSlider("F2", "半音", 0, 6)]
-    [DefaultValue(1.0d)]
-    [Range(0, 12)]
-    public double PlayerShotPitchJitter { get => playerShotPitchJitter; set => Set(ref playerShotPitchJitter, value); }
-    private double playerShotPitchJitter = 1.0;
-
-    // ---- 敵弾 発射音 ----
-    [Display(GroupName = "敵弾 発射音", Name = "発射音を鳴らす")]
-    [ToggleSlider]
-    public bool FireEnabled { get => fireEnabled; set => Set(ref fireEnabled, value); }
-    private bool fireEnabled = true;
-
-    [Display(GroupName = "敵弾 発射音", Name = "音声ファイル", Description = "敵弾を発射した瞬間に鳴る音 (WAV/MP3等)。")]
-    [FileSelector(YukkuriMovieMaker.Settings.FileGroupType.AudioItem)]
-    public string FireFilePath { get => fireFilePath; set => Set(ref fireFilePath, value ?? string.Empty); }
-    private string fireFilePath = string.Empty;
-
-    [Display(GroupName = "敵弾 発射音", Name = "音量")]
-    [TextBoxSlider("F2", "", 0, 1)]
-    [DefaultValue(0.6d)]
-    [Range(0, 1)]
-    public double FireVolume { get => fireVolume; set => Set(ref fireVolume, value); }
-    private double fireVolume = 0.6;
-
-    [Display(GroupName = "敵弾 発射音", Name = "ピッチ変調")]
-    [TextBoxSlider("F2", "半音", 0, 6)]
-    [DefaultValue(1.5d)]
-    [Range(0, 12)]
-    public double FirePitchJitter { get => firePitchJitter; set => Set(ref firePitchJitter, value); }
-    private double firePitchJitter = 1.5;
-
-    // ---- 変化・分裂音 ----
-    [Display(GroupName = "変化・分裂音", Name = "変化音を鳴らす")]
-    [ToggleSlider]
-    public bool ChangeEnabled { get => changeEnabled; set => Set(ref changeEnabled, value); }
-    private bool changeEnabled = true;
-
-    [Display(GroupName = "変化・分裂音", Name = "音声ファイル", Description = "弾が分裂・軌道変化したときに鳴る音。")]
-    [FileSelector(YukkuriMovieMaker.Settings.FileGroupType.AudioItem)]
-    public string ChangeFilePath { get => changeFilePath; set => Set(ref changeFilePath, value ?? string.Empty); }
-    private string changeFilePath = string.Empty;
-
-    [Display(GroupName = "変化・分裂音", Name = "音量")]
-    [TextBoxSlider("F2", "", 0, 1)]
-    [DefaultValue(0.5d)]
-    [Range(0, 1)]
-    public double ChangeVolume { get => changeVolume; set => Set(ref changeVolume, value); }
-    private double changeVolume = 0.5;
-
-    [Display(GroupName = "変化・分裂音", Name = "ピッチ変調")]
-    [TextBoxSlider("F2", "半音", 0, 6)]
-    [DefaultValue(2.0d)]
-    [Range(0, 12)]
-    public double ChangePitchJitter { get => changePitchJitter; set => Set(ref changePitchJitter, value); }
-    private double changePitchJitter = 2.0;
-
-    // ---- 被弾音 ----
-    [Display(GroupName = "被弾音", Name = "被弾音を鳴らす")]
-    [ToggleSlider]
-    public bool HitEnabled { get => hitEnabled; set => Set(ref hitEnabled, value); }
-    private bool hitEnabled = true;
-
-    [Display(GroupName = "被弾音", Name = "音声ファイル", Description = "自機またはエネミーが被弾した瞬間に鳴る音。")]
-    [FileSelector(YukkuriMovieMaker.Settings.FileGroupType.AudioItem)]
-    public string HitFilePath { get => hitFilePath; set => Set(ref hitFilePath, value ?? string.Empty); }
-    private string hitFilePath = string.Empty;
-
-    [Display(GroupName = "被弾音", Name = "音量")]
-    [TextBoxSlider("F2", "", 0, 1)]
-    [DefaultValue(0.8d)]
-    [Range(0, 1)]
-    public double HitVolume { get => hitVolume; set => Set(ref hitVolume, value); }
-    private double hitVolume = 0.8;
-
-    [Display(GroupName = "被弾音", Name = "ピッチ変調")]
-    [TextBoxSlider("F2", "半音", 0, 6)]
-    [DefaultValue(1.0d)]
-    [Range(0, 12)]
-    public double HitPitchJitter { get => hitPitchJitter; set => Set(ref hitPitchJitter, value); }
-    private double hitPitchJitter = 1.0;
-
-    // ---- 消滅音 ----
-    [Display(GroupName = "消滅音", Name = "消滅音を鳴らす")]
-    [ToggleSlider]
-    public bool VanishEnabled { get => vanishEnabled; set => Set(ref vanishEnabled, value); }
-    private bool vanishEnabled;
-
-    [Display(GroupName = "消滅音", Name = "音声ファイル", Description = "弾が画面外や寿命で消滅したときに鳴る音。")]
-    [FileSelector(YukkuriMovieMaker.Settings.FileGroupType.AudioItem)]
-    public string VanishFilePath { get => vanishFilePath; set => Set(ref vanishFilePath, value ?? string.Empty); }
-    private string vanishFilePath = string.Empty;
-
-    [Display(GroupName = "消滅音", Name = "音量")]
-    [TextBoxSlider("F2", "", 0, 1)]
-    [DefaultValue(0.35d)]
-    [Range(0, 1)]
-    public double VanishVolume { get => vanishVolume; set => Set(ref vanishVolume, value); }
-    private double vanishVolume = 0.35;
-
-    [Display(GroupName = "消滅音", Name = "ピッチ変調")]
-    [TextBoxSlider("F2", "半音", 0, 6)]
-    [DefaultValue(2.5d)]
-    [Range(0, 12)]
-    public double VanishPitchJitter { get => vanishPitchJitter; set => Set(ref vanishPitchJitter, value); }
-    private double vanishPitchJitter = 2.5;
-
-    public (bool Enabled, string FilePath, double Volume, double PitchJitter) GetSoundInfo(DanmakuSoundKind kind) => kind switch
-    {
-        DanmakuSoundKind.PlayerShot => (PlayerShotEnabled, PlayerShotFilePath, PlayerShotVolume, PlayerShotPitchJitter),
-        DanmakuSoundKind.Fire => (FireEnabled, FireFilePath, FireVolume, FirePitchJitter),
-        DanmakuSoundKind.Change => (ChangeEnabled, ChangeFilePath, ChangeVolume, ChangePitchJitter),
-        DanmakuSoundKind.Hit => (HitEnabled, HitFilePath, HitVolume, HitPitchJitter),
-        DanmakuSoundKind.Vanish => (VanishEnabled, VanishFilePath, VanishVolume, VanishPitchJitter),
-        _ => (false, string.Empty, 0, 0),
-    };
+    public string CustomFilePath { get => customFilePath; set => Set(ref customFilePath, value ?? string.Empty); }
+    private string customFilePath = string.Empty;
 
     public override IAudioEffectProcessor CreateAudioEffect(TimeSpan duration) =>
-        new DanmakuAudioEffectProcessor(this, duration);
+        new DanmakuSingleSoundProcessor(this, SoundKind, duration);
 
-    /// <summary>AviUtl (exo) には出力できない (独自シミュレーションのため)。</summary>
     public override IEnumerable<string> CreateExoAudioFilters(
         int keyFrameIndex,
         ExoOutputDescription exoOutputDescription) => [];
@@ -215,55 +82,83 @@ public class DanmakuAudioEffect : AudioEffectBase
     protected override IEnumerable<IAnimatable> GetAnimatables() => [];
 }
 
-/// <summary>
-/// <see cref="DanmakuAudioEffect"/> の音声処理本体。
-/// </summary>
-public sealed class DanmakuAudioEffectProcessor : AudioEffectProcessorBase
+/// <summary>自機ショット専用の弾幕効果音エフェクト。</summary>
+[AudioEffect("弾幕効果音 (自機ショット)", ["弾幕", "自機"], ["shot", "自機", "射撃", "効果音"], isAviUtlSupported: false)]
+public sealed class DanmakuPlayerShotAudioEffect : DanmakuSingleSoundAudioEffectBase
 {
-    /// <summary>1 回の発音。</summary>
+    public override string Label => $"弾幕効果音:自機ショット (ch{Channel})";
+    public override DanmakuSoundKind SoundKind => DanmakuSoundKind.PlayerShot;
+}
+
+/// <summary>敵弾発射専用の弾幕効果音エフェクト。</summary>
+[AudioEffect("弾幕効果音 (敵弾発射)", ["弾幕", "発射"], ["fire", "発射", "敵弾", "効果音"], isAviUtlSupported: false)]
+public sealed class DanmakuFireAudioEffect : DanmakuSingleSoundAudioEffectBase
+{
+    public override string Label => $"弾幕効果音:敵弾発射 (ch{Channel})";
+    public override DanmakuSoundKind SoundKind => DanmakuSoundKind.Fire;
+}
+
+/// <summary>被弾音専用の弾幕効果音エフェクト。</summary>
+[AudioEffect("弾幕効果音 (被弾音)", ["弾幕", "被弾"], ["hit", "被弾", "命中", "効果音"], isAviUtlSupported: false)]
+public sealed class DanmakuHitAudioEffect : DanmakuSingleSoundAudioEffectBase
+{
+    public override string Label => $"弾幕効果音:被弾 (ch{Channel})";
+    public override DanmakuSoundKind SoundKind => DanmakuSoundKind.Hit;
+}
+
+/// <summary>変化・分裂音専用の弾幕効果音エフェクト。</summary>
+[AudioEffect("弾幕効果音 (変化・分裂)", ["弾幕", "変化"], ["change", "変化", "分裂", "効果音"], isAviUtlSupported: false)]
+public sealed class DanmakuChangeAudioEffect : DanmakuSingleSoundAudioEffectBase
+{
+    public override string Label => $"弾幕効果音:変化 (ch{Channel})";
+    public override DanmakuSoundKind SoundKind => DanmakuSoundKind.Change;
+}
+
+/// <summary>消滅音専用の弾幕効果音エフェクト。</summary>
+[AudioEffect("弾幕効果音 (消滅音)", ["弾幕", "消滅"], ["vanish", "消滅", "効果音"], isAviUtlSupported: false)]
+public sealed class DanmakuVanishAudioEffect : DanmakuSingleSoundAudioEffectBase
+{
+    public override string Label => $"弾幕効果音:消滅 (ch{Channel})";
+    public override DanmakuSoundKind SoundKind => DanmakuSoundKind.Vanish;
+}
+
+/// <summary>
+/// 単機能弾幕効果音の音声処理本体。
+/// </summary>
+public sealed class DanmakuSingleSoundProcessor : AudioEffectProcessorBase
+{
     private readonly record struct Voice(DanmakuSoundBuffer Buffer, long StartPosition, double PitchRatio, double Volume);
 
-    private readonly DanmakuAudioEffect effect;
+    private readonly DanmakuSingleSoundAudioEffectBase effect;
+    private readonly DanmakuSoundKind soundKind;
     private readonly TimeSpan duration;
     private readonly List<Voice> voices = [];
 
-    private readonly float[] mixBuffer;
     private bool isPrepared;
 
-    public DanmakuAudioEffectProcessor(DanmakuAudioEffect effect, TimeSpan duration)
+    public DanmakuSingleSoundProcessor(DanmakuSingleSoundAudioEffectBase effect, DanmakuSoundKind soundKind, TimeSpan duration)
     {
         this.effect = effect;
+        this.soundKind = soundKind;
         this.duration = duration;
-        mixBuffer = new float[4096];
     }
 
     public override int Hz => Input?.Hz ?? 48000;
 
     public override long Duration => Input?.Duration ?? (long)(duration.TotalSeconds * Hz) * 2;
 
-    /// <summary>効果音が 1 つも用意できなかった場合の理由 (デバッグ用)。</summary>
     public string? Diagnostics { get; private set; }
 
     protected override int read(float[] destBuffer, int offset, int count)
     {
-        // まず入力をそのまま (または無音として) 書き込む
-        var read = 0;
-        if (Input is not null && effect.KeepInput)
-        {
-            read = Input.Read(destBuffer, offset, count);
-            if (read < count) Array.Clear(destBuffer, offset + read, count - read);
-        }
-        else
-        {
-            Input?.Seek(Position + count);
-            Array.Clear(destBuffer, offset, count);
-        }
+        // 音声アイテム自体の音はそのまま鳴らさず、弾幕イベントに合わせて発音するためクリア
+        Input?.Seek(Position + count);
+        Array.Clear(destBuffer, offset, count);
 
         Prepare();
 
         if (voices.Count == 0) return count;
 
-        // この読み出し区間 (float 要素単位) に重なる発音を加算する
         var regionStart = Position;
         var regionEnd = Position + count;
         var gain = (float)Math.Clamp(effect.Volume, 0.0, 4.0);
@@ -281,7 +176,6 @@ public sealed class DanmakuAudioEffectProcessor : AudioEffectProcessorBase
         return count;
     }
 
-    /// <summary>1 つの発音を出力バッファへ加算する。</summary>
     private static void MixVoice(
         float[] destBuffer,
         int offset,
@@ -294,7 +188,6 @@ public sealed class DanmakuAudioEffectProcessor : AudioEffectProcessorBase
         var volume = (float)voice.Volume * gain;
         if (volume <= 0f) return;
 
-        // count は 2ch インターリーブの要素数。フレーム単位で回す。
         var frames = count / 2;
         for (var i = 0; i < frames; i++)
         {
@@ -302,7 +195,6 @@ public sealed class DanmakuAudioEffectProcessor : AudioEffectProcessorBase
             var elapsedElements = elementPosition - voice.StartPosition;
             if (elapsedElements < 0) continue;
 
-            // ピッチ比 = 再生速度。1.0 より大きいと速く (高く) 再生される。
             var sourceFrame = elapsedElements / 2.0 * voice.PitchRatio;
             if (sourceFrame >= buffer.FrameCount) break;
 
@@ -312,10 +204,6 @@ public sealed class DanmakuAudioEffectProcessor : AudioEffectProcessorBase
         }
     }
 
-    /// <summary>
-    /// 弾幕シミュレーションを実行し、効果音イベントを発音予約へ変換する。
-    /// 1 度だけ行い、以降は結果を使い回す。
-    /// </summary>
     private void Prepare()
     {
         if (isPrepared) return;
@@ -327,9 +215,25 @@ public sealed class DanmakuAudioEffectProcessor : AudioEffectProcessorBase
             return;
         }
 
+        // 音声バッファの取得: カスタムファイル指定があれば優先、なければ音声アイテム (Input) から自動取得
+        DanmakuSoundBuffer? buffer = null;
+        if (!string.IsNullOrWhiteSpace(effect.CustomFilePath))
+        {
+            buffer = DanmakuSoundBuffer.Load(effect.CustomFilePath);
+        }
+        else if (Input is not null)
+        {
+            buffer = DanmakuSoundBuffer.FromAudioStream(Input);
+        }
+
+        if (buffer is null)
+        {
+            Diagnostics = "音声ソースを取得できませんでした。音声アイテムに音源をセットするか、カスタム音声ファイルを指定してください。";
+            return;
+        }
+
         isPrepared = true;
 
-        // 音声側は描画しないので、必要な長さぶんだけシミュレーションする
         var simulator = new DanmakuSimulator(settings)
         {
             MaxSimulationSeconds = Math.Max(1.0, duration.TotalSeconds + 1.0),
@@ -337,52 +241,14 @@ public sealed class DanmakuAudioEffectProcessor : AudioEffectProcessorBase
         simulator.SeekTo(duration.TotalSeconds);
 
         var log = simulator.SoundLog;
-        if (log.Count == 0)
-        {
-            Diagnostics = "効果音イベントがありません。";
-            return;
-        }
+        if (log.Count == 0) return;
 
-        BuildVoices(log, settings);
-    }
-
-    private void BuildVoices(SoundEventLog log, DanmakuSettings settings)
-    {
         var hz = Hz;
-
-        // 種類ごとにバッファを 1 度だけ取得する
-        var buffers = new Dictionary<DanmakuSoundKind, DanmakuSoundBuffer?>();
-        DanmakuSoundBuffer? GetBuffer(DanmakuSoundKind kind)
-        {
-            if (buffers.TryGetValue(kind, out var cached)) return cached;
-            var info = effect.GetSoundInfo(kind);
-            if (!info.Enabled || string.IsNullOrWhiteSpace(info.FilePath))
-            {
-                buffers[kind] = null;
-                return null;
-            }
-            var buffer = DanmakuSoundBuffer.Load(info.FilePath);
-            buffers[kind] = buffer;
-            return buffer;
-        }
-
-        var missing = new List<string>();
+        var random = new DeterministicRandom(settings.Seed + (int)soundKind * 1000);
 
         foreach (var e in log.Events)
         {
-            var info = effect.GetSoundInfo(e.Kind);
-            if (!info.Enabled) continue;
-
-            var buffer = GetBuffer(e.Kind);
-            if (buffer is null)
-            {
-                if (!string.IsNullOrWhiteSpace(info.FilePath))
-                {
-                    var label = $"{e.Kind}: {Path.GetFileName(info.FilePath)} (読込不可)";
-                    if (!missing.Contains(label)) missing.Add(label);
-                }
-                continue;
-            }
+            if (e.Kind != soundKind) continue;
 
             var time = settings.TimeScale < 0
                 ? (duration.TotalSeconds - e.TimeSeconds / Math.Max(0.01, Math.Abs(settings.TimeScale))) + effect.TimeOffset
@@ -390,19 +256,15 @@ public sealed class DanmakuAudioEffectProcessor : AudioEffectProcessorBase
             if (time < 0) continue;
             if (time > duration.TotalSeconds) continue;
 
-            // Position は「サンプル数 × 2ch」なので偶数に丸める (L/R の位相をずらさない)
             var startPosition = (long)(time * hz) * 2;
-            var voiceVolume = e.Volume * info.Volume;
+            var semitones = effect.PitchJitter > 0 ? random.NextSymmetric(effect.PitchJitter) : 0;
+            var pitchRatio = e.PitchRatio * DanmakuMath.SemitoneToRatio(semitones);
 
-            voices.Add(new Voice(buffer, startPosition, e.PitchRatio, voiceVolume));
+            voices.Add(new Voice(buffer, startPosition, pitchRatio, e.Volume));
 
             if (voices.Count >= effect.MaxVoices * 64) break;
         }
 
-        if (voices.Count == 0 && missing.Count > 0)
-            Diagnostics = "効果音ファイルを読み込めません: " + string.Join(", ", missing);
-
-        // 同時発音数の制限: 開始位置でソートしておくと後段の打ち切りが自然になる
         voices.Sort(static (a, b) => a.StartPosition.CompareTo(b.StartPosition));
     }
 

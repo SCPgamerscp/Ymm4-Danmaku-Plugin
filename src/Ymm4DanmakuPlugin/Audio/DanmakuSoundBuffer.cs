@@ -65,6 +65,46 @@ public sealed class DanmakuSoundBuffer
         lock (Gate) Cache.Clear();
     }
 
+    /// <summary>
+    /// YMM4 の音声ストリーム (Input) からサンプルを読み取ってバッファを生成する。
+    /// </summary>
+    public static DanmakuSoundBuffer? FromAudioStream(YukkuriMovieMaker.Player.Audio.Effects.IAudioStream? stream, int maxSeconds = 10)
+    {
+        if (stream is null) return null;
+        var hz = stream.Hz;
+        if (hz <= 0) hz = 48000;
+
+        // 最大 maxSeconds 分 (2ch float なので hz * 2 * maxSeconds)
+        var maxElements = hz * 2 * maxSeconds;
+        var totalElements = (int)Math.Min(stream.Duration, maxElements);
+        if (totalElements <= 0) return null;
+
+        var originalPosition = stream.Position;
+        stream.Seek(0);
+
+        var samples = new float[totalElements];
+        var readTotal = 0;
+        var chunk = new float[4096];
+        while (readTotal < totalElements)
+        {
+            var toRead = Math.Min(chunk.Length, totalElements - readTotal);
+            var read = stream.Read(chunk, 0, toRead);
+            if (read <= 0) break;
+            Array.Copy(chunk, 0, samples, readTotal, read);
+            readTotal += read;
+        }
+
+        stream.Seek(originalPosition);
+
+        if (readTotal == 0) return null;
+        if (readTotal < totalElements)
+        {
+            Array.Resize(ref samples, readTotal);
+        }
+
+        return new DanmakuSoundBuffer(samples, hz);
+    }
+
     private static DanmakuSoundBuffer ReadWav(string path)
     {
         using var stream = File.OpenRead(path);
