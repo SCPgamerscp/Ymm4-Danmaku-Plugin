@@ -713,6 +713,16 @@ public class DanmakuShapeParameter : ShapeParameterBase
     public int PlayerShotTargetChannel { get => playerShotTargetChannel; set => Set(ref playerShotTargetChannel, value); }
     private int playerShotTargetChannel = -1;
 
+    [Display(GroupName = "自機ショット", Name = "射撃音を鳴らす", Description = "自機ショット発射時に効果音を鳴らします。")]
+    [ToggleSlider]
+    public bool PlayerShotSoundEnabled { get => playerShotSoundEnabled; set => Set(ref playerShotSoundEnabled, value); }
+    private bool playerShotSoundEnabled = true;
+
+    [Display(GroupName = "自機ショット", Name = "カスタム射撃音", Description = "自機ショット専用の音声ファイル (WAV/MP3等)。未指定時はプラグイン設定の自機射撃音が使われます。")]
+    [FileSelector(YukkuriMovieMaker.Settings.FileGroupType.AudioItem)]
+    public string PlayerShotSoundPath { get => playerShotSoundPath; set => Set(ref playerShotSoundPath, value ?? string.Empty); }
+    private string playerShotSoundPath = string.Empty;
+
     // =====================================================================
     // 効果音
     // =====================================================================
@@ -961,6 +971,9 @@ public class DanmakuShapeParameter : ShapeParameterBase
             ChangeSound = sound.Change.ToSoundSettings(ChangeSoundEnabled),
             HitSound = sound.Hit.ToSoundSettings(HitSoundEnabled),
             VanishSound = sound.Vanish.ToSoundSettings(VanishSoundEnabled),
+            PlayerShotSound = string.IsNullOrWhiteSpace(PlayerShotSoundPath)
+                ? sound.PlayerShot.ToSoundSettings(PlayerShotSoundEnabled)
+                : sound.PlayerShot.ToSoundSettings(PlayerShotSoundEnabled) with { FilePath = PlayerShotSoundPath, IsEnabled = PlayerShotSoundEnabled },
 
             Emitters = builder.ToImmutable(),
         };
@@ -1079,6 +1092,8 @@ public class DanmakuShapeParameter : ShapeParameterBase
         private readonly bool playerShotDestroyOnHit = true;
         private readonly bool playerShotCancelEnemyBullets;
         private readonly int playerShotTargetChannel = -1;
+        private readonly bool playerShotSoundEnabled = true;
+        private readonly string playerShotSoundPath = string.Empty;
 
         private readonly bool fireSoundEnabled;
         private readonly bool changeSoundEnabled;
@@ -1130,6 +1145,8 @@ public class DanmakuShapeParameter : ShapeParameterBase
             playerShotDestroyOnHit = source.PlayerShotDestroyOnHit;
             playerShotCancelEnemyBullets = source.PlayerShotCancelEnemyBullets;
             playerShotTargetChannel = source.PlayerShotTargetChannel;
+            playerShotSoundEnabled = source.PlayerShotSoundEnabled;
+            playerShotSoundPath = source.PlayerShotSoundPath;
 
             fireSoundEnabled = source.FireSoundEnabled;
             changeSoundEnabled = source.ChangeSoundEnabled;
@@ -1189,6 +1206,8 @@ public class DanmakuShapeParameter : ShapeParameterBase
             target.PlayerShotDestroyOnHit = playerShotDestroyOnHit;
             target.PlayerShotCancelEnemyBullets = playerShotCancelEnemyBullets;
             target.PlayerShotTargetChannel = playerShotTargetChannel;
+            target.PlayerShotSoundEnabled = playerShotSoundEnabled;
+            target.PlayerShotSoundPath = playerShotSoundPath;
 
             target.FireSoundEnabled = fireSoundEnabled;
             target.ChangeSoundEnabled = changeSoundEnabled;

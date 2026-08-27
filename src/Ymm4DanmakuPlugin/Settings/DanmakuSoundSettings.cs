@@ -236,6 +236,44 @@ public class DanmakuSoundSettings : SettingsBase<DanmakuSoundSettings>
         set => Vanish.PitchJitterSemitones = value;
     }
 
+    [Display(GroupName = "自機ショット発射音", Name = "音声ファイル", Description = "自機がショットを発射した瞬間に鳴る音。")]
+    [FileSelector(YukkuriMovieMaker.Settings.FileGroupType.AudioItem)]
+    public string PlayerShotFilePath
+    {
+        get => PlayerShot.FilePath;
+        set => PlayerShot.FilePath = value;
+    }
+
+    [Display(GroupName = "自機ショット発射音", Name = "音量")]
+    [TextBoxSlider("F2", "", 0, 1)]
+    [DefaultValue(0.5d)]
+    [Range(0, 1)]
+    public double PlayerShotVolume
+    {
+        get => PlayerShot.Volume;
+        set => PlayerShot.Volume = value;
+    }
+
+    [Display(GroupName = "自機ショット発射音", Name = "ピッチ変調")]
+    [TextBoxSlider("F2", "半音", 0, 6)]
+    [DefaultValue(1.0d)]
+    [Range(0, 12)]
+    public double PlayerShotPitchJitter
+    {
+        get => PlayerShot.PitchJitterSemitones;
+        set => PlayerShot.PitchJitterSemitones = value;
+    }
+
+    [Display(GroupName = "自機ショット発射音", Name = "毎秒の上限", Description = "1 秒間に鳴らす最大回数。")]
+    [TextBoxSlider("F0", "回/秒", 1, 60)]
+    [DefaultValue(30)]
+    [Range(1, 240)]
+    public int PlayerShotMaxVoices
+    {
+        get => PlayerShot.MaxVoicesPerSecond;
+        set => PlayerShot.MaxVoicesPerSecond = value;
+    }
+
     /// <summary>プリセット保存先フォルダ。空のときは既定 (プラグインフォルダ配下) を使う。</summary>
     [Display(GroupName = "プリセット", Name = "保存フォルダ", Description = "弾幕プリセット (.json) を読み書きするフォルダ。空欄なら既定のフォルダを使います。")]
     [DirectorySelector]
@@ -256,12 +294,15 @@ public class DanmakuSoundSettings : SettingsBase<DanmakuSoundSettings>
 
     public DanmakuSoundEntry Vanish { get; set; } = new() { Volume = 0.35, PitchJitterSemitones = 2.5 };
 
+    public DanmakuSoundEntry PlayerShot { get; set; } = new() { Volume = 0.5, PitchJitterSemitones = 1.0, MaxVoicesPerSecond = 30 };
+
     /// <summary>種類を指定して設定を取得する。</summary>
     public DanmakuSoundEntry GetEntry(DanmakuSoundKind kind) => kind switch
     {
         DanmakuSoundKind.Fire => Fire,
         DanmakuSoundKind.Change => Change,
         DanmakuSoundKind.Hit => Hit,
+        DanmakuSoundKind.PlayerShot => PlayerShot,
         _ => Vanish,
     };
 

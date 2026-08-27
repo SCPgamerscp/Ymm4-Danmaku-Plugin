@@ -226,7 +226,11 @@ public sealed class DanmakuAudioEffectProcessor : AudioEffectProcessorBase
         DanmakuSoundBuffer? GetBuffer(DanmakuSoundKind kind)
         {
             if (buffers.TryGetValue(kind, out var cached)) return cached;
-            var buffer = DanmakuSoundBuffer.Load(soundSettings.GetEntry(kind).FilePath);
+            var itemSound = settings.GetSound(kind);
+            var filePath = !string.IsNullOrWhiteSpace(itemSound.FilePath)
+                ? itemSound.FilePath
+                : soundSettings.GetEntry(kind).FilePath;
+            var buffer = DanmakuSoundBuffer.Load(filePath);
             buffers[kind] = buffer;
             return buffer;
         }
@@ -238,7 +242,10 @@ public sealed class DanmakuAudioEffectProcessor : AudioEffectProcessorBase
             var buffer = GetBuffer(e.Kind);
             if (buffer is null)
             {
-                var name = soundSettings.GetEntry(e.Kind).FilePath;
+                var itemSound = settings.GetSound(e.Kind);
+                var name = !string.IsNullOrWhiteSpace(itemSound.FilePath)
+                    ? itemSound.FilePath
+                    : soundSettings.GetEntry(e.Kind).FilePath;
                 var label = string.IsNullOrWhiteSpace(name) ? $"{e.Kind}: 未設定" : $"{e.Kind}: {Path.GetFileName(name)}";
                 if (!missing.Contains(label)) missing.Add(label);
                 continue;

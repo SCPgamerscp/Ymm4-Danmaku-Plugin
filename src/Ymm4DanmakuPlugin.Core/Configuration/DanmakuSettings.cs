@@ -111,12 +111,15 @@ public sealed record DanmakuSettings
 
     public SoundSettings VanishSound { get; init; } = new() { Volume = 0.35, PitchJitterSemitones = 2.5 };
 
+    public SoundSettings PlayerShotSound { get; init; } = new() { Volume = 0.5, PitchJitterSemitones = 1.0 };
+
     /// <summary>指定した種類の効果音設定を取得する。</summary>
     public SoundSettings GetSound(DanmakuSoundKind kind) => kind switch
     {
         DanmakuSoundKind.Fire => FireSound,
         DanmakuSoundKind.Change => ChangeSound,
         DanmakuSoundKind.Hit => HitSound,
+        DanmakuSoundKind.PlayerShot => PlayerShotSound,
         _ => VanishSound,
     };
 }

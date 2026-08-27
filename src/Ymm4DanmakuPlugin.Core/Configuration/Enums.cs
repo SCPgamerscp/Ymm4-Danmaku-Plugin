@@ -91,7 +91,7 @@ public enum OutOfBoundsBehavior
 /// <summary>効果音の種類。</summary>
 public enum DanmakuSoundKind
 {
-    /// <summary>発射音。</summary>
+    /// <summary>敵弾発射音。</summary>
     Fire = 0,
 
     /// <summary>軌道変化 / 分裂音。</summary>
@@ -102,4 +102,7 @@ public enum DanmakuSoundKind
 
     /// <summary>消滅音。</summary>
     Vanish = 3,
+
+    /// <summary>自機ショット発射音。</summary>
+    PlayerShot = 4,
 }

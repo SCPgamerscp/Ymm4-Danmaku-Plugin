@@ -2004,5 +2004,35 @@ public class KeyframeLiveValueTests
         var shot = Assert.Single(engine.AliveBullets());
         Assert.True(shot.Position.Y > 0, "負の速度で下向きに進んでいない");
     }
+
+    [Fact]
+    public void 自機ショット発射時にPlayerShot効果音イベントが記録される()
+    {
+        var settings = new DanmakuSettings
+        {
+            Emitters = [],
+            PlayerShot = new PlayerShotSettings
+            {
+                IsEnabled = true,
+                Way = 2,
+                Speed = 1200,
+                FireInterval = 0.1
+            },
+            PlayerShotSound = new SoundSettings { IsEnabled = true, Volume = 0.6 },
+            Collision = new CollisionSettings
+            {
+                TargetX = 0,
+                TargetY = 200,
+                EnemyHitEnabled = false,
+                SpawnHitEffect = false
+            }
+        };
+
+        var engine = TestFactory.Engine(settings);
+        engine.Advance(0.15);
+
+        Assert.NotEmpty(engine.SoundLog.Events);
+        Assert.Contains(engine.SoundLog.Events, e => e.Kind == DanmakuSoundKind.PlayerShot);
+    }
 }
 

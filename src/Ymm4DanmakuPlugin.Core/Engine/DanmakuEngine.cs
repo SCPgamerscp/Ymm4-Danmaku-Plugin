@@ -340,7 +340,7 @@ public sealed class DanmakuEngine
 
             if (!soundEmitted)
             {
-                EmitSound(DanmakuSoundKind.Fire, 0);
+                EmitSound(DanmakuSoundKind.PlayerShot, 0);
                 soundEmitted = true;
             }
         }
