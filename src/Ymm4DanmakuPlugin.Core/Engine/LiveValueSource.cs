@@ -18,10 +18,11 @@ public sealed class LiveValueSource
     public Func<double, double?>? TargetRotation { get; set; }
     public Func<double, double?>? TargetOpacity { get; set; }
 
-    // ---- 公転 & シード ----
+    // ---- 公転 & シード & 魔法陣 ----
     public Func<int, double, double?>? EmitterOrbitRadius { get; set; }
     public Func<int, double, double?>? EmitterOrbitSpeed { get; set; }
     public Func<int, double, double?>? EmitterOrbitPhase { get; set; }
+    public Func<int, double, double?>? EmitterMagicCircleRotationSpeed { get; set; }
     public Func<int, double, int?>? EmitterSeedOffset { get; set; }
 
     // ---- 外部スクリプト ----
@@ -128,6 +129,7 @@ public sealed class LiveValueSource
         EmitterOrbitRadius is not null ||
         EmitterOrbitSpeed is not null ||
         EmitterOrbitPhase is not null ||
+        EmitterMagicCircleRotationSpeed is not null ||
         EmitterSeedOffset is not null ||
         EmitterScriptSpeedScale is not null ||
         EmitterScriptRank is not null ||
@@ -211,6 +213,7 @@ public sealed class LiveValueSource
         EmitterOrbitRadius = null;
         EmitterOrbitSpeed = null;
         EmitterOrbitPhase = null;
+        EmitterMagicCircleRotationSpeed = null;
         EmitterSeedOffset = null;
         EmitterScriptSpeedScale = null;
         EmitterScriptRank = null;

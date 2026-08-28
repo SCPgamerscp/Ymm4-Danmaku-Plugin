@@ -155,26 +155,17 @@ public sealed class DanmakuShapeSource : IShapeSource2
             var emitter = parameter.Emitters[i];
             if (!emitter.IsEnabled) continue;
 
-            // エミッター位置 (X, Y および公転)
-            var posX = (float)emitter.X.GetValue(frame, totalFrame, fps);
-            var posY = (float)emitter.Y.GetValue(frame, totalFrame, fps);
-            var orbitRadius = (float)emitter.OrbitRadius.GetValue(frame, totalFrame, fps);
-            if (MathF.Abs(orbitRadius) > 0.001f)
-            {
-                var orbitSpeed = (float)emitter.OrbitSpeed.GetValue(frame, totalFrame, fps);
-                var orbitPhase = (float)emitter.OrbitPhase.GetValue(frame, totalFrame, fps);
-                var angleRad = (orbitPhase + orbitSpeed * (float)simTime) * MathF.PI / 180f;
-                posX += orbitRadius * MathF.Cos(angleRad);
-                posY += orbitRadius * MathF.Sin(angleRad);
-            }
+            // エミッター位置 (X, Y および公転) と魔法陣回転角 (シミュレータの積分値を正確に反映)
+            var ctx = simulator?.Engine.Contexts is { Count: > 0 } ctxs && i < ctxs.Count ? ctxs[i] : null;
+            var posX = ctx is not null ? (float)ctx.Position.X : (float)emitter.X.GetValue(frame, totalFrame, fps);
+            var posY = ctx is not null ? (float)ctx.Position.Y : (float)emitter.Y.GetValue(frame, totalFrame, fps);
 
             var enemyScale = (float)emitter.EnemyScale.GetValue(frame, totalFrame, fps);
             var enemyRotation = (float)emitter.EnemyRotation.GetValue(frame, totalFrame, fps);
             var enemyOpacity = (float)emitter.EnemyOpacity.GetValue(frame, totalFrame, fps);
 
             var mcScale = (float)emitter.MagicCircleScale.GetValue(frame, totalFrame, fps);
-            var mcRotSpeed = (float)emitter.MagicCircleRotationSpeed.GetValue(frame, totalFrame, fps);
-            var mcAngle = mcRotSpeed * (float)simTime;
+            var mcAngle = ctx is not null ? (float)ctx.MagicCircleAngle : (float)emitter.MagicCircleRotationSpeed.GetValue(frame, totalFrame, fps) * (float)simTime;
             var mcOpacity = (float)emitter.MagicCircleOpacity.GetValue(frame, totalFrame, fps);
             var mcColor4 = ColorExtensions.ToColor4(emitter.MagicCircleColor);
 
@@ -205,7 +196,7 @@ public sealed class DanmakuShapeSource : IShapeSource2
         }
 
         var globalOpacity = Math.Clamp(parameter.GlobalOpacity.GetValue(frame, totalFrame, fps) / 100.0, 0.0, 1.0);
-        batchBuilder.Build(simulator.Bullets, GetAppearance, globalOpacity);
+        batchBuilder.Build(simulator?.Bullets ?? [], GetAppearance, globalOpacity);
         output = renderer.Render(batchBuilder, parameter.GetGlowIntensity, in targetInfo, enemies);
     }
 
@@ -265,6 +256,15 @@ public sealed class DanmakuShapeSource : IShapeSource2
             var emitter = emitters[index];
             var frame = TimeToFrame(timeSeconds, fps, totalFrame);
             return emitter.OrbitPhase.GetValue(frame, totalFrame, fps);
+        };
+
+        sim.Live.EmitterMagicCircleRotationSpeed = (index, timeSeconds) =>
+        {
+            if (index < 0 || index >= emitters.Count) return null;
+
+            var emitter = emitters[index];
+            var frame = TimeToFrame(timeSeconds, fps, totalFrame);
+            return emitter.MagicCircleRotationSpeed.GetValue(frame, totalFrame, fps);
         };
 
         sim.Live.EmitterSeedOffset = (index, timeSeconds) =>

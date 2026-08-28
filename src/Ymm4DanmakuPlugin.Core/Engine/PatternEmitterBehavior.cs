@@ -21,12 +21,16 @@ public sealed class PatternEmitterBehavior(EmitterSettings settings) : IEmitterB
     private double nextShotTime;
     private int shotIndex;
     private int burstIndex;
+    private double accumulatedAngleStep;
+    private double whipPhase;
 
     public void Reset()
     {
         nextShotTime = settings.Pattern.StartTime;
         shotIndex = 0;
         burstIndex = 0;
+        accumulatedAngleStep = 0.0;
+        whipPhase = 0.0;
     }
 
     public void Update(EmitterContext context, double deltaTime)
@@ -34,6 +38,12 @@ public sealed class PatternEmitterBehavior(EmitterSettings settings) : IEmitterB
         var pattern = settings.Pattern;
         var stepStart = context.Time;
         var stepEnd = stepStart + deltaTime;
+
+        if (pattern.Kind == PatternKind.Whip)
+        {
+            var period = Math.Max(0.05, context.EmitterWhipPeriod(stepStart) ?? pattern.WhipPeriod);
+            whipPhase += (DanmakuMath.Tau / period) * deltaTime;
+        }
 
         var start = context.EmitterStartTime(stepStart) ?? pattern.StartTime;
         var rawEnd = context.EmitterEndTime(stepStart) ?? pattern.EndTime;
@@ -95,8 +105,9 @@ public sealed class PatternEmitterBehavior(EmitterSettings settings) : IEmitterB
         }
 
         var angleStepPerShot = context.EmitterAngleStepPerShot(fireTime) ?? pattern.AngleStepPerShot;
-        if (angleStepPerShot != 0)
-            baseAngle += angleStepPerShot * shotIndex;
+        if (accumulatedAngleStep != 0)
+            baseAngle += accumulatedAngleStep;
+        accumulatedAngleStep += angleStepPerShot;
 
         var angleJitter = context.EmitterAngleJitter(fireTime) ?? pattern.AngleJitter;
         if (angleJitter != 0)
@@ -104,9 +115,8 @@ public sealed class PatternEmitterBehavior(EmitterSettings settings) : IEmitterB
 
         if (pattern.Kind == PatternKind.Whip)
         {
-            var period = Math.Max(0.05, context.EmitterWhipPeriod(fireTime) ?? pattern.WhipPeriod);
             var amplitude = context.EmitterWhipAmplitude(fireTime) ?? pattern.WhipAmplitude;
-            baseAngle += amplitude * Math.Sin(DanmakuMath.Tau * fireTime / period);
+            baseAngle += amplitude * Math.Sin(whipPhase);
         }
 
         var spreadAngle = context.EmitterSpreadAngle(fireTime) ?? pattern.SpreadAngle;

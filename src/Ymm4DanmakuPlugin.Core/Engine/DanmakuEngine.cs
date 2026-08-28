@@ -21,6 +21,9 @@ public sealed class DanmakuEngine
 
     public DanmakuSettings Settings { get; internal set; }
 
+    /// <summary>全エミッターの実行コンテキスト一覧。</summary>
+    public IReadOnlyList<EmitterContext> Contexts => contexts;
+
     public BulletPool Pool { get; private set; }
 
     public DeterministicRandom Random { get; private set; }
@@ -118,6 +121,23 @@ public sealed class DanmakuEngine
         TotalSpawned = 0;
         EnemyHitCount = 0;
         playerShotTimer = 0;
+
+        foreach (var ctx in contexts)
+        {
+            ctx.OrbitAngle = 0;
+            ctx.MagicCircleAngle = 0;
+            ctx.RainbowBaseHue = 0;
+            var s = Settings.Emitters[ctx.EmitterIndex];
+            var p = Live.EmitterPosition?.Invoke(ctx.EmitterIndex, 0) ?? new Vec2(s.X, s.Y);
+            var orbitRadius = Live.EmitterOrbitRadius?.Invoke(ctx.EmitterIndex, 0) ?? s.OrbitRadius;
+            var orbitPhase = Live.EmitterOrbitPhase?.Invoke(ctx.EmitterIndex, 0) ?? s.OrbitPhase;
+            if (orbitRadius != 0)
+            {
+                p += Vec2.FromDegrees(orbitPhase, orbitRadius);
+            }
+            ctx.Position = p;
+        }
+
         RefreshPositions();
 
         foreach (var behavior in behaviors) behavior.Reset();
@@ -245,11 +265,19 @@ public sealed class DanmakuEngine
             var orbitRadius = Live.EmitterOrbitRadius?.Invoke(context.EmitterIndex, CurrentTime) ?? settings.OrbitRadius;
             var orbitSpeed = Live.EmitterOrbitSpeed?.Invoke(context.EmitterIndex, CurrentTime) ?? settings.OrbitSpeed;
             var orbitPhase = Live.EmitterOrbitPhase?.Invoke(context.EmitterIndex, CurrentTime) ?? settings.OrbitPhase;
+
+            context.OrbitAngle += orbitSpeed * deltaTime;
             if (orbitRadius != 0)
             {
-                var angle = orbitPhase + orbitSpeed * CurrentTime;
+                var angle = orbitPhase + context.OrbitAngle;
                 position += Vec2.FromDegrees(angle, orbitRadius);
             }
+
+            var mcRotSpeed = Live.EmitterMagicCircleRotationSpeed?.Invoke(context.EmitterIndex, CurrentTime) ?? 0.0;
+            context.MagicCircleAngle += mcRotSpeed * deltaTime;
+
+            var hueVelocity = Live.EmitterHueVelocity?.Invoke(context.EmitterIndex, CurrentTime) ?? settings.Appearance.HueVelocity;
+            context.RainbowBaseHue += hueVelocity * deltaTime;
 
             context.Position = position;
             behaviors[i].Update(context, deltaTime);
@@ -858,8 +886,10 @@ public sealed class DanmakuEngine
 
             case ColorMode.Rainbow:
             {
-                bullet.Hue = DanmakuMath.NormalizeAngle360(appearance.HueStep * request.IndexInBurst
-                                                           + appearance.HueVelocity * CurrentTime);
+                var baseHue = request.EmitterIndex >= 0 && request.EmitterIndex < contexts.Count
+                    ? contexts[request.EmitterIndex].RainbowBaseHue
+                    : 0.0;
+                bullet.Hue = DanmakuMath.NormalizeAngle360(appearance.HueStep * request.IndexInBurst + baseHue);
                 bullet.HueVelocity = appearance.HueVelocity;
                 bullet.Saturation = 0.9;
                 bullet.Value = 1.0;

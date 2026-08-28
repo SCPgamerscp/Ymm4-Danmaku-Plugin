@@ -36,6 +36,15 @@ public sealed class EmitterContext(DanmakuEngine engine, int emitterIndex)
     /// <summary>エミッターの現在位置 (公転を反映済み)。</summary>
     public Vec2 Position { get; internal set; }
 
+    /// <summary>公転で累積された回転角度 (度)。毎フレーム orbitSpeed * deltaTime を積分。</summary>
+    public double OrbitAngle { get; internal set; }
+
+    /// <summary>魔法陣の累積回転角度 (度)。毎フレーム mcRotationSpeed * deltaTime を積分。</summary>
+    public double MagicCircleAngle { get; internal set; }
+
+    /// <summary>虹色カラーモードの累積基準色相 (度)。毎フレーム hueVelocity * deltaTime を積分。</summary>
+    public double RainbowBaseHue { get; internal set; }
+
     /// <summary>ターゲット (自機) の位置。</summary>
     public Vec2 TargetPosition => Engine.TargetPosition;
 
