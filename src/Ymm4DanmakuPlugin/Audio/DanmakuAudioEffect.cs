@@ -41,12 +41,12 @@ public abstract class DanmakuSingleSoundAudioEffectBase : AudioEffectBase
     private double volume = 1.0;
 
     [Display(GroupName = "基本設定", Name = "ピッチ変調",
-        Description = "±この半音幅でランダムに変調して音の単調さを防ぎます。")]
+        Description = "±この半音幅でランダムに変調して音の単調さを防ぎます (0 で音程を完全に固定)。")]
     [TextBoxSlider("F2", "半音", 0, 6)]
-    [DefaultValue(1.0d)]
+    [DefaultValue(0d)]
     [Range(0, 12)]
     public double PitchJitter { get => pitchJitter; set => Set(ref pitchJitter, value); }
-    private double pitchJitter = 1.0;
+    private double pitchJitter = 0.0;
 
     [Display(GroupName = "基本設定", Name = "時間オフセット",
         Description = "効果音を前後にずらします。負で早く鳴ります。")]
