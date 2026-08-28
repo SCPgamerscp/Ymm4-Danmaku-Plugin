@@ -786,15 +786,7 @@ public sealed class DanmakuEngine
             bullet.MaxSpeed = maxSpeed;
 
         if (request.HomingTurnRateOverride is { } homingTurn)
-        {
             bullet.HomingTurnRate = homingTurn;
-            if (Math.Abs(homingTurn) > 0.001)
-            {
-                bullet.HomingEnabled = true;
-                if (bullet.HomingRemaining <= 0)
-                    bullet.HomingRemaining = double.PositiveInfinity;
-            }
-        }
 
         if (request.HomingDurationOverride is { } homingDur)
             bullet.HomingRemaining = homingDur;

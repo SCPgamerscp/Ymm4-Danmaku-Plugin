@@ -93,11 +93,10 @@ public sealed record BulletPhysics
             bullet.Lifetime = Math.Max(0.05, lifetime);
         }
 
-        var homingActive = HomingEnabled || Math.Abs(HomingTurnRate) > 0.001;
-        bullet.HomingEnabled = homingActive;
+        bullet.HomingEnabled = HomingEnabled;
         bullet.HomingTurnRate = HomingTurnRate;
         bullet.HomingDelay = Math.Max(0, HomingDelay);
-        bullet.HomingRemaining = homingActive
+        bullet.HomingRemaining = HomingEnabled
             ? (HomingDuration > 0 ? HomingDuration : double.PositiveInfinity)
             : 0;
 
