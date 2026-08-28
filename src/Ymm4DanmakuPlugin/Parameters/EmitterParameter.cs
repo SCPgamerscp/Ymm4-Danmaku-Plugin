@@ -705,7 +705,7 @@ public class EmitterParameter : Animatable
             TrailScale = TrailScale.GetFirstValue(),
         },
 
-        Split = SplitEnabled ? BuildSplit(Math.Max(0, (int)Math.Round(SplitMaxGeneration.GetFirstValue()))) : null,
+        Split = (SplitEnabled || SplitCount.GetFirstValue() > 0) ? BuildSplit(Math.Max(1, (int)Math.Round(SplitMaxGeneration.GetFirstValue()))) : null,
         SplitDelay = SplitDelay.GetFirstValue(),
     };
 
