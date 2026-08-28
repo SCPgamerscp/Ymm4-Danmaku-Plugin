@@ -151,6 +151,8 @@ public sealed class PatternEmitterBehavior(EmitterSettings settings) : IEmitterB
         var fadeOut = context.EmitterFadeOutDuration(fireTime);
         var trailLength = context.EmitterTrailLength(fireTime);
         var trailInterval = context.EmitterTrailInterval(fireTime);
+        var trailFade = context.EmitterTrailFade(fireTime) ?? appearance.TrailFade;
+        var trailScale = context.EmitterTrailScale(fireTime) ?? appearance.TrailScale;
 
         // 分裂の動的評価
         SplitSpec? split = settings.Split;
@@ -198,6 +200,8 @@ public sealed class PatternEmitterBehavior(EmitterSettings settings) : IEmitterB
                     ScaleJitter = scaleJitter,
                     HueVelocity = hueVelocity,
                     HueStep = hueStep,
+                    TrailFade = trailFade,
+                    TrailScale = trailScale,
                 };
 
                 var request = BulletSpawnRequest.Create(curPhysics, curAppearance);
