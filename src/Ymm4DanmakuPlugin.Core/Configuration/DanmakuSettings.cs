@@ -10,8 +10,8 @@ public sealed record SoundSettings
     /// <summary>音量 (0〜1)。</summary>
     public double Volume { get; init; } = 0.6;
 
-    /// <summary>ピッチのランダム変調幅 (± 半音)。同時多発音の単調さを避けるための微変調。</summary>
-    public double PitchJitterSemitones { get; init; } = 1.5;
+    /// <summary>ピッチのランダム変調幅 (± 半音)。0 で完全に一定。</summary>
+    public double PitchJitterSemitones { get; init; } = 0.0;
 
     /// <summary>基準ピッチ (半音単位のオフセット)。</summary>
     public double PitchSemitones { get; init; }
@@ -102,13 +102,13 @@ public sealed record DanmakuSettings
 
     public SoundSettings FireSound { get; init; } = new();
 
-    public SoundSettings ChangeSound { get; init; } = new() { Volume = 0.5, PitchJitterSemitones = 2.0 };
+    public SoundSettings ChangeSound { get; init; } = new() { Volume = 0.5 };
 
-    public SoundSettings HitSound { get; init; } = new() { Volume = 0.8, PitchJitterSemitones = 1.0 };
+    public SoundSettings HitSound { get; init; } = new() { Volume = 0.8 };
 
-    public SoundSettings VanishSound { get; init; } = new() { Volume = 0.35, PitchJitterSemitones = 2.5 };
+    public SoundSettings VanishSound { get; init; } = new() { Volume = 0.35 };
 
-    public SoundSettings PlayerShotSound { get; init; } = new() { Volume = 0.5, PitchJitterSemitones = 1.0 };
+    public SoundSettings PlayerShotSound { get; init; } = new() { Volume = 0.5 };
 
     /// <summary>指定した種類の効果音設定を取得する。</summary>
     public SoundSettings GetSound(DanmakuSoundKind kind) => kind switch
