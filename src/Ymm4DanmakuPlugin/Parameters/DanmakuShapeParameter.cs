@@ -48,6 +48,13 @@ public class DanmakuShapeParameter : ShapeParameterBase
     [AnimationSlider("F0", "", -100, 100)]
     public Animation SeedOffset => MainEmitter.SeedOffset;
 
+    [Display(GroupName = "発射位置", Name = "制御点を表示",
+        Description = "オフにすると、プレビュー画面上のドラッグ用丸ハンドル (〇) を非表示にします。")]
+    [ToggleSlider]
+    [DefaultValue(true)]
+    public bool ShowControllers { get => showControllers; set => Set(ref showControllers, value); }
+    private bool showControllers = true;
+
     // =====================================================================
     // プリセット
     // =====================================================================
@@ -1029,6 +1036,7 @@ public class DanmakuShapeParameter : ShapeParameterBase
         private readonly Animation hitEffectSpeed = new(160, -100000, 100000);
         private readonly Animation hitEffectLifetime = new(0.35, 0, 1000);
         private readonly bool showTargetMarker;
+        private readonly bool showControllers = true;
 
         private readonly bool playerShotEnabled;
         private readonly PlayerShotType playerShotType;
@@ -1075,6 +1083,7 @@ public class DanmakuShapeParameter : ShapeParameterBase
             hitEffectSpeed.CopyFrom(source.HitEffectSpeed);
             hitEffectLifetime.CopyFrom(source.HitEffectLifetime);
             showTargetMarker = source.ShowTargetMarker;
+            showControllers = source.ShowControllers;
 
             playerShotEnabled = source.PlayerShotEnabled;
             playerShotType = source.PlayerShotType;
@@ -1129,6 +1138,7 @@ public class DanmakuShapeParameter : ShapeParameterBase
             target.HitEffectSpeed.CopyFrom(hitEffectSpeed);
             target.HitEffectLifetime.CopyFrom(hitEffectLifetime);
             target.ShowTargetMarker = showTargetMarker;
+            target.ShowControllers = showControllers;
 
             target.PlayerShotEnabled = playerShotEnabled;
             target.PlayerShotType = playerShotType;

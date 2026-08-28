@@ -1060,6 +1060,8 @@ public sealed class DanmakuShapeSource : IShapeSource2
     /// </summary>
     private IEnumerable<VideoController> BuildControllers()
     {
+        if (!parameter.ShowControllers) yield break;
+
         var emitters = parameter.Emitters;
         var fps = lastFps > 0 ? lastFps : 60;
         var frame = Math.Max(0, lastFrame);
