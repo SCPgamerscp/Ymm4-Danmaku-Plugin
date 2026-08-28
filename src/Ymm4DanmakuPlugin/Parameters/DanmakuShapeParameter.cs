@@ -746,7 +746,7 @@ public class DanmakuShapeParameter : ShapeParameterBase
 
     [Display(GroupName = "全体", Name = "画面外の余裕", Description = "画面の外側にこの距離ぶん余裕を持たせ、その外へ出た弾を処理します。")]
     [AnimationSlider("F0", "px", -2000, 2000)]
-    public Animation BoundsMargin { get; } = new Animation(1000, -100000, 100000);
+    public Animation BoundsMargin { get; } = new Animation(160, -100000, 100000);
 
     [Display(GroupName = "全体", Name = "全体の不透明度")]
     [AnimationSlider("F1", "%", -100, 100)]
@@ -1017,7 +1017,7 @@ public class DanmakuShapeParameter : ShapeParameterBase
         private readonly Animation timeScale = new(1.0, -100, 100);
         private readonly SimulationStep simulationStep;
         private readonly OutOfBoundsBehavior outOfBounds;
-        private readonly Animation boundsMargin = new(1000, -100000, 100000);
+        private readonly Animation boundsMargin = new(160, -100000, 100000);
         private readonly Animation globalOpacity = new(100, -100, 100);
         private readonly Animation channel = new(0, -1, 255);
 

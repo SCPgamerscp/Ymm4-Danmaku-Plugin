@@ -77,8 +77,8 @@ public sealed record DanmakuSettings
     /// <summary>キャンバス高さ (px)。</summary>
     public int CanvasHeight { get; init; } = 1080;
 
-    /// <summary>画面外判定のマージン (px)。</summary>
-    public double BoundsMargin { get; init; } = 1000;
+    /// <summary>画面外判定のマージン (px)。画面外に出た弾を即座に消去して軽量化。</summary>
+    public double BoundsMargin { get; init; } = 160;
 
     /// <summary>同時に存在できる弾の最大数。</summary>
     public int MaxBullets { get; init; } = 100000;
