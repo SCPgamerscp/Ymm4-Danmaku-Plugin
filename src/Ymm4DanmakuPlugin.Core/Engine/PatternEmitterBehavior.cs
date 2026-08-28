@@ -11,10 +11,10 @@ namespace Ymm4DanmakuPlugin.Core.Engine;
 public sealed class PatternEmitterBehavior(EmitterSettings settings) : IEmitterBehavior
 {
     /// <summary>1 ステップで処理する発射回数の上限 (無限ループ防止)。</summary>
-    private const int MaxShotsPerStep = 512;
+    private const int MaxShotsPerStep = 4096;
 
-    /// <summary>発射間隔の下限 (秒)。超高速連射 (0.001秒等) も許容。</summary>
-    private const double MinInterval = 1.0 / 10000.0;
+    /// <summary>発射間隔の下限 (秒)。完全無制限。</summary>
+    private const double MinInterval = 0.0;
 
     private readonly EmitterSettings settings = settings;
 

@@ -16,7 +16,7 @@ public sealed class BulletPool
     private long nextId = 1;
 
     /// <summary>プールが確保する弾の最大数。</summary>
-    public int Capacity { get; }
+    public int Capacity { get; private set; }
 
     /// <summary>生存中の弾。</summary>
     public IReadOnlyList<Bullet> ActiveBullets => active;
@@ -30,15 +30,15 @@ public sealed class BulletPool
     /// <summary>容量不足で生成を却下した回数。</summary>
     public int RejectedCount { get; private set; }
 
-    public BulletPool(int capacity = 4096)
+    public BulletPool(int capacity = 100000)
     {
         Capacity = Math.Max(1, capacity);
-        storage = new List<Bullet>(Math.Min(Capacity, 1024));
-        free = new Stack<Bullet>(Math.Min(Capacity, 1024));
-        active = new List<Bullet>(Math.Min(Capacity, 1024));
+        storage = new List<Bullet>(Math.Min(Capacity, 4096));
+        free = new Stack<Bullet>(Math.Min(Capacity, 4096));
+        active = new List<Bullet>(Math.Min(Capacity, 4096));
     }
 
-    /// <summary>弾を 1 つ確保する。容量を超える場合は null を返す。</summary>
+    /// <summary>弾を 1 つ確保する。必要に応じて最大50万発まで動的に自動拡張する。</summary>
     public Bullet? Rent()
     {
         Bullet bullet;
@@ -48,6 +48,13 @@ public sealed class BulletPool
         }
         else if (storage.Count < Capacity)
         {
+            bullet = new Bullet { PoolIndex = storage.Count };
+            storage.Add(bullet);
+        }
+        else if (Capacity < 500000)
+        {
+            // 動的自動拡張 (最大50万発まで自動スケール)
+            Capacity = Math.Min(500000, Math.Max(Capacity * 2, storage.Count + 4096));
             bullet = new Bullet { PoolIndex = storage.Count };
             storage.Add(bullet);
         }

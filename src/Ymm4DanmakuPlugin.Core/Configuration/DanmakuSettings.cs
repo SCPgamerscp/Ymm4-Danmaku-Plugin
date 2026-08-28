@@ -78,10 +78,10 @@ public sealed record DanmakuSettings
     public int CanvasHeight { get; init; } = 1080;
 
     /// <summary>画面外判定のマージン (px)。</summary>
-    public double BoundsMargin { get; init; } = 160;
+    public double BoundsMargin { get; init; } = 1000;
 
     /// <summary>同時に存在できる弾の最大数。</summary>
-    public int MaxBullets { get; init; } = 16384;
+    public int MaxBullets { get; init; } = 100000;
 
     /// <summary>シミュレーションの時間倍率。</summary>
     public double TimeScale { get; init; } = 1.0;

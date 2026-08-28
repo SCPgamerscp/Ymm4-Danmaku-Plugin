@@ -215,19 +215,19 @@ public class EmitterParameter : Animatable
     private PatternKind patternKind = Core.Configuration.PatternKind.Circle;
 
     [Display(GroupName = "パターン", Name = "way数", Description = "1 回の発射で撃つ弾の本数。0 で発射しません。")]
-    [AnimationSlider("F0", "本", 0, 72)]
-    public Animation Way { get; } = new Animation(24, 0, 2000);
+    [AnimationSlider("F0", "本", 0, 360)]
+    public Animation Way { get; } = new Animation(24, 0, 10000);
 
     [Display(GroupName = "パターン", Name = "段数", Description = "速度差をつけて重ねる同心円の段数。way数 × 段数 が 1 回の発射数になります。0 で発射しません。")]
-    [AnimationSlider("F0", "段", 0, 12)]
-    public Animation Stack { get; } = new Animation(1, 0, 200);
+    [AnimationSlider("F0", "段", 0, 64)]
+    public Animation Stack { get; } = new Animation(1, 0, 1000);
 
     [Display(GroupName = "パターン", Name = "段ごとの速度差")]
-    [AnimationSlider("F0", "px/秒", -200, 200)]
+    [AnimationSlider("F0", "px/秒", -500, 500)]
     public Animation StackSpeedStep { get; } = new Animation(40, -100000, 100000);
 
     [Display(GroupName = "パターン", Name = "段ごとの角度差")]
-    [AnimationSlider("F1", "度", -90, 90)]
+    [AnimationSlider("F1", "度", -180, 180)]
     public Animation StackAngleStep { get; } = new Animation(0, -100000, 100000);
 
     [Display(GroupName = "パターン", Name = "基準角", Description = "発射の中心方向。キーフレームで自由に回転させられます。0 で下向き。")]
@@ -243,23 +243,23 @@ public class EmitterParameter : Animatable
     public Animation AngleStepPerShot { get; } = new Animation(0, -100000, 100000);
 
     [Display(GroupName = "パターン", Name = "角度ゆらぎ", Description = "基準角にかけるランダム幅 (±)。")]
-    [AnimationSlider("F1", "度", -90, 90)]
+    [AnimationSlider("F1", "度", -180, 180)]
     public Animation AngleJitter { get; } = new Animation(0, -100000, 100000);
 
     [Display(GroupName = "パターン", Name = "発射間隔")]
-    [AnimationSlider("F3", "秒", 0, 2)]
+    [AnimationSlider("F4", "秒", 0, 5)]
     public Animation FireInterval { get; } = new Animation(0.35, 0, 10000);
 
     [Display(GroupName = "パターン", Name = "連射数", Description = "ひとかたまり (バースト) あたりの発射回数。")]
-    [AnimationSlider("F0", "回", 0, 20)]
-    public Animation BurstCount { get; } = new Animation(1, 0, 1000);
+    [AnimationSlider("F0", "回", 0, 100)]
+    public Animation BurstCount { get; } = new Animation(1, 0, 10000);
 
     [Display(GroupName = "パターン", Name = "連射間隔")]
-    [AnimationSlider("F3", "秒", 0, 0.5)]
+    [AnimationSlider("F4", "秒", 0, 1)]
     public Animation BurstInterval { get; } = new Animation(0.02, 0, 10000);
 
     [Display(GroupName = "パターン", Name = "連射後の待機")]
-    [AnimationSlider("F3", "秒", 0, 3)]
+    [AnimationSlider("F3", "秒", 0, 10)]
     public Animation BurstCooldown { get; } = new Animation(0, 0, 10000);
 
     [Display(GroupName = "パターン", Name = "発射開始", Description = "アイテム先頭からの相対時間。")]
@@ -310,27 +310,27 @@ public class EmitterParameter : Animatable
     // =====================================================================
 
     [Display(GroupName = "弾の動き", Name = "初速")]
-    [AnimationSlider("F0", "px/秒", -900, 900)]
+    [AnimationSlider("F0", "px/秒", -3000, 3000)]
     public Animation Speed { get; } = new Animation(260, -100000, 100000);
 
     [Display(GroupName = "弾の動き", Name = "初速ゆらぎ")]
-    [AnimationSlider("F0", "px/秒", -300, 300)]
+    [AnimationSlider("F0", "px/秒", -1000, 1000)]
     public Animation SpeedJitter { get; } = new Animation(0, -100000, 100000);
 
     [Display(GroupName = "弾の動き", Name = "弾ごとの速度差", Description = "n-way の内側と外側で速度差をつけます。")]
-    [AnimationSlider("F1", "px/秒", -50, 50)]
+    [AnimationSlider("F1", "px/秒", -100, 100)]
     public Animation SpeedStep { get; } = new Animation(0, -100000, 100000);
 
     [Display(GroupName = "弾の動き", Name = "加速度")]
-    [AnimationSlider("F1", "px/秒²", -400, 400)]
+    [AnimationSlider("F1", "px/秒²", -1000, 1000)]
     public Animation Acceleration { get; } = new Animation(0, -1000000, 1000000);
 
     [Display(GroupName = "弾の動き", Name = "旋回速度", Description = "正で時計回りに曲がります。")]
-    [AnimationSlider("F1", "度/秒", -360, 360)]
+    [AnimationSlider("F1", "度/秒", -720, 720)]
     public Animation AngularVelocity { get; } = new Animation(0, -100000, 100000);
 
     [Display(GroupName = "弾の動き", Name = "旋回ゆらぎ")]
-    [AnimationSlider("F1", "度/秒", -180, 180)]
+    [AnimationSlider("F1", "度/秒", -360, 360)]
     public Animation AngularVelocityJitter { get; } = new Animation(0, -100000, 100000);
 
     [Display(GroupName = "弾の動き", Name = "減速", Description = "1 秒後に残る速度の割合。1 で減速なし。0 で瞬時に静止。")]
@@ -338,27 +338,27 @@ public class EmitterParameter : Animatable
     public Animation Damping { get; } = new Animation(1.0, -100, 100);
 
     [Display(GroupName = "弾の動き", Name = "最低速度")]
-    [AnimationSlider("F0", "px/秒", -3000, 3000)]
+    [AnimationSlider("F0", "px/秒", -5000, 5000)]
     public Animation MinSpeed { get; } = new Animation(0, -1000000, 1000000);
 
     [Display(GroupName = "弾の動き", Name = "最高速度")]
-    [AnimationSlider("F0", "px/秒", -3000, 3000)]
-    public Animation MaxSpeed { get; } = new Animation(2000, -1000000, 1000000);
+    [AnimationSlider("F0", "px/秒", -5000, 5000)]
+    public Animation MaxSpeed { get; } = new Animation(3000, -1000000, 1000000);
 
     [Display(GroupName = "弾の動き", Name = "重力", Description = "正で下向き。")]
-    [AnimationSlider("F0", "px/秒²", -600, 600)]
+    [AnimationSlider("F0", "px/秒²", -1000, 1000)]
     public Animation Gravity { get; } = new Animation(0, -1000000, 1000000);
 
     [Display(GroupName = "弾の動き", Name = "風", Description = "正で右向き。")]
-    [AnimationSlider("F0", "px/秒²", -600, 600)]
+    [AnimationSlider("F0", "px/秒²", -1000, 1000)]
     public Animation Wind { get; } = new Animation(0, -1000000, 1000000);
 
     [Display(GroupName = "弾の動き", Name = "寿命", Description = "0 で無限 (画面外に出るまで残ります)。")]
-    [AnimationSlider("F2", "秒", 0, 20)]
-    public Animation Lifetime { get; } = new Animation(6.0, 0, 100000);
+    [AnimationSlider("F1", "秒", 0, 100)]
+    public Animation Lifetime { get; } = new Animation(30.0, 0, 100000);
 
     [Display(GroupName = "弾の動き", Name = "寿命ゆらぎ")]
-    [AnimationSlider("F2", "秒", -5, 5)]
+    [AnimationSlider("F1", "秒", -10, 10)]
     public Animation LifetimeJitter { get; } = new Animation(0, -100000, 100000);
 
     // ---- ホーミング ----

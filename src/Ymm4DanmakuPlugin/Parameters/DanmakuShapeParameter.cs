@@ -727,8 +727,8 @@ public class DanmakuShapeParameter : ShapeParameterBase
     public Animation Seed { get; } = new Animation(20240101, 0, 10000000);
 
     [Display(GroupName = "全体設定", Name = "最大弾数", Description = "同時に画面上に存在できる弾の最大数。")]
-    [AnimationSlider("F0", "発", 0, 100000)]
-    public Animation MaxBullets { get; } = new Animation(16384, 0, 200000);
+    [AnimationSlider("F0", "発", 0, 500000)]
+    public Animation MaxBullets { get; } = new Animation(100000, 0, 500000);
 
     [Display(GroupName = "全体", Name = "再生速度", Description = "弾幕全体の時間倍率。0 で完全静止 (時止め)、0.5 でスローモーションになります。")]
     [AnimationSlider("F2", "倍", -3, 3)]
@@ -745,8 +745,8 @@ public class DanmakuShapeParameter : ShapeParameterBase
     private OutOfBoundsBehavior outOfBounds = OutOfBoundsBehavior.Destroy;
 
     [Display(GroupName = "全体", Name = "画面外の余裕", Description = "画面の外側にこの距離ぶん余裕を持たせ、その外へ出た弾を処理します。")]
-    [AnimationSlider("F0", "px", -1000, 1000)]
-    public Animation BoundsMargin { get; } = new Animation(160, -100000, 100000);
+    [AnimationSlider("F0", "px", -2000, 2000)]
+    public Animation BoundsMargin { get; } = new Animation(1000, -100000, 100000);
 
     [Display(GroupName = "全体", Name = "全体の不透明度")]
     [AnimationSlider("F1", "%", -100, 100)]
@@ -1013,11 +1013,11 @@ public class DanmakuShapeParameter : ShapeParameterBase
     private sealed class SharedData
     {
         private readonly Animation seed = new(20240101, 0, 10000000);
-        private readonly Animation maxBullets = new(16384, 0, 200000);
+        private readonly Animation maxBullets = new(100000, 0, 500000);
         private readonly Animation timeScale = new(1.0, -100, 100);
         private readonly SimulationStep simulationStep;
         private readonly OutOfBoundsBehavior outOfBounds;
-        private readonly Animation boundsMargin = new(160, -100000, 100000);
+        private readonly Animation boundsMargin = new(1000, -100000, 100000);
         private readonly Animation globalOpacity = new(100, -100, 100);
         private readonly Animation channel = new(0, -1, 255);
 
