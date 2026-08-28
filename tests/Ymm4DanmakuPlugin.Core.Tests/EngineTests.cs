@@ -2181,6 +2181,53 @@ public class KeyframeLiveValueTests
         var fireEvents = engine.SoundLog.Events.Where(e => e.Kind == DanmakuSoundKind.Fire).ToList();
         Assert.InRange(fireEvents.Count, 95, 105);
     }
+
+    [Fact]
+    public void 全方位リングにWhip振れ幅を設定すると首振りスイングしながら発射される()
+    {
+        var pattern = TestFactory.SingleShot(4) with
+        {
+            Kind = PatternKind.Circle,
+            WhipAmplitude = 45.0,
+            WhipPeriod = 1.0,
+            FireInterval = 0.25,
+        };
+        var engine = TestFactory.Engine(TestFactory.Settings(TestFactory.Emitter(pattern)));
+
+        // t=0.0: whipPhase = 0 -> sin(0) = 0 -> angle = 0
+        engine.Advance(0.01);
+        var firstShot = engine.AliveBullets().First();
+        Assert.Equal(0.0, DanmakuMath.NormalizeAngle(firstShot.Direction), 1);
+
+        // t=0.25: whipPhase = π/2 -> sin(π/2) = 1 -> angle = +45
+        engine.Advance(0.25);
+        var secondShot = engine.AliveBullets().Last();
+        Assert.Equal(45.0, DanmakuMath.NormalizeAngle(secondShot.Direction), 1);
+    }
+
+    [Fact]
+    public void 全方位リングにLaserSpacingを設定すると前後ストリーム配置が適用される()
+    {
+        var pattern = TestFactory.SingleShot(4) with
+        {
+            Kind = PatternKind.Circle,
+            LaserSpacing = 50.0,
+        };
+        var engine = TestFactory.Engine(TestFactory.Settings(TestFactory.Emitter(pattern)));
+        engine.Advance(0.01);
+
+        var bullets = engine.AliveBullets().OrderBy(b => b.Id).ToList();
+        Assert.Equal(4, bullets.Count);
+
+        // index 0: offset = 0px
+        // index 1: offset = 50px
+        // index 2: offset = 100px
+        // index 3: offset = 150px
+        Assert.Equal(0.0, bullets[0].Position.Length, 1);
+        Assert.Equal(50.0, bullets[1].Position.Length, 1);
+        Assert.Equal(100.0, bullets[2].Position.Length, 1);
+        Assert.Equal(150.0, bullets[3].Position.Length, 1);
+    }
 }
 
 

@@ -39,7 +39,8 @@ public sealed class PatternEmitterBehavior(EmitterSettings settings) : IEmitterB
         var stepStart = context.Time;
         var stepEnd = stepStart + deltaTime;
 
-        if (pattern.Kind == PatternKind.Whip)
+        var whipAmp = context.EmitterWhipAmplitude(stepStart) ?? pattern.WhipAmplitude;
+        if (whipAmp != 0)
         {
             var period = Math.Max(0.05, context.EmitterWhipPeriod(stepStart) ?? pattern.WhipPeriod);
             whipPhase += (DanmakuMath.Tau / period) * deltaTime;
@@ -108,10 +109,10 @@ public sealed class PatternEmitterBehavior(EmitterSettings settings) : IEmitterB
         if (angleJitter != 0)
             baseAngle += context.Random.NextSymmetric(Math.Abs(angleJitter));
 
-        if (pattern.Kind == PatternKind.Whip)
+        var whipAmplitude = context.EmitterWhipAmplitude(fireTime) ?? pattern.WhipAmplitude;
+        if (whipAmplitude != 0)
         {
-            var amplitude = context.EmitterWhipAmplitude(fireTime) ?? pattern.WhipAmplitude;
-            baseAngle += amplitude * Math.Sin(whipPhase);
+            baseAngle += whipAmplitude * Math.Sin(whipPhase);
         }
 
         var spreadAngle = context.EmitterSpreadAngle(fireTime) ?? pattern.SpreadAngle;
@@ -283,23 +284,29 @@ public sealed class PatternEmitterBehavior(EmitterSettings settings) : IEmitterB
                 var offsetAngle = Math.Abs(spread - 360.0) < 1e-6
                     ? step * index
                     : -spread / 2 + step * index;
-                return (baseAngle + offsetAngle, Vec2.Zero, 0);
+                var dir = baseAngle + offsetAngle;
+                var streamOffset = laserSpacing != 0 ? Vec2.FromDegrees(dir, laserSpacing * index) : Vec2.Zero;
+                return (dir, streamOffset, 0);
             }
 
             case PatternKind.Fan:
             case PatternKind.Aimed:
+            case PatternKind.Whip:
             {
                 var spread = spreadAngle;
                 var step = way > 1 ? spread / (way - 1) : 0;
                 var offsetAngle = way > 1 ? -spread / 2 + step * index : 0;
-                return (baseAngle + offsetAngle, Vec2.Zero, 0);
+                var dir = baseAngle + offsetAngle;
+                var streamOffset = laserSpacing != 0 ? Vec2.FromDegrees(dir, laserSpacing * index) : Vec2.Zero;
+                return (dir, streamOffset, 0);
             }
 
             case PatternKind.Scatter:
             {
                 var spread = spreadAngle;
                 var angle = baseAngle + context.Random.NextSymmetric(spread / 2);
-                return (angle, Vec2.Zero, 0);
+                var streamOffset = laserSpacing != 0 ? Vec2.FromDegrees(angle, laserSpacing * index) : Vec2.Zero;
+                return (angle, streamOffset, 0);
             }
 
             case PatternKind.Wall:
@@ -319,28 +326,22 @@ public sealed class PatternEmitterBehavior(EmitterSettings settings) : IEmitterB
                     angleOffset = -spreadAngle / 2 + (spreadAngle / (way - 1)) * index;
                 }
 
-                return (baseAngle + angleOffset, perpendicular + forward, 0);
+                var streamOffset = laserSpacing != 0 ? Vec2.FromDegrees(baseAngle + angleOffset, laserSpacing * index) : Vec2.Zero;
+                return (baseAngle + angleOffset, perpendicular + forward + streamOffset, 0);
             }
 
             case PatternKind.Rose:
             {
                 var angle = baseAngle + DanmakuMath.GoldenAngleDegrees * index;
                 var extraSpeed = stackSpeedStep * Math.Sqrt(index);
-                return (angle, Vec2.Zero, extraSpeed);
+                var streamOffset = laserSpacing != 0 ? Vec2.FromDegrees(angle, laserSpacing * index) : Vec2.Zero;
+                return (angle, streamOffset, extraSpeed);
             }
 
             case PatternKind.Laser:
             {
                 var distance = spawnRadius + laserSpacing * index;
                 return (baseAngle, Vec2.FromDegrees(baseAngle, distance), 0);
-            }
-
-            case PatternKind.Whip:
-            {
-                var spread = spreadAngle;
-                var step = way > 1 ? spread / (way - 1) : 0;
-                var offsetAngle = way > 1 ? -spread / 2 + step * index : 0;
-                return (baseAngle + offsetAngle, Vec2.Zero, 0);
             }
 
             default:

@@ -71,9 +71,9 @@ public sealed record PatternSettings
     /// <summary>Laser パターンで 1 本のレーザーを構成する弾数。</summary>
     public double LaserSpacing { get; init; } = 24;
 
-    /// <summary>Whip パターンの振れ幅 (度)。</summary>
-    public double WhipAmplitude { get; init; } = 60;
+    /// <summary>Whip 首振り振動の振れ幅 (度)。0 で首振りなし。どのパターンにも重ねがけ可能。</summary>
+    public double WhipAmplitude { get; init; } = 0;
 
-    /// <summary>Whip パターンの振動周期 (秒)。</summary>
+    /// <summary>Whip 首振り振動の周期 (秒)。</summary>
     public double WhipPeriod { get; init; } = 1.2;
 }
