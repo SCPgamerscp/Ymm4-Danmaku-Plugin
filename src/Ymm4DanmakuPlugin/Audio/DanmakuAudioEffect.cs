@@ -58,11 +58,11 @@ public abstract class DanmakuSingleSoundAudioEffectBase : AudioEffectBase
 
     [Display(GroupName = "基本設定", Name = "同時発音数",
         Description = "同時に重ねられる効果音の上限。超えた分は古い音から打ち切られます。")]
-    [TextBoxSlider("F0", "音", 4, 128)]
-    [DefaultValue(32)]
-    [Range(1, 512)]
+    [TextBoxSlider("F0", "音", 4, 256)]
+    [DefaultValue(64)]
+    [Range(1, 1024)]
     public int MaxVoices { get => maxVoices; set => Set(ref maxVoices, value); }
-    private int maxVoices = 32;
+    private int maxVoices = 64;
 
     [Display(GroupName = "再生範囲", Name = "開始位置",
         Description = "音源の何秒目から再生するかを指定します (先頭の無音カット等に便利)。")]
@@ -304,7 +304,7 @@ public sealed class DanmakuSingleSoundProcessor : AudioEffectProcessorBase
 
             voices.Add(new Voice(buffer, startPosition, pitchRatio, e.Volume, startFrame, maxFrames, fadeOutFrames));
 
-            if (voices.Count >= effect.MaxVoices * 64) break;
+            if (voices.Count >= effect.MaxVoices * 256) break;
         }
 
         voices.Sort(static (a, b) => a.StartPosition.CompareTo(b.StartPosition));

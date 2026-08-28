@@ -28,7 +28,7 @@ public sealed class DanmakuSimulator
     public IReadOnlyList<string> Warnings { get; private set; } = [];
 
     /// <summary>1 回のシークで計算する最大秒数。これを超えるシークは打ち切る。</summary>
-    public double MaxSimulationSeconds { get; set; } = 600.0;
+    public double MaxSimulationSeconds { get; set; } = 3600.0;
 
     /// <summary>最後に再計算 (巻き戻し) が発生した回数。パフォーマンス計測用。</summary>
     public int RewindCount { get; private set; }

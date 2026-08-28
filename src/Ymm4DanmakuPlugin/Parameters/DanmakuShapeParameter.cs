@@ -726,9 +726,9 @@ public class DanmakuShapeParameter : ShapeParameterBase
     [AnimationSlider("F0", "", 0, 100000)]
     public Animation Seed { get; } = new Animation(20240101, 0, 10000000);
 
-    [Display(GroupName = "全体", Name = "最大弾数", Description = "同時に存在できる弾の上限。大きくすると重くなります。")]
-    [AnimationSlider("F0", "発", 0, 20000)]
-    public Animation MaxBullets { get; } = new Animation(4096, 0, 200000);
+    [Display(GroupName = "全体設定", Name = "最大弾数", Description = "同時に画面上に存在できる弾の最大数。")]
+    [AnimationSlider("F0", "発", 0, 100000)]
+    public Animation MaxBullets { get; } = new Animation(16384, 0, 200000);
 
     [Display(GroupName = "全体", Name = "再生速度", Description = "弾幕全体の時間倍率。0 で完全静止 (時止め)、0.5 でスローモーションになります。")]
     [AnimationSlider("F2", "倍", -3, 3)]
@@ -1013,7 +1013,7 @@ public class DanmakuShapeParameter : ShapeParameterBase
     private sealed class SharedData
     {
         private readonly Animation seed = new(20240101, 0, 10000000);
-        private readonly Animation maxBullets = new(4096, 0, 200000);
+        private readonly Animation maxBullets = new(16384, 0, 200000);
         private readonly Animation timeScale = new(1.0, -100, 100);
         private readonly SimulationStep simulationStep;
         private readonly OutOfBoundsBehavior outOfBounds;

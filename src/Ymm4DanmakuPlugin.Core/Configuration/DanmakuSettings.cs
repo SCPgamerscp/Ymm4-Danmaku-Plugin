@@ -16,8 +16,8 @@ public sealed record SoundSettings
     /// <summary>基準ピッチ (半音単位のオフセット)。</summary>
     public double PitchSemitones { get; init; }
 
-    /// <summary>1 秒あたりに再生できる最大発音数 (音の飽和を防ぐ)。</summary>
-    public int MaxVoicesPerSecond { get; init; } = 20;
+    /// <summary>1 秒あたりに再生できる最大発音数 (0 で無制限)。</summary>
+    public int MaxVoicesPerSecond { get; init; } = 0;
 
     /// <summary>同一フレーム内で複数の発音が起きた際にまとめるかどうか。</summary>
     public bool CoalesceSimultaneous { get; init; } = true;
@@ -81,7 +81,7 @@ public sealed record DanmakuSettings
     public double BoundsMargin { get; init; } = 160;
 
     /// <summary>同時に存在できる弾の最大数。</summary>
-    public int MaxBullets { get; init; } = 4096;
+    public int MaxBullets { get; init; } = 16384;
 
     /// <summary>シミュレーションの時間倍率。</summary>
     public double TimeScale { get; init; } = 1.0;

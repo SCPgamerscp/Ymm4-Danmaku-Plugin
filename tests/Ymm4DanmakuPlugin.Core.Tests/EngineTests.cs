@@ -2164,6 +2164,23 @@ public class KeyframeLiveValueTests
 
         Assert.True(simulator.Engine.TotalSpawned > 2000, "長時間シークで弾の発射が途切れている");
     }
+
+    [Fact]
+    public void 超高速連射0_01秒でも効果音イベントが途切れることなく毎秒100回記録される()
+    {
+        var pattern = TestFactory.SingleShot(1) with
+        {
+            FireInterval = 0.01, // 毎秒100発
+        };
+        var settings = TestFactory.Settings(TestFactory.Emitter(pattern));
+
+        var engine = TestFactory.Engine(settings);
+        engine.Advance(1.0); // 1秒進める
+
+        // 1秒間に約100回の効果音イベントが発生していること (途切れ制限でカットされていないこと)
+        var fireEvents = engine.SoundLog.Events.Where(e => e.Kind == DanmakuSoundKind.Fire).ToList();
+        Assert.InRange(fireEvents.Count, 95, 105);
+    }
 }
 
 

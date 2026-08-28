@@ -56,10 +56,10 @@ public sealed class SoundEventLog
     {
         if (!settings.IsEnabled) return;
 
-        // 同時発音の合成: 同一フレーム(=1/120秒)内の同種イベントは 1 回にまとめる
+        // 同時発音の合成: 同一タイムステップ内の同種イベントは 1 回にまとめる (1ms未満)
         if (settings.CoalesceSimultaneous &&
             lastEmitTime.TryGetValue(kind, out var last) &&
-            timeSeconds - last < 1.0 / 120.0)
+            timeSeconds - last < 0.001)
         {
             return;
         }
