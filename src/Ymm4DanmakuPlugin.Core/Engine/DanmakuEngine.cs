@@ -163,11 +163,7 @@ public sealed class DanmakuEngine
 
         // 目標時刻までに完了しているべき格子ステップ数
         var targetSteps = (long)Math.Floor(target / step + 1e-9);
-
-        // 1 回の呼び出しで進めるステップ数の上限 (極端なシークでの固まりを防ぐ)
-        const int MaxStepsPerCall = 4096;
         var remainingSteps = targetSteps - gridSteps;
-        if (remainingSteps > MaxStepsPerCall) remainingSteps = MaxStepsPerCall;
 
         for (var i = 0L; i < remainingSteps; i++)
             StepGrid(step);

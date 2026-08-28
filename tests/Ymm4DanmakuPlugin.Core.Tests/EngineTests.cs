@@ -2121,6 +2121,49 @@ public class KeyframeLiveValueTests
             Assert.Equal(1.0, e.PitchRatio, 4);
         }
     }
+
+    [Fact]
+    public void 全方位リングの発射間隔が途切れることなく一定周期で発射され続ける()
+    {
+        var preset = PresetCatalog.Presets.First(p => p.Name == "全方位リング");
+        var settings = TestFactory.Settings(
+            TestFactory.Emitter(preset.Pattern, preset.Physics, preset.Appearance));
+
+        var engine = TestFactory.Engine(settings);
+
+        var fireTimes = new List<double>();
+        var lastCount = 0;
+        for (var frame = 0; frame < 600; frame++) // 10 seconds at 60fps
+        {
+            engine.Advance(1.0 / 60.0);
+            if (engine.TotalSpawned > lastCount)
+            {
+                fireTimes.Add(engine.CurrentTime);
+                lastCount = engine.TotalSpawned;
+            }
+        }
+
+        Assert.True(fireTimes.Count >= 25, "発射回数が不足している");
+        for (var i = 1; i < fireTimes.Count; i++)
+        {
+            var interval = fireTimes[i] - fireTimes[i - 1];
+            // interval は常に 0.35 秒 (±1フレーム許容)
+            Assert.InRange(interval, 0.33, 0.37);
+        }
+    }
+
+    [Fact]
+    public void 長時間シミュレーションでも弾が途切れることなく発射され続ける()
+    {
+        var preset = PresetCatalog.Presets.First(p => p.Name == "全方位リング");
+        var settings = TestFactory.Settings(
+            TestFactory.Emitter(preset.Pattern, preset.Physics, preset.Appearance));
+
+        var simulator = new DanmakuSimulator(settings);
+        simulator.SeekTo(60.0); // 60秒先までシーク
+
+        Assert.True(simulator.Engine.TotalSpawned > 2000, "長時間シークで弾の発射が途切れている");
+    }
 }
 
 

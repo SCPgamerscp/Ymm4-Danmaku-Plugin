@@ -54,8 +54,7 @@ public sealed class PatternEmitterBehavior(EmitterSettings settings) : IEmitterB
         var guard = 0;
         while (nextShotTime < stepEnd && nextShotTime <= end && guard++ < MaxShotsPerStep)
         {
-            if (nextShotTime >= stepStart)
-                FireOnce(context, nextShotTime);
+            FireOnce(context, nextShotTime);
 
             shotIndex++;
             burstIndex++;
@@ -75,10 +74,6 @@ public sealed class PatternEmitterBehavior(EmitterSettings settings) : IEmitterB
                 nextShotTime += Math.Max(MinInterval, interval + burstCooldown);
             }
         }
-
-        // タイムラインを大きく飛ばした場合に while が回りきらないケースを補正する
-        if (nextShotTime < stepStart)
-            nextShotTime = stepStart;
     }
 
     private void FireOnce(EmitterContext context, double fireTime)
