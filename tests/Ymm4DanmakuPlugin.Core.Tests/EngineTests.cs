@@ -2034,5 +2034,93 @@ public class KeyframeLiveValueTests
         Assert.NotEmpty(engine.SoundLog.Events);
         Assert.Contains(engine.SoundLog.Events, e => e.Kind == DanmakuSoundKind.PlayerShot);
     }
+
+    [Fact]
+    public void 公転速度を時間変化させても連続積分されて角度が滑らかに変化する()
+    {
+        var settings = TestFactory.Settings(TestFactory.Emitter(
+            TestFactory.SingleShot(1) with { FireInterval = 0.5 },
+            orbitRadius: 100,
+            orbitSpeed: 60));
+
+        var engine = TestFactory.Engine(settings);
+        // 最初の 1 秒は 60度/秒、次の 1 秒は 120度/秒
+        engine.Live.EmitterOrbitSpeed = (index, time) => time < 1.0 ? 60.0 : 120.0;
+
+        engine.Advance(1.0);
+        Assert.Equal(60.0, engine.Contexts[0].OrbitAngle, 1);
+
+        engine.Advance(1.0);
+        // 60 + 120 = 180 度
+        Assert.Equal(180.0, engine.Contexts[0].OrbitAngle, 1);
+    }
+
+    [Fact]
+    public void 発射角ステップを動的に変化させても各回のステップが累積加算される()
+    {
+        var pattern = TestFactory.SingleShot(1) with
+        {
+            AngleStepPerShot = 10,
+            FireInterval = 0.1,
+        };
+        var engine = TestFactory.Engine(TestFactory.Settings(TestFactory.Emitter(pattern)));
+        // 発射 1 回目 (t=0.0): step 10 -> 次回へ 10 累積
+        // 発射 2 回目 (t=0.1): step 20 -> 次回へ 10+20=30 累積
+        // 発射 3 回目 (t=0.2): step 30
+        engine.Live.EmitterAngleStepPerShot = (index, time) => time < 0.05 ? 10.0 : (time < 0.15 ? 20.0 : 30.0);
+
+        engine.Advance(0.25);
+
+        var bullets = engine.AliveBullets().OrderBy(b => b.Id).ToArray();
+        Assert.True(bullets.Length >= 3);
+        // bullet 0: angle = 0
+        // bullet 1: angle = 10 (+10)
+        // bullet 2: angle = 30 (+20)
+        Assert.Equal(0.0, DanmakuMath.NormalizeAngle(bullets[0].Direction), 1);
+        Assert.Equal(10.0, DanmakuMath.NormalizeAngle(bullets[1].Direction), 1);
+        Assert.Equal(30.0, DanmakuMath.NormalizeAngle(bullets[2].Direction), 1);
+    }
+
+    [Fact]
+    public void 魔法陣回転速度が連続積分される()
+    {
+        var settings = TestFactory.Settings(TestFactory.Emitter(TestFactory.SingleShot(1)));
+        var engine = TestFactory.Engine(settings);
+
+        engine.Live.EmitterMagicCircleRotationSpeed = (index, time) => 90.0;
+        engine.Advance(2.0);
+
+        Assert.Equal(180.0, engine.Contexts[0].MagicCircleAngle, 1);
+    }
+
+    [Fact]
+    public void 虹色色相変化速度が連続積分される()
+    {
+        var settings = TestFactory.Settings(TestFactory.Emitter(TestFactory.SingleShot(1)));
+        var engine = TestFactory.Engine(settings);
+
+        engine.Live.EmitterHueVelocity = (index, time) => 45.0;
+        engine.Advance(2.0);
+
+        Assert.Equal(90.0, engine.Contexts[0].RainbowBaseHue, 1);
+    }
+
+    [Fact]
+    public void 効果音イベントのピッチ比率はデフォルトで完全に一定である()
+    {
+        var settings = TestFactory.Settings(
+            TestFactory.Emitter(TestFactory.SingleShot(1) with { FireInterval = 0.05 }),
+            seed: 12345);
+
+        var engine = TestFactory.Engine(settings);
+        engine.Advance(0.3);
+
+        Assert.NotEmpty(engine.SoundLog.Events);
+        foreach (var e in engine.SoundLog.Events)
+        {
+            Assert.Equal(1.0, e.PitchRatio, 4);
+        }
+    }
 }
+
 
