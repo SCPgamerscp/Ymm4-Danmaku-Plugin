@@ -551,20 +551,20 @@ public class DanmakuShapeParameter : ShapeParameterBase
     // 当たり判定 (被弾シミュレーション & 自機設定)
     // =====================================================================
 
-    [Display(GroupName = "当たり判定", Name = "当たり判定を有効化", Description = "ターゲット (自機) との被弾判定を行います。")]
+    [Display(GroupName = "当たり判定", Name = "当たり判定を有効化", Description = "自機と敵弾との被弾判定を行います。")]
     [ToggleSlider]
     public bool CollisionEnabled { get => collisionEnabled; set => Set(ref collisionEnabled, value); }
     private bool collisionEnabled;
 
-    [Display(GroupName = "当たり判定", Name = "ターゲット X", Description = "自機の X 座標。プレビュー画面でのドラッグやキーフレーム移動が可能です。")]
+    [Display(GroupName = "当たり判定", Name = "自機 X", Description = "自機の X 座標。プレビュー画面でのドラッグやキーフレーム移動が可能です。")]
     [AnimationSlider("F1", "px", -1920, 1920)]
     public Animation TargetX { get; } = new Animation(0, -100000, 100000);
 
-    [Display(GroupName = "当たり判定", Name = "ターゲット Y", Description = "自機の Y 座標。プレビュー画面でのドラッグやキーフレーム移動が可能です。")]
+    [Display(GroupName = "当たり判定", Name = "自機 Y", Description = "自機の Y 座標。プレビュー画面でのドラッグやキーフレーム移動が可能です。")]
     [AnimationSlider("F1", "px", -1080, 1080)]
     public Animation TargetY { get; } = new Animation(250, -100000, 100000);
 
-    [Display(GroupName = "当たり判定", Name = "自機画像", Description = "自機 (ターゲット) の位置に表示するキャラクターや機体の画像。")]
+    [Display(GroupName = "当たり判定", Name = "自機画像", Description = "自機の位置に表示するキャラクターや機体の画像。")]
     [FileSelector(YukkuriMovieMaker.Settings.FileGroupType.ImageItem)]
     public string TargetImagePath
     {
@@ -587,7 +587,7 @@ public class DanmakuShapeParameter : ShapeParameterBase
     [AnimationSlider("F2", "", -1, 1)]
     public Animation TargetOpacity { get; } = new Animation(1.0, -1, 1);
 
-    [Display(GroupName = "当たり判定", Name = "ターゲット半径", Description = "自機の被弾判定半径 (喰らい判定)。0 で無敵になります。")]
+    [Display(GroupName = "当たり判定", Name = "自機判定半径 (喰らい判定)", Description = "自機の被弾判定半径 (喰らい判定)。0 で無敵になります。")]
     [AnimationSlider("F1", "px", -200, 200)]
     public Animation TargetRadius { get; } = new Animation(30, -10000, 10000);
 
@@ -629,7 +629,7 @@ public class DanmakuShapeParameter : ShapeParameterBase
     [AnimationSlider("F2", "秒", 0, 2)]
     public Animation HitEffectLifetime { get; } = new Animation(0.35, 0, 1000);
 
-    [Display(GroupName = "当たり判定", Name = "ターゲットを表示", Description = "自機画像や当たり判定枠 (喰らい判定) を描画します。")]
+    [Display(GroupName = "当たり判定", Name = "自機マーカーを表示", Description = "自機画像や当たり判定枠 (喰らい判定) を描画します。")]
     [ToggleSlider]
     public bool ShowTargetMarker { get => showTargetMarker; set => Set(ref showTargetMarker, value); }
     private bool showTargetMarker = true;
