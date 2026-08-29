@@ -222,11 +222,11 @@ public class EmitterParameter : Animatable
     [AnimationSlider("F0", "段", 0, 64)]
     public Animation Stack { get; } = new Animation(1, 0, 1000);
 
-    [Display(GroupName = "パターン", Name = "段ごとの速度差")]
+    [Display(GroupName = "パターン", Name = "段ごとの\n速度差")]
     [AnimationSlider("F0", "px/秒", -500, 500)]
     public Animation StackSpeedStep { get; } = new Animation(40, -100000, 100000);
 
-    [Display(GroupName = "パターン", Name = "段ごとの角度差")]
+    [Display(GroupName = "パターン", Name = "段ごとの\n角度差")]
     [AnimationSlider("F1", "度", -180, 180)]
     public Animation StackAngleStep { get; } = new Animation(0, -100000, 100000);
 
@@ -238,7 +238,7 @@ public class EmitterParameter : Animatable
     [AnimationSlider("F1", "度", -360, 360)]
     public Animation SpreadAngle { get; } = new Animation(360, -100000, 100000);
 
-    [Display(GroupName = "パターン", Name = "発射ごとの回転", Description = "1 回発射するたびに基準角へ加算する角度。螺旋弾の要です。")]
+    [Display(GroupName = "パターン", Name = "発射ごとの\n回転", Description = "1 回発射するたびに基準角へ加算する角度。螺旋弾の要です。")]
     [AnimationSlider("F1", "度/発", -180, 180)]
     public Animation AngleStepPerShot { get; } = new Animation(0, -100000, 100000);
 
@@ -258,7 +258,7 @@ public class EmitterParameter : Animatable
     [AnimationSlider("F4", "秒", 0, 1)]
     public Animation BurstInterval { get; } = new Animation(0.02, 0, 10000);
 
-    [Display(GroupName = "パターン", Name = "連射後の待機")]
+    [Display(GroupName = "パターン", Name = "連射後の\n待機")]
     [AnimationSlider("F3", "秒", 0, 10)]
     public Animation BurstCooldown { get; } = new Animation(0, 0, 10000);
 
@@ -274,7 +274,7 @@ public class EmitterParameter : Animatable
     [AnimationSlider("F1", "px", -300, 300)]
     public Animation SpawnRadius { get; } = new Animation(0, -100000, 100000);
 
-    [Display(GroupName = "パターン", Name = "発生位置ゆらぎ")]
+    [Display(GroupName = "パターン", Name = "発生位置\nゆらぎ")]
     [AnimationSlider("F1", "px", -200, 200)]
     public Animation SpawnJitter { get; } = new Animation(0, -100000, 100000);
 
@@ -317,7 +317,7 @@ public class EmitterParameter : Animatable
     [AnimationSlider("F0", "px/秒", -1000, 1000)]
     public Animation SpeedJitter { get; } = new Animation(0, -100000, 100000);
 
-    [Display(GroupName = "弾の動き", Name = "弾ごとの速度差", Description = "n-way の内側と外側で速度差をつけます。")]
+    [Display(GroupName = "弾の動き", Name = "弾ごとの\n速度差", Description = "n-way の内側と外側で速度差をつけます。")]
     [AnimationSlider("F1", "px/秒", -100, 100)]
     public Animation SpeedStep { get; } = new Animation(0, -100000, 100000);
 
@@ -329,7 +329,7 @@ public class EmitterParameter : Animatable
     [AnimationSlider("F1", "度/秒", -720, 720)]
     public Animation AngularVelocity { get; } = new Animation(0, -100000, 100000);
 
-    [Display(GroupName = "弾の動き", Name = "旋回ゆらぎ")]
+    [Display(GroupName = "弾の動き", Name = "旋回の\nゆらぎ")]
     [AnimationSlider("F1", "度/秒", -360, 360)]
     public Animation AngularVelocityJitter { get; } = new Animation(0, -100000, 100000);
 
@@ -376,7 +376,7 @@ public class EmitterParameter : Animatable
     [AnimationSlider("F2", "秒", 0, 10)]
     public Animation HomingDuration { get; } = new Animation(1.5, 0, 100000);
 
-    [Display(GroupName = "ホーミング", Name = "追尾開始まで")]
+    [Display(GroupName = "ホーミング", Name = "追尾開始\nまで")]
     [AnimationSlider("F2", "秒", 0, 3)]
     public Animation HomingDelay { get; } = new Animation(0, 0, 100000);
 
@@ -398,7 +398,7 @@ public class EmitterParameter : Animatable
     [AnimationSlider("F2", "倍", -4, 4)]
     public Animation Scale { get; } = new Animation(1.0, -1000, 1000);
 
-    [Display(GroupName = "見た目", Name = "大きさゆらぎ")]
+    [Display(GroupName = "見た目", Name = "大きさの\nゆらぎ")]
     [AnimationSlider("F2", "倍", -1, 1)]
     public Animation ScaleJitter { get; } = new Animation(0, -1000, 1000);
 
@@ -410,7 +410,7 @@ public class EmitterParameter : Animatable
     [AnimationSlider("F0", "度/秒", -720, 720)]
     public Animation RotationVelocity { get; } = new Animation(0, -100000, 100000);
 
-    [Display(GroupName = "見た目", Name = "進行方向を向く")]
+    [Display(GroupName = "見た目", Name = "進行方向を\n向く")]
     [ToggleSlider]
     public bool AlignToDirection { get => alignToDirection; set => Set(ref alignToDirection, value); }
     private bool alignToDirection = true;
@@ -434,11 +434,11 @@ public class EmitterParameter : Animatable
     [AnimationSlider("F0", "度/秒", -720, 720)]
     public Animation HueVelocity { get; } = new Animation(120, -100000, 100000);
 
-    [Display(GroupName = "見た目", Name = "弾ごとの色相差")]
+    [Display(GroupName = "見た目", Name = "弾ごとの\n色相差")]
     [AnimationSlider("F1", "度", -180, 180)]
     public Animation HueStep { get; } = new Animation(15, -100000, 100000);
 
-    [Display(GroupName = "見た目", Name = "発光 (加算合成)", Description = "東方風の光る弾にします。")]
+    [Display(GroupName = "見た目", Name = "発光\n(加算合成)", Description = "東方風の光る弾にします。")]
     [ToggleSlider]
     public bool Additive { get => additive; set => Set(ref additive, value); }
     private bool additive = true;
@@ -451,11 +451,11 @@ public class EmitterParameter : Animatable
     [AnimationSlider("F2", "", -1, 1)]
     public Animation Opacity { get; } = new Animation(1.0, -1, 1);
 
-    [Display(GroupName = "見た目", Name = "フェードイン")]
+    [Display(GroupName = "見た目", Name = "フェード\nイン")]
     [AnimationSlider("F2", "秒", 0, 1)]
     public Animation FadeInDuration { get; } = new Animation(0.05, 0, 1000);
 
-    [Display(GroupName = "見た目", Name = "フェードアウト")]
+    [Display(GroupName = "見た目", Name = "フェード\nアウト")]
     [AnimationSlider("F2", "秒", 0, 2)]
     public Animation FadeOutDuration { get; } = new Animation(0.15, 0, 1000);
 
@@ -465,15 +465,15 @@ public class EmitterParameter : Animatable
     [AnimationSlider("F0", "個", 0, 32)]
     public Animation TrailLength { get; } = new Animation(0, 0, 48);
 
-    [Display(GroupName = "残像", Name = "残像の間隔")]
+    [Display(GroupName = "残像", Name = "残像の\n間隔")]
     [AnimationSlider("F3", "秒", 0, 0.2)]
     public Animation TrailInterval { get; } = new Animation(1.0 / 60.0, 0, 100);
 
-    [Display(GroupName = "残像", Name = "末端の濃さ")]
+    [Display(GroupName = "残像", Name = "末端の\n濃さ")]
     [AnimationSlider("F2", "", 0, 1)]
     public Animation TrailFade { get; } = new Animation(0, 0, 1);
 
-    [Display(GroupName = "残像", Name = "末端の大きさ")]
+    [Display(GroupName = "残像", Name = "末端の\n大きさ")]
     [AnimationSlider("F2", "倍", -1.5, 1.5)]
     public Animation TrailScale { get; } = new Animation(0.6, -100, 100);
 
@@ -486,7 +486,7 @@ public class EmitterParameter : Animatable
     public bool SplitEnabled { get => splitEnabled; set => Set(ref splitEnabled, value); }
     private bool splitEnabled;
 
-    [Display(GroupName = "分裂", Name = "分裂までの時間")]
+    [Display(GroupName = "分裂", Name = "分裂までの\n時間")]
     [AnimationSlider("F2", "秒", 0, 5)]
     public Animation SplitDelay { get; } = new Animation(0.6, 0, 100000);
 
@@ -494,15 +494,15 @@ public class EmitterParameter : Animatable
     [AnimationSlider("F0", "個", 0, 32)]
     public Animation SplitCount { get; } = new Animation(8, 0, 500);
 
-    [Display(GroupName = "分裂", Name = "分裂の広がり角")]
+    [Display(GroupName = "分裂", Name = "分裂の\n広がり角")]
     [AnimationSlider("F1", "度", -360, 360)]
     public Animation SplitSpread { get; } = new Animation(360, -100000, 100000);
 
-    [Display(GroupName = "分裂", Name = "分裂後の速度")]
+    [Display(GroupName = "分裂", Name = "分裂後の\n速度")]
     [AnimationSlider("F0", "px/秒", -800, 800)]
     public Animation SplitSpeed { get; } = new Animation(180, -100000, 100000);
 
-    [Display(GroupName = "分裂", Name = "分裂後の大きさ")]
+    [Display(GroupName = "分裂", Name = "分裂後の\n大きさ")]
     [AnimationSlider("F2", "倍", -2, 2)]
     public Animation SplitScaleFactor { get; } = new Animation(0.8, -100, 100);
 
@@ -511,7 +511,7 @@ public class EmitterParameter : Animatable
     public bool SplitDestroyParent { get => splitDestroyParent; set => Set(ref splitDestroyParent, value); }
     private bool splitDestroyParent = true;
 
-    [Display(GroupName = "分裂", Name = "多段の世代数", Description = "2 以上でさらに分裂を繰り返します。")]
+    [Display(GroupName = "分裂", Name = "多段の\n世代数", Description = "2 以上でさらに分裂を繰り返します。")]
     [AnimationSlider("F0", "世代", 0, 5)]
     public Animation SplitMaxGeneration { get; } = new Animation(1, 0, 10);
 
@@ -538,12 +538,12 @@ public class EmitterParameter : Animatable
     [AnimationSlider("F2", "", -1, 1)]
     public Animation EnemyOpacity { get; } = new Animation(1.0, -1, 1);
 
-    [Display(GroupName = "エネミー (敵)", Name = "弾の奥に描画", Description = "オンで弾幕の背後に配置、オフで弾幕の手前に配置します。")]
+    [Display(GroupName = "エネミー (敵)", Name = "弾の奥に\n描画", Description = "オンで弾幕の背後に配置、オフで弾幕の手前に配置します。")]
     [ToggleSlider]
     public bool EnemyBehindBullets { get => enemyBehindBullets; set => Set(ref enemyBehindBullets, value); }
     private bool enemyBehindBullets = true;
 
-    [Display(GroupName = "エネミー (敵)", Name = "魔法陣を有効化", Description = "ボスの背後に東方風の魔法陣を展開します。")]
+    [Display(GroupName = "エネミー (敵)", Name = "魔法陣を\n有効化", Description = "ボスの背後に東方風の魔法陣を展開します。")]
     [ToggleSlider]
     public bool MagicCircleEnabled { get => magicCircleEnabled; set => Set(ref magicCircleEnabled, value); }
     private bool magicCircleEnabled;
@@ -555,11 +555,11 @@ public class EmitterParameter : Animatable
 
     public bool HasCustomMagicCircleImage => !string.IsNullOrWhiteSpace(MagicCircleImagePath);
 
-    [Display(GroupName = "エネミー (敵)", Name = "魔法陣サイズ")]
+    [Display(GroupName = "エネミー (敵)", Name = "魔法陣\nサイズ")]
     [AnimationSlider("F2", "倍", -10, 10)]
     public Animation MagicCircleScale { get; } = new Animation(1.5, -1000, 1000);
 
-    [Display(GroupName = "エネミー (敵)", Name = "魔法陣回転速度", Description = "1 秒あたりの回転角度。正で時計回り、負で反時計回り。")]
+    [Display(GroupName = "エネミー (敵)", Name = "魔法陣の\n回転速度", Description = "1 秒あたりの回転角度。正で時計回り、負で反時計回り。")]
     [AnimationSlider("F1", "度/秒", -720, 720)]
     public Animation MagicCircleRotationSpeed { get; } = new Animation(45, -100000, 100000);
 
@@ -568,16 +568,16 @@ public class EmitterParameter : Animatable
     public Color MagicCircleColor { get => magicCircleColor; set => Set(ref magicCircleColor, value); }
     private Color magicCircleColor = Color.FromRgb(150, 220, 255);
 
-    [Display(GroupName = "エネミー (敵)", Name = "魔法陣の不透明度")]
+    [Display(GroupName = "エネミー (敵)", Name = "魔法陣の\n不透明度")]
     [AnimationSlider("F2", "", -1, 1)]
     public Animation MagicCircleOpacity { get; } = new Animation(0.8, -1, 1);
 
-    [Display(GroupName = "エネミー (敵)", Name = "魔法陣を加算合成")]
+    [Display(GroupName = "エネミー (敵)", Name = "魔法陣を\n加算合成")]
     [ToggleSlider]
     public bool MagicCircleAdditive { get => magicCircleAdditive; set => Set(ref magicCircleAdditive, value); }
     private bool magicCircleAdditive = true;
 
-    [Display(GroupName = "エネミー (敵)", Name = "オーラを有効化", Description = "ボスの周囲に発光オーラを纏わせます。")]
+    [Display(GroupName = "エネミー (敵)", Name = "オーラを\n有効化", Description = "ボスの周囲に発光オーラを纏わせます。")]
     [ToggleSlider]
     public bool AuraEnabled { get => auraEnabled; set => Set(ref auraEnabled, value); }
     private bool auraEnabled;
@@ -599,7 +599,7 @@ public class EmitterParameter : Animatable
     [AnimationSlider("F1", "px", -40, 40)]
     public Animation HitRadius { get; } = new Animation(0, -100000, 100000);
 
-    [Display(GroupName = "当たり判定", Name = "当たったら消える")]
+    [Display(GroupName = "当たり判定", Name = "被弾時に\n弾を消す")]
     [ToggleSlider]
     public bool DestroyOnHit { get => destroyOnHit; set => Set(ref destroyOnHit, value); }
     private bool destroyOnHit = true;
