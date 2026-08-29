@@ -839,8 +839,8 @@ public class DanmakuShapeParameter : ShapeParameterBase
     [AnimationSlider("F1", "%", -100, 100)]
     public Animation GlobalOpacity { get; } = new Animation(100, -100, 100);
 
-    [Display(GroupName = "全体", Name = "効果音チャンネル",
-        Description = "「弾幕効果音」音声エフェクト側で同じ番号を指定すると、この弾幕に合わせて効果音が鳴ります。-1 で全チャンネル連動。")]
+    [Display(GroupName = "全体", Name = "チャンネル",
+        Description = "この弾幕アイテムの識別チャンネル番号 (0〜255)。効果音エフェクトや別レイヤーの自機ショットとの連携に使います。-1 で全チャンネル連動。")]
     [AnimationSlider("F0", "ch", -1, 255)]
     public Animation Channel { get; } = new Animation(0, -1, 255);
 
