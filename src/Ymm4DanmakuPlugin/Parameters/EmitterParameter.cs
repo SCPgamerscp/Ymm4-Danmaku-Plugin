@@ -289,19 +289,19 @@ public class EmitterParameter : Animatable
         set => AimRate.SetFirstValue(value ? 100 : 0);
     }
 
-    [Display(GroupName = "パターン", Name = "壁の横幅", Description = "「壁弾」で弾を並べる横幅。")]
+    [Display(GroupName = "パターン", Name = "壁の横幅", Description = "横一列に並べて配置する横幅。0 で点発生。")]
     [AnimationSlider("F0", "px", -3840, 3840)]
-    public Animation WallWidth { get; } = new Animation(1280, -100000, 100000);
+    public Animation WallWidth { get; } = new Animation(0, -100000, 100000);
 
-    [Display(GroupName = "パターン", Name = "レーザー間隔", Description = "「疑似レーザー」で弾を並べる間隔。")]
+    [Display(GroupName = "パターン", Name = "レーザー間隔", Description = "進行方向に弾を並べる間隔。0 で前後オフセットなし。")]
     [AnimationSlider("F1", "px", -120, 120)]
-    public Animation LaserSpacing { get; } = new Animation(24, -100000, 100000);
+    public Animation LaserSpacing { get; } = new Animation(0, -100000, 100000);
 
-    [Display(GroupName = "パターン", Name = "鞭の振れ幅")]
+    [Display(GroupName = "パターン", Name = "鞭の振れ幅", Description = "左右に首を振る振れ幅。0 で首振りなし。")]
     [AnimationSlider("F1", "度", -180, 180)]
-    public Animation WhipAmplitude { get; } = new Animation(60, -100000, 100000);
+    public Animation WhipAmplitude { get; } = new Animation(0, -100000, 100000);
 
-    [Display(GroupName = "パターン", Name = "鞭の周期")]
+    [Display(GroupName = "パターン", Name = "鞭の周期", Description = "首振りが1往復する周期。")]
     [AnimationSlider("F2", "秒", -6, 6)]
     public Animation WhipPeriod { get; } = new Animation(1.2, -100000, 100000);
 
@@ -947,10 +947,10 @@ public class EmitterParameter : Animatable
         BurstCount.SetFirstValue(1);
         BurstInterval.SetFirstValue(0.02);
         BurstCooldown.SetFirstValue(0);
-        WallWidth.SetFirstValue(1280);
-        LaserSpacing.SetFirstValue(24);
-        WhipAmplitude.SetFirstValue(45);
-        WhipPeriod.SetFirstValue(1.5);
+        WallWidth.SetFirstValue(0);
+        LaserSpacing.SetFirstValue(0);
+        WhipAmplitude.SetFirstValue(0);
+        WhipPeriod.SetFirstValue(1.2);
 
         switch (kind)
         {

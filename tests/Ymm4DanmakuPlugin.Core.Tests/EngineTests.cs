@@ -2182,6 +2182,65 @@ public class KeyframeLiveValueTests
         Assert.InRange(fireEvents.Count, 95, 105);
     }
 
+    [Fact]
+    public void 全方位リングのデフォルト発射は歪みゼロの真円である()
+    {
+        var pattern = TestFactory.SingleShot(8) with
+        {
+            Kind = PatternKind.Circle,
+            SpawnRadius = 100.0,
+            BaseAngle = 0.0,
+        };
+        var engine = TestFactory.Engine(TestFactory.Settings(TestFactory.Emitter(pattern)));
+        engine.Advance(0.01);
+
+        var bullets = engine.AliveBullets().OrderBy(b => b.Id).ToList();
+        Assert.Equal(8, bullets.Count);
+
+        for (var i = 0; i < 8; i++)
+        {
+            var expectedAngle = i * 45.0;
+            var expectedPos = Vec2.FromDegrees(expectedAngle, 100.0);
+            Assert.Equal(expectedAngle, DanmakuMath.NormalizeAngle(bullets[i].Direction), 1);
+            Assert.Equal(expectedPos.X, bullets[i].Position.X, 1);
+            Assert.Equal(expectedPos.Y, bullets[i].Position.Y, 1);
+        }
+    }
+
+    [Fact]
+    public void 全方位リングでWhipやLaserSpacingやWallWidthを動かすと正しく複合変形する()
+    {
+        // LaserSpacing を動かした場合
+        var patternLaser = TestFactory.SingleShot(4) with
+        {
+            Kind = PatternKind.Circle,
+            LaserSpacing = 50.0,
+        };
+        var engineLaser = TestFactory.Engine(TestFactory.Settings(TestFactory.Emitter(patternLaser)));
+        engineLaser.Advance(0.01);
+        var bulletsLaser = engineLaser.AliveBullets().OrderBy(b => b.Id).ToList();
+        Assert.Equal(0.0, bulletsLaser[0].Position.Length, 1);
+        Assert.Equal(50.0, bulletsLaser[1].Position.Length, 1);
+        Assert.Equal(100.0, bulletsLaser[2].Position.Length, 1);
+        Assert.Equal(150.0, bulletsLaser[3].Position.Length, 1);
+
+        // WallWidth を動かした場合
+        var patternWall = TestFactory.SingleShot(3) with
+        {
+            Kind = PatternKind.Circle,
+            BaseAngle = 0.0, // 右向き -> 垂直は下向き (90度)
+            WallWidth = 200.0,
+        };
+        var engineWall = TestFactory.Engine(TestFactory.Settings(TestFactory.Emitter(patternWall)));
+        engineWall.Advance(0.01);
+        var bulletsWall = engineWall.AliveBullets().OrderBy(b => b.Id).ToList();
+        // index 0: y = -100
+        // index 1: y = 0
+        // index 2: y = +100
+        Assert.Equal(-100.0, bulletsWall[0].Position.Y, 1);
+        Assert.Equal(0.0, bulletsWall[1].Position.Y, 1);
+        Assert.Equal(100.0, bulletsWall[2].Position.Y, 1);
+    }
 }
 
 

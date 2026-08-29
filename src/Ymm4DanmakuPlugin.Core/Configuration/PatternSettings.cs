@@ -65,11 +65,11 @@ public sealed record PatternSettings
         init => AimRate = value ? 100.0 : 0.0;
     }
 
-    /// <summary>Wall パターンで使用する横幅 (px)。</summary>
-    public double WallWidth { get; init; } = 1280;
+    /// <summary>Wall 横並び配置の横幅 (px)。0 で点発生。どのパターンにも重ねがけ可能。</summary>
+    public double WallWidth { get; init; } = 0;
 
-    /// <summary>Laser パターンで 1 本のレーザーを構成する弾数。</summary>
-    public double LaserSpacing { get; init; } = 24;
+    /// <summary>Laser 前後ストリーム配置の間隔 (px)。0 で前後オフセットなし。どのパターンにも重ねがけ可能。</summary>
+    public double LaserSpacing { get; init; } = 0;
 
     /// <summary>Whip 首振り振動の振れ幅 (度)。0 で首振りなし。どのパターンにも重ねがけ可能。</summary>
     public double WhipAmplitude { get; init; } = 0;
