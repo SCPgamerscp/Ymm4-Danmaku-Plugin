@@ -94,4 +94,33 @@ public static class DanmakuCollisionBus
         radius = 0;
         return false;
     }
+
+    private static readonly Dictionary<int, double> ChannelDamage = new();
+
+    /// <summary>指定したチャンネルのエネミーへ被弾ダメージを報告する。</summary>
+    public static void ReportDamage(int channel, double damage)
+    {
+        lock (Gate)
+        {
+            ChannelDamage[channel] = ChannelDamage.GetValueOrDefault(channel) + damage;
+        }
+    }
+
+    /// <summary>指定したチャンネルのエネミーが受けた他レイヤーからの累積ダメージを取得する。</summary>
+    public static double GetChannelDamage(int channel)
+    {
+        lock (Gate)
+        {
+            return ChannelDamage.GetValueOrDefault(channel);
+        }
+    }
+
+    /// <summary>累積ダメージをクリアする。</summary>
+    public static void ClearDamage()
+    {
+        lock (Gate)
+        {
+            ChannelDamage.Clear();
+        }
+    }
 }

@@ -121,6 +121,7 @@ public sealed class DanmakuEngine
         TotalSpawned = 0;
         EnemyHitCount = 0;
         playerShotTimer = 0;
+        TotalDamageDealt = 0;
 
         BossMaxHp = Settings.HpBar.MaxHp > 0 ? Settings.HpBar.MaxHp : 1000.0;
         var initPct = Live.BossHp?.Invoke(0) ?? Settings.HpBar.InitialHpPercentage;
@@ -216,6 +217,9 @@ public sealed class DanmakuEngine
     /// <summary>被弾追従ラグバーの HP (滑らかに減衰)。</summary>
     public double DamageLagBossHp { get; set; } = 1000.0;
 
+    /// <summary>これまでに受けた累積ダメージ量。</summary>
+    public double TotalDamageDealt { get; set; }
+
     /// <summary>ボスの現在 HP 割合 (0.0〜1.0)。</summary>
     public double BossHpRatio => BossMaxHp > 0 ? Math.Clamp(CurrentBossHp / BossMaxHp, 0.0, 1.0) : 1.0;
 
@@ -229,11 +233,13 @@ public sealed class DanmakuEngine
     {
         RefreshPositions();
 
-        // タイムラインによるキーフレーム HP 制御
+        // タイムラインによるキーフレーム HP 制御 ＆ 累積被弾ダメージの合算
+        var baseHp = BossMaxHp;
         if (Live.BossHp?.Invoke(CurrentTime) is { } liveHp)
         {
-            CurrentBossHp = Math.Clamp(liveHp / 100.0, 0.0, 1.0) * BossMaxHp;
+            baseHp = Math.Clamp(liveHp / 100.0, 0.0, 1.0) * BossMaxHp;
         }
+        CurrentBossHp = Math.Max(0.0, baseHp - TotalDamageDealt);
 
         // 被弾追従ラグバーの滑らかなアニメーション補間
         if (DamageLagBossHp > CurrentBossHp)
@@ -715,7 +721,13 @@ public sealed class DanmakuEngine
                         EnemyHitCount++;
                         HitCount++;
                         var dmg = Settings.HpBar.DamagePerHit > 0 ? Settings.HpBar.DamagePerHit : 15.0;
-                        CurrentBossHp = Math.Max(0.0, CurrentBossHp - dmg);
+                        TotalDamageDealt += dmg;
+                        var baseHp = BossMaxHp;
+                        if (Live.BossHp?.Invoke(CurrentTime) is { } liveHp)
+                        {
+                            baseHp = Math.Clamp(liveHp / 100.0, 0.0, 1.0) * BossMaxHp;
+                        }
+                        CurrentBossHp = Math.Max(0.0, baseHp - TotalDamageDealt);
                         EmitSound(DanmakuSoundKind.Hit, bullet.EmitterIndex);
 
                         if (collision.SpawnHitEffect)
