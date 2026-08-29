@@ -56,6 +56,21 @@ try {
     try {
         Copy-Item -Path $pluginDll -Destination (Join-Path $tempStage "Ymm4DanmakuPlugin.dll") -Force
 
+        $pluginJsonPath = Join-Path $repoRoot "plugin.json"
+        if (Test-Path $pluginJsonPath) {
+            Copy-Item -Path $pluginJsonPath -Destination (Join-Path $tempStage "plugin.json") -Force
+        }
+
+        $readmeTxtPath = Join-Path $repoRoot "README.txt"
+        if (Test-Path $readmeTxtPath) {
+            Copy-Item -Path $readmeTxtPath -Destination (Join-Path $tempStage "README.txt") -Force
+        }
+
+        $readmeMdPath = Join-Path $repoRoot "README.md"
+        if (Test-Path $readmeMdPath) {
+            Copy-Item -Path $readmeMdPath -Destination (Join-Path $tempStage "README.md") -Force
+        }
+
         if ($IncludePdb) {
             $pluginPdb = "$binDir/Ymm4DanmakuPlugin.pdb"
             if (Test-Path $pluginPdb) {
@@ -89,7 +104,10 @@ try {
             }
             try {
                 Copy-Item -Path $pluginDll -Destination "$ymm4UserPluginDir\Ymm4DanmakuPlugin.dll" -Force
-                Write-Host "Updated YMM4 user plugin directory: $ymm4UserPluginDir\Ymm4DanmakuPlugin.dll" -ForegroundColor Cyan
+                if (Test-Path $pluginJsonPath) { Copy-Item -Path $pluginJsonPath -Destination "$ymm4UserPluginDir\plugin.json" -Force }
+                if (Test-Path $readmeTxtPath) { Copy-Item -Path $readmeTxtPath -Destination "$ymm4UserPluginDir\README.txt" -Force }
+                if (Test-Path $readmeMdPath) { Copy-Item -Path $readmeMdPath -Destination "$ymm4UserPluginDir\README.md" -Force }
+                Write-Host "Updated YMM4 user plugin directory: $ymm4UserPluginDir" -ForegroundColor Cyan
             } catch {
                 Write-Host "Note: YMM4 is currently running. Close YMM4 and re-run pack.ps1 (or install dist/Ymm4DanmakuPlugin.ymme) to update the running instance." -ForegroundColor Yellow
             }

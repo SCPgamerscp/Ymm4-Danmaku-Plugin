@@ -1,0 +1,10 @@
+{
+  "name": "東方風弾幕プラグイン",
+  "version": "1.0.0",
+  "author": "creature-creature",
+  "description": "YukkuriMovieMaker 4 (YMM4) 上で、東方Project風の本格的な弾幕・自機・ボス・魔法陣・体力ゲージ・効果音を作成・描画・編集するためのプラグインです。",
+  "url": "https://github.com/SCPgamerscp/Ymm4-Danmaku-Plugin",
+  "assembly": "Ymm4DanmakuPlugin.dll",
+  "main": "Ymm4DanmakuPlugin.dll",
+  "license": "MIT"
+}

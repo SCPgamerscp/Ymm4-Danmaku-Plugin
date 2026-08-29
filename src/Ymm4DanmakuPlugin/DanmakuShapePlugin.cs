@@ -28,7 +28,7 @@ public class DanmakuShapePlugin : IShapePlugin
 
     public PluginDetailsAttribute? Details => new()
     {
-        AuthorName = "Ymm4DanmakuPlugin contributors",
+        AuthorName = "creature-creature",
         ContentId = string.Empty,
     };
 

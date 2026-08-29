@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <!--
@@ -16,9 +16,17 @@
 
     <AssemblyName>Ymm4DanmakuPlugin</AssemblyName>
     <RootNamespace>Ymm4DanmakuPlugin</RootNamespace>
-    <Version>0.1.0</Version>
-    <Authors>Ymm4DanmakuPlugin contributors</Authors>
-    <Description>YMM4 用 東方風弾幕作成プラグイン</Description>
+    <Version>1.0.0</Version>
+    <AssemblyVersion>1.0.0.0</AssemblyVersion>
+    <FileVersion>1.0.0.0</FileVersion>
+    <Title>東方風弾幕プラグイン</Title>
+    <Product>東方風弾幕プラグイン for YMM4</Product>
+    <Authors>creature-creature</Authors>
+    <Company>creature-creature</Company>
+    <Copyright>Copyright © 2026 creature-creature</Copyright>
+    <Description>YMM4上で東方Project風の本格的な弾幕・自機・ボス・魔法陣・体力ゲージ・効果音を作成・描画・編集するプラグインです。</Description>
+    <PackageProjectUrl>https://github.com/SCPgamerscp/Ymm4-Danmaku-Plugin</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/SCPgamerscp/Ymm4-Danmaku-Plugin</RepositoryUrl>
 
     <!-- Pdb 内にソースコードのフルパスを含めない -->
     <RepoRoot>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..\..\'))</RepoRoot>
