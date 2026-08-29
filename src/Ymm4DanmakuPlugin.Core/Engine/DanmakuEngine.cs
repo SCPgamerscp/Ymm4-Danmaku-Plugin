@@ -122,6 +122,11 @@ public sealed class DanmakuEngine
         EnemyHitCount = 0;
         playerShotTimer = 0;
 
+        BossMaxHp = Settings.HpBar.MaxHp > 0 ? Settings.HpBar.MaxHp : 1000.0;
+        var initPct = Live.BossHp?.Invoke(0) ?? Settings.HpBar.InitialHpPercentage;
+        CurrentBossHp = Math.Clamp(initPct / 100.0, 0.0, 1.0) * BossMaxHp;
+        DamageLagBossHp = CurrentBossHp;
+
         foreach (var ctx in contexts)
         {
             ctx.OrbitAngle = 0;
@@ -202,12 +207,45 @@ public sealed class DanmakuEngine
     /// <summary>エネミーへの自機ショット命中回数。</summary>
     public int EnemyHitCount { get; private set; }
 
+    /// <summary>ボスの最大 HP。</summary>
+    public double BossMaxHp { get; set; } = 1000.0;
+
+    /// <summary>ボスの現在 HP。</summary>
+    public double CurrentBossHp { get; set; } = 1000.0;
+
+    /// <summary>被弾追従ラグバーの HP (滑らかに減衰)。</summary>
+    public double DamageLagBossHp { get; set; } = 1000.0;
+
+    /// <summary>ボスの現在 HP 割合 (0.0〜1.0)。</summary>
+    public double BossHpRatio => BossMaxHp > 0 ? Math.Clamp(CurrentBossHp / BossMaxHp, 0.0, 1.0) : 1.0;
+
+    /// <summary>被弾追従ラグバーの HP 割合 (0.0〜1.0)。</summary>
+    public double BossDamageLagRatio => BossMaxHp > 0 ? Math.Clamp(DamageLagBossHp / BossMaxHp, 0.0, 1.0) : 1.0;
+
     private double playerShotTimer;
 
     /// <summary>格子 1 ステップぶんの更新処理。</summary>
     private void StepGrid(double deltaTime)
     {
         RefreshPositions();
+
+        // タイムラインによるキーフレーム HP 制御
+        if (Live.BossHp?.Invoke(CurrentTime) is { } liveHp)
+        {
+            CurrentBossHp = Math.Clamp(liveHp / 100.0, 0.0, 1.0) * BossMaxHp;
+        }
+
+        // 被弾追従ラグバーの滑らかなアニメーション補間
+        if (DamageLagBossHp > CurrentBossHp)
+        {
+            var diff = DamageLagBossHp - CurrentBossHp;
+            DamageLagBossHp = Math.Max(CurrentBossHp, DamageLagBossHp - diff * Math.Min(1.0, 5.0 * deltaTime) - (BossMaxHp * 0.15 * deltaTime));
+        }
+        else if (DamageLagBossHp < CurrentBossHp)
+        {
+            DamageLagBossHp = CurrentBossHp;
+        }
+
         UpdateEmitters(deltaTime);
         if (Settings.PlayerShot.IsEnabled) UpdatePlayerShots(deltaTime);
         UpdateBullets(deltaTime);
@@ -676,6 +714,8 @@ public sealed class DanmakuEngine
                         bullet.HasHit = true;
                         EnemyHitCount++;
                         HitCount++;
+                        var dmg = Settings.HpBar.DamagePerHit > 0 ? Settings.HpBar.DamagePerHit : 15.0;
+                        CurrentBossHp = Math.Max(0.0, CurrentBossHp - dmg);
                         EmitSound(DanmakuSoundKind.Hit, bullet.EmitterIndex);
 
                         if (collision.SpawnHitEffect)

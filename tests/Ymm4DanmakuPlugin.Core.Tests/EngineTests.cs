@@ -2039,9 +2039,11 @@ public class KeyframeLiveValueTests
     public void 公転速度を時間変化させても連続積分されて角度が滑らかに変化する()
     {
         var settings = TestFactory.Settings(TestFactory.Emitter(
-            TestFactory.SingleShot(1) with { FireInterval = 0.5 },
-            orbitRadius: 100,
-            orbitSpeed: 60));
+            TestFactory.SingleShot(1) with { FireInterval = 0.5 }) with
+        {
+            OrbitRadius = 100,
+            OrbitSpeed = 60
+        });
 
         var engine = TestFactory.Engine(settings);
         // 最初の 1 秒は 60度/秒、次の 1 秒は 120度/秒
@@ -2125,14 +2127,13 @@ public class KeyframeLiveValueTests
     [Fact]
     public void 全方位リングの発射間隔が途切れることなく一定周期で発射され続ける()
     {
-        var preset = PresetCatalog.Presets.First(p => p.Name == "全方位リング");
-        var settings = TestFactory.Settings(
-            TestFactory.Emitter(preset.Pattern, preset.Physics, preset.Appearance));
+        var pattern = new PatternSettings { Kind = PatternKind.Circle, Way = 16, FireInterval = 0.35 };
+        var settings = TestFactory.Settings(TestFactory.Emitter(pattern));
 
         var engine = TestFactory.Engine(settings);
 
         var fireTimes = new List<double>();
-        var lastCount = 0;
+        long lastCount = 0;
         for (var frame = 0; frame < 600; frame++) // 10 seconds at 60fps
         {
             engine.Advance(1.0 / 60.0);
@@ -2155,9 +2156,8 @@ public class KeyframeLiveValueTests
     [Fact]
     public void 長時間シミュレーションでも弾が途切れることなく発射され続ける()
     {
-        var preset = PresetCatalog.Presets.First(p => p.Name == "全方位リング");
-        var settings = TestFactory.Settings(
-            TestFactory.Emitter(preset.Pattern, preset.Physics, preset.Appearance));
+        var pattern = new PatternSettings { Kind = PatternKind.Circle, Way = 16, FireInterval = 0.35 };
+        var settings = TestFactory.Settings(TestFactory.Emitter(pattern));
 
         var simulator = new DanmakuSimulator(settings);
         simulator.SeekTo(60.0); // 60秒先までシーク
@@ -2191,7 +2191,7 @@ public class KeyframeLiveValueTests
             SpawnRadius = 100.0,
             BaseAngle = 0.0,
         };
-        var engine = TestFactory.Engine(TestFactory.Settings(TestFactory.Emitter(pattern)));
+        var engine = TestFactory.Engine(TestFactory.Settings(TestFactory.Emitter(pattern, TestFactory.Straight(0))));
         engine.Advance(0.01);
 
         var bullets = engine.AliveBullets().OrderBy(b => b.Id).ToList();
@@ -2201,7 +2201,7 @@ public class KeyframeLiveValueTests
         {
             var expectedAngle = i * 45.0;
             var expectedPos = Vec2.FromDegrees(expectedAngle, 100.0);
-            Assert.Equal(expectedAngle, DanmakuMath.NormalizeAngle(bullets[i].Direction), 1);
+            Assert.Equal(DanmakuMath.NormalizeAngle(expectedAngle), DanmakuMath.NormalizeAngle(bullets[i].Direction), 1);
             Assert.Equal(expectedPos.X, bullets[i].Position.X, 1);
             Assert.Equal(expectedPos.Y, bullets[i].Position.Y, 1);
         }
@@ -2216,7 +2216,7 @@ public class KeyframeLiveValueTests
             Kind = PatternKind.Circle,
             LaserSpacing = 50.0,
         };
-        var engineLaser = TestFactory.Engine(TestFactory.Settings(TestFactory.Emitter(patternLaser)));
+        var engineLaser = TestFactory.Engine(TestFactory.Settings(TestFactory.Emitter(patternLaser, TestFactory.Straight(0))));
         engineLaser.Advance(0.01);
         var bulletsLaser = engineLaser.AliveBullets().OrderBy(b => b.Id).ToList();
         Assert.Equal(0.0, bulletsLaser[0].Position.Length, 1);
@@ -2231,7 +2231,7 @@ public class KeyframeLiveValueTests
             BaseAngle = 0.0, // 右向き -> 垂直は下向き (90度)
             WallWidth = 200.0,
         };
-        var engineWall = TestFactory.Engine(TestFactory.Settings(TestFactory.Emitter(patternWall)));
+        var engineWall = TestFactory.Engine(TestFactory.Settings(TestFactory.Emitter(patternWall, TestFactory.Straight(0))));
         engineWall.Advance(0.01);
         var bulletsWall = engineWall.AliveBullets().OrderBy(b => b.Id).ToList();
         // index 0: y = -100
@@ -2240,6 +2240,85 @@ public class KeyframeLiveValueTests
         Assert.Equal(-100.0, bulletsWall[0].Position.Y, 1);
         Assert.Equal(0.0, bulletsWall[1].Position.Y, 1);
         Assert.Equal(100.0, bulletsWall[2].Position.Y, 1);
+    }
+
+    [Fact]
+    public void 自機ショット命中時にボスのHPが自動で減算されラグバーが追従する()
+    {
+        var settings = new DanmakuSettings
+        {
+            Collision = new CollisionSettings
+            {
+                IsEnabled = true,
+                EnemyHitEnabled = true,
+                EnemyRadius = 40.0,
+                TargetX = 0,
+                TargetY = 200,
+            },
+            PlayerShot = new PlayerShotSettings
+            {
+                IsEnabled = true,
+                Way = 1,
+                FireInterval = 0.05,
+                Speed = 1000,
+                HitRadius = 15,
+            },
+            HpBar = new BossHpBarSettings
+            {
+                Enabled = true,
+                MaxHp = 1000.0,
+                InitialHpPercentage = 100.0,
+                DamagePerHit = 50.0,
+            },
+            Emitters = [new EmitterSettings { X = 0, Y = -200 }]
+        };
+
+        var engine = new DanmakuEngine(settings);
+        engine.EnemyPosition = new Vec2(0, -200);
+        engine.TargetPosition = new Vec2(0, 200);
+
+        Assert.Equal(1000.0, engine.CurrentBossHp);
+        Assert.Equal(1.0, engine.BossHpRatio);
+
+        // 1秒進めて自機ショットをボスへ命中させる
+        engine.Advance(1.0);
+
+        Assert.True(engine.EnemyHitCount > 0, "エネミーに自機弾が命中していること");
+        Assert.True(engine.CurrentBossHp < 1000.0, "ボスのHPがダメージを受けて減少していること");
+        Assert.True(engine.BossHpRatio < 1.0, "ボスのHP割合が減少していること");
+    }
+
+    [Fact]
+    public void タイムラインのキーフレーム指定によりHPが直接アニメーション制御される()
+    {
+        var settings = new DanmakuSettings
+        {
+            HpBar = new BossHpBarSettings
+            {
+                Enabled = true,
+                MaxHp = 500.0,
+                InitialHpPercentage = 100.0,
+            }
+        };
+
+        var engine = new DanmakuEngine(settings);
+        engine.Live.BossHp = time => time switch
+        {
+            < 1.0 => 100.0,
+            < 2.0 => 50.0,
+            _ => 10.0
+        };
+
+        engine.Advance(0.5);
+        Assert.Equal(500.0, engine.CurrentBossHp, 1);
+
+        engine.Advance(1.0); // 1.5秒時点
+        Assert.Equal(250.0, engine.CurrentBossHp, 1);
+        Assert.Equal(0.5, engine.BossHpRatio, 0.05);
+
+        engine.Advance(1.0); // 2.5秒時点
+        Assert.Equal(50.0, engine.CurrentBossHp, 1);
+        Assert.Equal(0.1, engine.BossHpRatio, 0.05);
     }
 }
 

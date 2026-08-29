@@ -106,3 +106,19 @@ public enum DanmakuSoundKind
     /// <summary>自機ショット発射音。</summary>
     PlayerShot = 4,
 }
+
+/// <summary>体力バー (HP ゲージ) の表示形式。</summary>
+public enum HpBarStyle
+{
+    /// <summary>東方風 ボス円形ライフゲージ (ボスの周りを囲む円弧リング)。</summary>
+    CircularRing = 0,
+
+    /// <summary>画面上部 ボス体力バー (画面上部にドンと表示される横長バー)。</summary>
+    TopBar = 1,
+
+    /// <summary>ボス頭上 追従バー (ボスの移動に追従するコンパクトな横長バー)。</summary>
+    FloatingBar = 2,
+
+    /// <summary>両方表示 (円形リング ＋ 画面上部バーの同時表示)。</summary>
+    Both = 3,
+}

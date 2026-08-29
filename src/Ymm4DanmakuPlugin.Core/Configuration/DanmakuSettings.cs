@@ -97,6 +97,9 @@ public sealed record DanmakuSettings
 
     public CollisionSettings Collision { get; init; } = new();
 
+    /// <summary>ボス体力バー (HP ゲージ) の設定。</summary>
+    public BossHpBarSettings HpBar { get; init; } = new();
+
     /// <summary>自機 (プレイヤー) の射撃設定。</summary>
     public PlayerShotSettings PlayerShot { get; init; } = new();
 

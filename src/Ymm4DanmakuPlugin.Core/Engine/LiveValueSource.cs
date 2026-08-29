@@ -110,6 +110,15 @@ public sealed class LiveValueSource
     public Func<double, double?>? PlayerShotScale { get; set; }
     public Func<double, double?>? PlayerShotHitRadius { get; set; }
 
+    // ---- ボス体力バー (HP ゲージ) ----
+    public Func<double, double?>? BossHp { get; set; }
+    public Func<double, double?>? HpBarRadius { get; set; }
+    public Func<double, double?>? HpBarWidth { get; set; }
+    public Func<double, double?>? HpBarHeight { get; set; }
+    public Func<double, double?>? HpBarX { get; set; }
+    public Func<double, double?>? HpBarY { get; set; }
+    public Func<double, double?>? HpBarOpacity { get; set; }
+
     public Func<double, int?>? Seed { get; set; }
     public Func<double, int?>? MaxBullets { get; set; }
     public Func<double, int?>? Channel { get; set; }
@@ -285,5 +294,12 @@ public sealed class LiveValueSource
         HitEffectCount = null;
         HitEffectSpeed = null;
         HitEffectLifetime = null;
+        BossHp = null;
+        HpBarRadius = null;
+        HpBarWidth = null;
+        HpBarHeight = null;
+        HpBarX = null;
+        HpBarY = null;
+        HpBarOpacity = null;
     }
 }

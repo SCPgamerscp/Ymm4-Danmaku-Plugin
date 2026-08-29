@@ -719,6 +719,93 @@ public class DanmakuShapeParameter : ShapeParameterBase
     private int playerShotTargetChannel = -1;
 
     // =====================================================================
+    // ボス体力バー (HP ゲージ)
+    // =====================================================================
+
+    [Display(GroupName = "体力バー", Name = "体力バーを表示する")]
+    [ToggleSlider]
+    public bool HpBarEnabled { get => hpBarEnabled; set => Set(ref hpBarEnabled, value); }
+    private bool hpBarEnabled;
+
+    [Display(GroupName = "体力バー", Name = "表示スタイル")]
+    [EnumComboBox]
+    public HpBarStyle HpBarStyle { get => hpBarStyle; set => Set(ref hpBarStyle, value); }
+    private HpBarStyle hpBarStyle = HpBarStyle.CircularRing;
+
+    [Display(GroupName = "体力バー", Name = "現在HP (割合)", Description = "タイムラインで 100% から 0% へアニメーション可能です。")]
+    [AnimationSlider("F1", "%", 0, 100)]
+    public Animation BossHp { get; } = new Animation(100.0, 0, 100);
+
+    [Display(GroupName = "体力バー", Name = "最大HP (実数値)")]
+    [TextBoxSlider("F0", "HP", 1, 1000000)]
+    public double BossMaxHp { get => bossMaxHp; set => Set(ref bossMaxHp, value); }
+    private double bossMaxHp = 1000.0;
+
+    [Display(GroupName = "体力バー", Name = "被弾ダメージ", Description = "自機ショット 1 発あたりのダメージ実数値。")]
+    [TextBoxSlider("F1", "ダメージ", 0, 10000)]
+    public double DamagePerHit { get => damagePerHit; set => Set(ref damagePerHit, value); }
+    private double damagePerHit = 15.0;
+
+    [Display(GroupName = "体力バー", Name = "円形ゲージ半径", Description = "円形ゲージの半径 (px)。")]
+    [AnimationSlider("F0", "px", 10, 800)]
+    public Animation HpBarRadius { get; } = new Animation(140, -10000, 10000);
+
+    [Display(GroupName = "体力バー", Name = "バー横幅", Description = "横長バーの横幅 (px)。")]
+    [AnimationSlider("F0", "px", 50, 3840)]
+    public Animation HpBarWidth { get; } = new Animation(800, -10000, 10000);
+
+    [Display(GroupName = "体力バー", Name = "バー高さ", Description = "横長バーの太さ/高さ (px)。")]
+    [AnimationSlider("F0", "px", 2, 100)]
+    public Animation HpBarHeight { get; } = new Animation(16, -10000, 10000);
+
+    [Display(GroupName = "体力バー", Name = "バー位置 X")]
+    [AnimationSlider("F0", "px", -1920, 1920)]
+    public Animation HpBarX { get; } = new Animation(0, -100000, 100000);
+
+    [Display(GroupName = "体力バー", Name = "バー位置 Y", Description = "画面上部バーの Y 座標 (通常 -480 付近)。")]
+    [AnimationSlider("F0", "px", -1080, 1080)]
+    public Animation HpBarY { get; } = new Animation(-480, -100000, 100000);
+
+    [Display(GroupName = "体力バー", Name = "ゲージ線の太さ")]
+    [TextBoxSlider("F1", "px", 1, 50)]
+    public double HpBarThickness { get => hpBarThickness; set => Set(ref hpBarThickness, value); }
+    private double hpBarThickness = 6.0;
+
+    [Display(GroupName = "体力バー", Name = "通常HPの色")]
+    [ColorPicker]
+    public Color HpBarColor { get => hpBarColor; set => Set(ref hpBarColor, value); }
+    private Color hpBarColor = Color.FromArgb(255, 60, 220, 100);
+
+    [Display(GroupName = "体力バー", Name = "ピンチ時の警告色", Description = "HP 25% 以下でこの色に変化します。")]
+    [ColorPicker]
+    public Color HpBarDangerColor { get => hpBarDangerColor; set => Set(ref hpBarDangerColor, value); }
+    private Color hpBarDangerColor = Color.FromArgb(255, 240, 50, 50);
+
+    [Display(GroupName = "体力バー", Name = "被弾追従ラグバー色")]
+    [ColorPicker]
+    public Color HpBarDamageLagColor { get => hpBarDamageLagColor; set => Set(ref hpBarDamageLagColor, value); }
+    private Color hpBarDamageLagColor = Color.FromArgb(230, 255, 230, 80);
+
+    [Display(GroupName = "体力バー", Name = "背景枠の色")]
+    [ColorPicker]
+    public Color HpBarBackgroundColor { get => hpBarBackgroundColor; set => Set(ref hpBarBackgroundColor, value); }
+    private Color hpBarBackgroundColor = Color.FromArgb(180, 25, 25, 40);
+
+    [Display(GroupName = "体力バー", Name = "スペルカード区切り数", Description = "ゲージ上に表示するフェーズ区切り目 (1〜10)。")]
+    [TextBoxSlider("F0", "段階", 1, 10)]
+    public int HpBarPhaseCount { get => hpBarPhaseCount; set => Set(ref hpBarPhaseCount, value); }
+    private int hpBarPhaseCount = 3;
+
+    [Display(GroupName = "体力バー", Name = "発光グロー効果")]
+    [ToggleSlider]
+    public bool HpBarGlow { get => hpBarGlow; set => Set(ref hpBarGlow, value); }
+    private bool hpBarGlow = true;
+
+    [Display(GroupName = "体力バー", Name = "不透明度")]
+    [AnimationSlider("F1", "%", 0, 100)]
+    public Animation HpBarOpacity { get; } = new Animation(100.0, 0, 100);
+
+    // =====================================================================
     // 全体設定
     // =====================================================================
 
@@ -809,9 +896,15 @@ public class DanmakuShapeParameter : ShapeParameterBase
         SubscribeAnimatable(Seed, nameof(Seed));
         SubscribeAnimatable(MaxBullets, nameof(MaxBullets));
         SubscribeAnimatable(TimeScale, nameof(TimeScale));
-        SubscribeAnimatable(BoundsMargin, nameof(BoundsMargin));
         SubscribeAnimatable(GlobalOpacity, nameof(GlobalOpacity));
         SubscribeAnimatable(Channel, nameof(Channel));
+        SubscribeAnimatable(BossHp, nameof(BossHp));
+        SubscribeAnimatable(HpBarRadius, nameof(HpBarRadius));
+        SubscribeAnimatable(HpBarWidth, nameof(HpBarWidth));
+        SubscribeAnimatable(HpBarHeight, nameof(HpBarHeight));
+        SubscribeAnimatable(HpBarX, nameof(HpBarX));
+        SubscribeAnimatable(HpBarY, nameof(HpBarY));
+        SubscribeAnimatable(HpBarOpacity, nameof(HpBarOpacity));
 
         SubscribeEmitters(emitters);
     }
@@ -936,6 +1029,28 @@ public class DanmakuShapeParameter : ShapeParameterBase
                 TargetChannel = PlayerShotTargetChannel,
             },
 
+            HpBar = new BossHpBarSettings
+            {
+                Enabled = HpBarEnabled,
+                Style = HpBarStyle,
+                MaxHp = BossMaxHp,
+                InitialHpPercentage = BossHp.GetFirstValue(),
+                DamagePerHit = DamagePerHit,
+                Radius = HpBarRadius.GetFirstValue(),
+                Width = HpBarWidth.GetFirstValue(),
+                Height = HpBarHeight.GetFirstValue(),
+                X = HpBarX.GetFirstValue(),
+                Y = HpBarY.GetFirstValue(),
+                Thickness = HpBarThickness,
+                BarColor = ColorExtensions.ToBulletColor(HpBarColor),
+                DangerColor = ColorExtensions.ToBulletColor(HpBarDangerColor),
+                DamageLagColor = ColorExtensions.ToBulletColor(HpBarDamageLagColor),
+                BackgroundColor = ColorExtensions.ToBulletColor(HpBarBackgroundColor),
+                PhaseCount = HpBarPhaseCount,
+                Glow = HpBarGlow,
+                Opacity = HpBarOpacity.GetFirstValue(),
+            },
+
             Emitters = builder.ToImmutable(),
         };
     }
@@ -1055,6 +1170,25 @@ public class DanmakuShapeParameter : ShapeParameterBase
         private readonly bool playerShotCancelEnemyBullets;
         private readonly int playerShotTargetChannel = -1;
 
+        private readonly bool hpBarEnabled;
+        private readonly HpBarStyle hpBarStyle;
+        private readonly Animation bossHp = new(100.0, 0, 100);
+        private readonly double bossMaxHp = 1000.0;
+        private readonly double damagePerHit = 15.0;
+        private readonly Animation hpBarRadius = new(140, -10000, 10000);
+        private readonly Animation hpBarWidth = new(800, -10000, 10000);
+        private readonly Animation hpBarHeight = new(16, -10000, 10000);
+        private readonly Animation hpBarX = new(0, -100000, 100000);
+        private readonly Animation hpBarY = new(-480, -100000, 100000);
+        private readonly double hpBarThickness = 6.0;
+        private readonly Color hpBarColor = Color.FromArgb(255, 60, 220, 100);
+        private readonly Color hpBarDangerColor = Color.FromArgb(255, 240, 50, 50);
+        private readonly Color hpBarDamageLagColor = Color.FromArgb(230, 255, 230, 80);
+        private readonly Color hpBarBackgroundColor = Color.FromArgb(180, 25, 25, 40);
+        private readonly int hpBarPhaseCount = 3;
+        private readonly bool hpBarGlow = true;
+        private readonly Animation hpBarOpacity = new(100.0, 0, 100);
+
         private readonly ImmutableList<EmitterParameter> emitters;
 
         public SharedData(DanmakuShapeParameter source)
@@ -1101,6 +1235,25 @@ public class DanmakuShapeParameter : ShapeParameterBase
             playerShotDestroyOnHit = source.PlayerShotDestroyOnHit;
             playerShotCancelEnemyBullets = source.PlayerShotCancelEnemyBullets;
             playerShotTargetChannel = source.PlayerShotTargetChannel;
+
+            hpBarEnabled = source.HpBarEnabled;
+            hpBarStyle = source.HpBarStyle;
+            bossHp.CopyFrom(source.BossHp);
+            bossMaxHp = source.BossMaxHp;
+            damagePerHit = source.DamagePerHit;
+            hpBarRadius.CopyFrom(source.HpBarRadius);
+            hpBarWidth.CopyFrom(source.HpBarWidth);
+            hpBarHeight.CopyFrom(source.HpBarHeight);
+            hpBarX.CopyFrom(source.HpBarX);
+            hpBarY.CopyFrom(source.HpBarY);
+            hpBarThickness = source.HpBarThickness;
+            hpBarColor = source.HpBarColor;
+            hpBarDangerColor = source.HpBarDangerColor;
+            hpBarDamageLagColor = source.HpBarDamageLagColor;
+            hpBarBackgroundColor = source.HpBarBackgroundColor;
+            hpBarPhaseCount = source.HpBarPhaseCount;
+            hpBarGlow = source.HpBarGlow;
+            hpBarOpacity.CopyFrom(source.HpBarOpacity);
 
             var builder = ImmutableList.CreateBuilder<EmitterParameter>();
             foreach (var emitter in source.Emitters)
@@ -1156,6 +1309,25 @@ public class DanmakuShapeParameter : ShapeParameterBase
             target.PlayerShotDestroyOnHit = playerShotDestroyOnHit;
             target.PlayerShotCancelEnemyBullets = playerShotCancelEnemyBullets;
             target.PlayerShotTargetChannel = playerShotTargetChannel;
+
+            target.HpBarEnabled = hpBarEnabled;
+            target.HpBarStyle = hpBarStyle;
+            target.BossHp.CopyFrom(bossHp);
+            target.BossMaxHp = bossMaxHp;
+            target.DamagePerHit = damagePerHit;
+            target.HpBarRadius.CopyFrom(hpBarRadius);
+            target.HpBarWidth.CopyFrom(hpBarWidth);
+            target.HpBarHeight.CopyFrom(hpBarHeight);
+            target.HpBarX.CopyFrom(hpBarX);
+            target.HpBarY.CopyFrom(hpBarY);
+            target.HpBarThickness = hpBarThickness;
+            target.HpBarColor = hpBarColor;
+            target.HpBarDangerColor = hpBarDangerColor;
+            target.HpBarDamageLagColor = hpBarDamageLagColor;
+            target.HpBarBackgroundColor = hpBarBackgroundColor;
+            target.HpBarPhaseCount = hpBarPhaseCount;
+            target.HpBarGlow = hpBarGlow;
+            target.HpBarOpacity.CopyFrom(hpBarOpacity);
 
             var builder = ImmutableList.CreateBuilder<EmitterParameter>();
             foreach (var emitter in emitters)

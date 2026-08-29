@@ -197,7 +197,48 @@ public sealed class DanmakuShapeSource : IShapeSource2
 
         var globalOpacity = Math.Clamp(parameter.GlobalOpacity.GetValue(frame, totalFrame, fps) / 100.0, 0.0, 1.0);
         batchBuilder.Build(simulator?.Bullets ?? [], GetAppearance, globalOpacity);
-        output = renderer.Render(batchBuilder, parameter.GetGlowIntensity, in targetInfo, enemies);
+
+        var hpBarEnabled = parameter.HpBarEnabled;
+        var hpRatio = (float)(simulator?.Engine.BossHpRatio ?? 1.0);
+        var lagRatio = (float)(simulator?.Engine.BossDamageLagRatio ?? 1.0);
+        var hpBarRadius = (float)parameter.HpBarRadius.GetValue(frame, totalFrame, fps);
+        var hpBarWidth = (float)parameter.HpBarWidth.GetValue(frame, totalFrame, fps);
+        var hpBarHeight = (float)parameter.HpBarHeight.GetValue(frame, totalFrame, fps);
+        var hpBarX = (float)parameter.HpBarX.GetValue(frame, totalFrame, fps);
+        var hpBarY = (float)parameter.HpBarY.GetValue(frame, totalFrame, fps);
+        var hpBarOpacity = Math.Clamp((float)parameter.HpBarOpacity.GetValue(frame, totalFrame, fps) / 100f, 0f, 1f);
+
+        var bossX = 0f;
+        var bossY = -200f;
+        if (enemies is { Count: > 0 })
+        {
+            bossX = enemies[0].X;
+            bossY = enemies[0].Y;
+        }
+
+        var hpBarInfo = new BossHpBarRenderInfo(
+            Enabled: hpBarEnabled,
+            Style: parameter.HpBarStyle,
+            HpRatio: hpRatio,
+            DamageLagRatio: lagRatio,
+            BossX: bossX,
+            BossY: bossY,
+            Radius: hpBarRadius,
+            Width: hpBarWidth,
+            Height: hpBarHeight,
+            X: hpBarX,
+            Y: hpBarY,
+            Thickness: (float)parameter.HpBarThickness,
+            BarColor: ColorExtensions.ToColor4(parameter.HpBarColor),
+            DangerColor: ColorExtensions.ToColor4(parameter.HpBarDangerColor),
+            DamageLagColor: ColorExtensions.ToColor4(parameter.HpBarDamageLagColor),
+            BackgroundColor: ColorExtensions.ToColor4(parameter.HpBarBackgroundColor),
+            PhaseCount: parameter.HpBarPhaseCount,
+            Glow: parameter.HpBarGlow,
+            Opacity: hpBarOpacity
+        );
+
+        output = renderer.Render(batchBuilder, parameter.GetGlowIntensity, in targetInfo, enemies, in hpBarInfo);
     }
 
     /// <summary>
@@ -945,6 +986,49 @@ public sealed class DanmakuShapeSource : IShapeSource2
             }
             var frame = TimeToFrame(timeSeconds, fps, totalFrame);
             return parameter.EnemyRadius.GetValue(frame, totalFrame, fps);
+        };
+
+        // ボス体力バー (HP ゲージ)
+        sim.Live.BossHp = timeSeconds =>
+        {
+            var frame = TimeToFrame(timeSeconds, fps, totalFrame);
+            return parameter.BossHp.GetValue(frame, totalFrame, fps);
+        };
+
+        sim.Live.HpBarRadius = timeSeconds =>
+        {
+            var frame = TimeToFrame(timeSeconds, fps, totalFrame);
+            return parameter.HpBarRadius.GetValue(frame, totalFrame, fps);
+        };
+
+        sim.Live.HpBarWidth = timeSeconds =>
+        {
+            var frame = TimeToFrame(timeSeconds, fps, totalFrame);
+            return parameter.HpBarWidth.GetValue(frame, totalFrame, fps);
+        };
+
+        sim.Live.HpBarHeight = timeSeconds =>
+        {
+            var frame = TimeToFrame(timeSeconds, fps, totalFrame);
+            return parameter.HpBarHeight.GetValue(frame, totalFrame, fps);
+        };
+
+        sim.Live.HpBarX = timeSeconds =>
+        {
+            var frame = TimeToFrame(timeSeconds, fps, totalFrame);
+            return parameter.HpBarX.GetValue(frame, totalFrame, fps);
+        };
+
+        sim.Live.HpBarY = timeSeconds =>
+        {
+            var frame = TimeToFrame(timeSeconds, fps, totalFrame);
+            return parameter.HpBarY.GetValue(frame, totalFrame, fps);
+        };
+
+        sim.Live.HpBarOpacity = timeSeconds =>
+        {
+            var frame = TimeToFrame(timeSeconds, fps, totalFrame);
+            return parameter.HpBarOpacity.GetValue(frame, totalFrame, fps);
         };
     }
 
