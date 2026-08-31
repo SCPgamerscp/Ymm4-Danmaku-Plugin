@@ -1000,7 +1000,11 @@ public class DanmakuShapeParameter : ShapeParameterBase
             Collision = new CollisionSettings
             {
                 IsEnabled = CollisionEnabled,
+                TargetX = TargetX.GetFirstValue(),
+                TargetY = TargetY.GetFirstValue(),
                 TargetRadius = TargetRadius.GetFirstValue(),
+                EnemyX = MainEmitter.X.GetFirstValue(),
+                EnemyY = MainEmitter.Y.GetFirstValue(),
                 EnemyHitEnabled = EnemyHitEnabled,
                 EnemyRadius = EnemyRadius.GetFirstValue(),
                 SpawnHitEffect = SpawnHitEffect,

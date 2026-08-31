@@ -2394,6 +2394,39 @@ public class KeyframeLiveValueTests
         Assert.Contains(engine.SoundLog.Events, e => e.Kind == DanmakuSoundKind.PlayerHit);
         Assert.Contains(engine.SoundLog.Events, e => e.Kind == DanmakuSoundKind.Hit);
     }
+
+    [Fact]
+    public void 上向きに発射された弾は下にある自機に命中せずPlayerHitは鳴らない()
+    {
+        var settings = new DanmakuSettings
+        {
+            Collision = new CollisionSettings
+            {
+                IsEnabled = true,
+                TargetRadius = 30.0,
+                EnemyHitEnabled = false,
+                SpawnHitEffect = false
+            },
+            Emitters = [
+                new EmitterSettings
+                {
+                    IsEnabled = true,
+                    Pattern = new PatternSettings { FireInterval = 0.05, BurstCount = 1, Way = 1, BaseAngle = -90 }, // 上向き(-90度)に発射
+                    Physics = new BulletPhysics { Speed = 500.0, HitRadius = 10.0, DestroyOnHit = true }
+                }
+            ]
+        };
+
+        var engine = new DanmakuEngine(settings);
+        // エミッター Y=0、自機 Y=250 (下側)
+        engine.Live.EmitterPosition = (_, _) => new Vec2(0, 0);
+        engine.Live.TargetPosition = _ => new Vec2(0, 250);
+
+        engine.Advance(1.0);
+
+        Assert.DoesNotContain(engine.SoundLog.Events, e => e.Kind == DanmakuSoundKind.PlayerHit);
+        Assert.DoesNotContain(engine.SoundLog.Events, e => e.Kind == DanmakuSoundKind.Hit);
+    }
 }
 
 

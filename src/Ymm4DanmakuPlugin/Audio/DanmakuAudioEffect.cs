@@ -268,7 +268,11 @@ public sealed class DanmakuSingleSoundProcessor : AudioEffectProcessorBase
     {
         if (isPrepared) return;
 
-        var settings = DanmakuChannelBus.TryGetSettings(effect.Channel);
+        var parameter = DanmakuChannelBus.TryGetParameter(effect.Channel);
+        var settings = parameter is not null
+            ? parameter.ToSettings(parameter.LastCanvasWidth, parameter.LastCanvasHeight)
+            : DanmakuChannelBus.TryGetSettings(effect.Channel);
+
         if (settings is null)
         {
             Diagnostics = $"チャンネル {effect.Channel} の弾幕アイテムが見つかりません。";
@@ -289,6 +293,14 @@ public sealed class DanmakuSingleSoundProcessor : AudioEffectProcessorBase
         {
             MaxSimulationSeconds = Math.Max(1.0, duration.TotalSeconds + 1.0),
         };
+
+        if (parameter is not null)
+        {
+            var fps = 60;
+            var totalFrame = Math.Max(1, (int)Math.Ceiling(duration.TotalSeconds * fps));
+            DanmakuLiveWiring.WireLiveValues(parameter, simulator, fps, totalFrame);
+        }
+
         simulator.SeekTo(duration.TotalSeconds);
 
         var log = simulator.SoundLog;

@@ -56,6 +56,15 @@ public static class DanmakuChannelBus
     /// </summary>
     public static DanmakuSettings? TryGetSettings(int channel)
     {
+        var parameter = TryGetParameter(channel);
+        return parameter?.ToSettings(parameter.LastCanvasWidth, parameter.LastCanvasHeight);
+    }
+
+    /// <summary>
+    /// 指定チャンネルの弾幕パラメータインスタンスを取得する。
+    /// </summary>
+    public static DanmakuShapeParameter? TryGetParameter(int channel)
+    {
         lock (Gate)
         {
             Prune();
@@ -65,7 +74,7 @@ public static class DanmakuChannelBus
                 var paramChannel = (int)Math.Round(parameter.Channel.GetFirstValue());
                 if (channel != -1 && paramChannel != -1 && paramChannel != channel) continue;
 
-                return parameter.ToSettings(parameter.LastCanvasWidth, parameter.LastCanvasHeight);
+                return parameter;
             }
         }
 
