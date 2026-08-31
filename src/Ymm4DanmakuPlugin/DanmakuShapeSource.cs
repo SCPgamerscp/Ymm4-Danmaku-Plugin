@@ -123,15 +123,35 @@ public sealed class DanmakuShapeSource : IShapeSource2
         var targetRadius = (float)parameter.TargetRadius.GetValue(frame, totalFrame, fps);
 
         var mainEmitter = parameter.Emitters.Count > 0 ? parameter.Emitters[0] : null;
-        var enemyX = mainEmitter != null ? (float)mainEmitter.X.GetValue(frame, totalFrame, fps) : 0f;
-        var enemyY = mainEmitter != null ? (float)mainEmitter.Y.GetValue(frame, totalFrame, fps) : 0f;
+        var enemyPos = Core.Mathematics.Vec2.Zero;
+        if (mainEmitter != null)
+        {
+            if (simulator?.Engine.Contexts is { Count: > 0 } ctxs0)
+            {
+                enemyPos = ctxs0[0].Position;
+            }
+            else
+            {
+                var baseX = mainEmitter.X.GetValue(frame, totalFrame, fps);
+                var baseY = mainEmitter.Y.GetValue(frame, totalFrame, fps);
+                var orbitRadius = mainEmitter.OrbitRadius.GetValue(frame, totalFrame, fps);
+                var orbitSpeed = mainEmitter.OrbitSpeed.GetValue(frame, totalFrame, fps);
+                var orbitPhase = mainEmitter.OrbitPhase.GetValue(frame, totalFrame, fps);
+                var orbitAngle = orbitPhase + orbitSpeed * simTime;
+                enemyPos = new Core.Mathematics.Vec2(baseX, baseY);
+                if (orbitRadius != 0)
+                {
+                    enemyPos += Core.Mathematics.Vec2.FromDegrees(orbitAngle, orbitRadius);
+                }
+            }
+        }
         var enemyRadius = (float)parameter.EnemyRadius.GetValue(frame, totalFrame, fps);
         var currentChannel = (int)Math.Round(parameter.Channel.GetValue(frame, totalFrame, fps));
 
         Collision.DanmakuCollisionBus.Publish(new Collision.DanmakuLayerState(
             SourceKey: this,
             Channel: currentChannel,
-            EnemyPosition: new Core.Mathematics.Vec2(enemyX, enemyY),
+            EnemyPosition: enemyPos,
             EnemyRadius: enemyRadius,
             TargetPosition: new Core.Mathematics.Vec2(targetX, targetY),
             TargetRadius: targetRadius

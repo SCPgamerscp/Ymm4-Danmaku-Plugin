@@ -253,6 +253,7 @@ public sealed class DanmakuEngine
         }
 
         UpdateEmitters(deltaTime);
+        RefreshPositions();
         var playerShotEnabled = Live.PlayerShotEnabled?.Invoke(CurrentTime) ?? Settings.PlayerShot.IsEnabled;
         if (playerShotEnabled) UpdatePlayerShots(deltaTime);
         UpdateBullets(deltaTime);

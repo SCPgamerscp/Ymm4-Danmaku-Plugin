@@ -2551,5 +2551,61 @@ public class DynamicToggleKeyframeTests
     }
 }
 
+public class OrbitCollisionTests
+{
+    [Fact]
+    public void 公転設定時にエネミー当たり判定座標が公転位置に追従する()
+    {
+        var settings = new DanmakuSettings
+        {
+            Collision = new CollisionSettings
+            {
+                IsEnabled = true,
+                EnemyRadius = 20,
+            },
+            PlayerShot = new PlayerShotSettings
+            {
+                IsEnabled = true,
+                AutoAim = true,
+                Speed = 1000,
+                Way = 1,
+                FireInterval = 0.05
+            },
+            Emitters = [
+                new EmitterSettings
+                {
+                    IsEnabled = true,
+                    X = 0,
+                    Y = 0,
+                    OrbitRadius = 150, // 右へ150px公転オフセット
+                    OrbitSpeed = 0,
+                    OrbitPhase = 0,
+                    Pattern = new PatternSettings { FireInterval = 10.0, Way = 1 }
+                }
+            ]
+        };
+
+        var engine = new DanmakuEngine(settings);
+        // 自機は (150, 300) に配置 (ボスの公転位置 (150, 0) の真下)
+        engine.Live.TargetPosition = _ => new Vec2(150, 300);
+
+        engine.Advance(0.1);
+
+        // ボスの現在位置が公転オフセット (150, 0) になっている
+        Assert.Equal(150, engine.EnemyPosition.X, precision: 1);
+        Assert.Equal(0, engine.EnemyPosition.Y, precision: 1);
+
+        // 自機の弾が真上 (-90度 = ボス (150, 0) の方向) に発射されている
+        var playerShot = engine.AliveBullets().FirstOrDefault(b => b.IsPlayerShot);
+        Assert.NotNull(playerShot);
+        Assert.Equal(-90, playerShot.Direction, precision: 1);
+
+        // 弾が進んで公転位置のボスに命中する
+        engine.Advance(0.35);
+        Assert.Contains(engine.SoundLog.Events, e => e.Kind == DanmakuSoundKind.EnemyHit);
+    }
+}
+
+
 
 
