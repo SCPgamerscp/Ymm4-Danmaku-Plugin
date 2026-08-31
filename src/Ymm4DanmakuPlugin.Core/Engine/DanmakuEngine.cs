@@ -145,6 +145,7 @@ public sealed class DanmakuEngine
         }
 
         RefreshPositions(0);
+        DamageHistory.Clear();
 
         foreach (var behavior in behaviors) behavior.Reset();
     }
@@ -222,6 +223,9 @@ public sealed class DanmakuEngine
 
     /// <summary>これまでに受けた累積ダメージ量。</summary>
     public double TotalDamageDealt { get; set; }
+
+    /// <summary>このエンジンが放った自機ショットの被弾ダメージ履歴 (時刻, ダメージ, 相手ch)。</summary>
+    public List<(double Time, double Damage, int TargetChannel)> DamageHistory { get; } = new();
 
     /// <summary>ボスの現在 HP 割合 (0.0〜1.0)。</summary>
     public double BossHpRatio => BossMaxHp > 0 ? Math.Clamp(CurrentBossHp / BossMaxHp, 0.0, 1.0) : 1.0;
@@ -761,6 +765,7 @@ public sealed class DanmakuEngine
                         HitCount++;
                         var dmg = Live.HpBarDamagePerHit?.Invoke(stepTime) ?? (Settings.HpBar.DamagePerHit > 0 ? Settings.HpBar.DamagePerHit : 15.0);
                         TotalDamageDealt += dmg;
+                        DamageHistory.Add((stepTime, dmg, Settings.PlayerShot.TargetChannel));
                         Live.OnDamageDealt?.Invoke(dmg, bullet.EmitterIndex);
 
                         var baseHp = BossMaxHp;
