@@ -3029,6 +3029,87 @@ public class CollisionHitboxFollowUpTests
             Assert.Equal(expectedContextPos.Y, engine.EnemyPosition.Y, precision: 4);
         }
     }
+
+    [Fact]
+    public void レイヤー2の敵弾がレイヤー1の外部自機に命中する_自レイヤー当たり判定OFFでも機能する()
+    {
+        var settings = new DanmakuSettings
+        {
+            // レイヤー2自体は自機を持たないため CollisionEnabled = false
+            Collision = new CollisionSettings { IsEnabled = false },
+            Emitters = [
+                new EmitterSettings
+                {
+                    IsEnabled = true,
+                    X = 0,
+                    Y = 0,
+                    Pattern = new PatternSettings { FireInterval = 10.0, Way = 1, BaseAngle = 90 },
+                    Physics = new BulletPhysics { Speed = 300, HitRadius = 10.0 }
+                }
+            ]
+        };
+
+        var engine = new DanmakuEngine(settings);
+        // レイヤー1の自機 (0, 150)
+        engine.Live.Targets = _ => [new TargetHitbox(new Vec2(0, 150), 20.0, 0)];
+
+        engine.Advance(0.6); // 弾が (0, 150) に到達
+        Assert.True(engine.HitCount > 0, "外部レイヤーの自機に対して被弾判定が実行されるべき");
+    }
+
+    [Fact]
+    public void レイヤー1の自機無敵_CollisionEnabledが0の時は敵弾が命中しない()
+    {
+        var settings = new DanmakuSettings
+        {
+            Collision = new CollisionSettings { IsEnabled = true, TargetRadius = 20.0 },
+            Emitters = [
+                new EmitterSettings
+                {
+                    IsEnabled = true,
+                    X = 0,
+                    Y = 0,
+                    Pattern = new PatternSettings { FireInterval = 10.0, Way = 1, BaseAngle = 90 },
+                    Physics = new BulletPhysics { Speed = 300, HitRadius = 10.0 }
+                }
+            ]
+        };
+
+        var engine = new DanmakuEngine(settings);
+        engine.Live.CollisionEnabled = _ => false; // 自機無敵 (0)
+
+        engine.Advance(0.6);
+        Assert.Equal(0, engine.HitCount); // 命中しない
+        Assert.Empty(engine.TargetHitboxes); // 喰らい判定リストも空
+    }
+
+    [Fact]
+    public void レイヤー1のボス無敵_EnemyHitEnabledが0の時は自機ショットが命中しない()
+    {
+        var settings = new DanmakuSettings
+        {
+            Collision = new CollisionSettings { IsEnabled = true, EnemyRadius = 30.0, EnemyHitEnabled = true },
+            PlayerShot = new PlayerShotSettings
+            {
+                IsEnabled = true,
+                Way = 1,
+                Speed = 1000,
+                FireInterval = 0.05
+            },
+            Emitters = [
+                new EmitterSettings { IsEnabled = true, X = 0, Y = -100 }
+            ]
+        };
+
+        var engine = new DanmakuEngine(settings);
+        engine.Live.TargetPosition = _ => new Vec2(0, 100);
+        engine.Live.EnemyHitEnabled = _ => false; // ボス無敵 (0)
+
+        engine.Advance(0.3); // ショットがボス位置 (0, -100) を通過
+        Assert.Equal(0, engine.EnemyHitCount); // ボス被弾カウントは 0
+        Assert.Empty(engine.DamageHistory); // ダメージも記録されない
+        Assert.Empty(engine.EnemyHitboxes); // ボス判定リストも空
+    }
 }
 
 

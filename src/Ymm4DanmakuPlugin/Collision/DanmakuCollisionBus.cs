@@ -120,16 +120,14 @@ public static class DanmakuCollisionBus
                 var ch = (int)Math.Round(reg.Parameter.Channel.GetValue(frame, reg.TotalFrame, reg.Fps));
                 if (targetChannel >= 0 && ch != targetChannel) continue;
 
-                if (reg.TargetPositionsSnapshot is { Length: > 0 } snap)
+                if (reg.TargetPositionsSnapshot is not null)
                 {
-                    list.AddRange(snap);
+                    list.AddRange(reg.TargetPositionsSnapshot);
                     continue;
                 }
 
                 var col = reg.Parameter.CollisionEnabled.GetValue(frame, reg.TotalFrame, reg.Fps) >= 0.5;
-                var show = reg.Parameter.ShowTargetMarker.GetValue(frame, reg.TotalFrame, reg.Fps) >= 0.5;
-                var hasTarget = col && (show || reg.Parameter.HasCustomTargetImage);
-                if (!hasTarget) continue;
+                if (!col) continue;
 
                 var radius = reg.Parameter.TargetRadius.GetValue(frame, reg.TotalFrame, reg.Fps);
                 if (radius <= 0) continue;
@@ -159,11 +157,11 @@ public static class DanmakuCollisionBus
                 var ch = (int)Math.Round(reg.Parameter.Channel.GetValue(frame, reg.TotalFrame, reg.Fps));
                 if (targetChannel >= 0 && ch != targetChannel) continue;
 
-                if (reg.EnemyPositionsSnapshot is { Length: > 0 } snap)
+                if (reg.EnemyPositionsSnapshot is not null)
                 {
-                    for (var s = 0; s < snap.Length; s++)
+                    for (var s = 0; s < reg.EnemyPositionsSnapshot.Length; s++)
                     {
-                        var e = snap[s];
+                        var e = reg.EnemyPositionsSnapshot[s];
                         if (targetChannel < 0 || e.Channel < 0 || e.Channel == targetChannel)
                         {
                             list.Add(e);
@@ -171,6 +169,9 @@ public static class DanmakuCollisionBus
                     }
                     continue;
                 }
+
+                var enemyHitEnabled = reg.Parameter.EnemyHitEnabled.GetValue(frame, reg.TotalFrame, reg.Fps) >= 0.5;
+                if (!enemyHitEnabled) continue;
 
                 var enemyRadius = reg.Parameter.EnemyRadius.GetValue(frame, reg.TotalFrame, reg.Fps);
                 if (enemyRadius <= 0) continue;

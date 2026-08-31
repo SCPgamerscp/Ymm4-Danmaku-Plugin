@@ -272,8 +272,10 @@ public sealed class DanmakuEngine
         if (playerShotEnabled) UpdatePlayerShots(deltaTime);
         UpdateBullets(deltaTime);
         ProcessSplits();
-        var collisionEnabled = Live.CollisionEnabled?.Invoke(stepTime) ?? Settings.Collision.IsEnabled;
-        if (collisionEnabled || playerShotEnabled) ProcessCollisions(stepTime);
+        if (TargetHitboxes.Count > 0 || playerShotEnabled || Live.IsBulletCancelledByExternalShot is not null)
+        {
+            ProcessCollisions(stepTime);
+        }
         Pool.Compact();
 
         gridSteps++;
@@ -293,12 +295,15 @@ public sealed class DanmakuEngine
         var liveTargetRadius = Live.TargetRadius?.Invoke(time);
         TargetRadius = liveTargetRadius ?? Settings.Collision.TargetRadius;
 
-        if (TargetRadius > 0)
+        var collisionEnabled = Live.CollisionEnabled?.Invoke(time) ?? Settings.Collision.IsEnabled;
+
+        // 自機の当たり判定が有効 (CollisionEnabled=1) かつ 半径>0 の場合のみ被弾判定を生成 (0で無敵)
+        if (collisionEnabled && TargetRadius > 0)
         {
             TargetHitboxes.Add(new TargetHitbox(TargetPosition, TargetRadius, 0));
         }
 
-        // 外部レイヤーの自機を追加
+        // 外部レイヤーの自機 (有効なもの) を追加
         if (Live.Targets?.Invoke(time) is { Count: > 0 } liveTargets)
         {
             TargetHitboxes.AddRange(liveTargets);
@@ -308,31 +313,45 @@ public sealed class DanmakuEngine
         var liveEnemyRadius = Live.EnemyRadius?.Invoke(time);
         EnemyRadius = liveEnemyRadius ?? Settings.Collision.EnemyRadius;
 
-        // 自レイヤーのエミッター位置 (contexts[i].Position は公転・位置が積分済みで画像と完全一致)
-        if (contexts.Count > 0)
+        var enemyHitEnabled = Live.EnemyHitEnabled?.Invoke(time) ?? Settings.Collision.EnemyHitEnabled;
+
+        // ボス被弾判定が有効 (EnemyHitEnabled=1) かつ 半径>0 の場合のみ被弾判定を生成 (0でボス無敵)
+        if (enemyHitEnabled && EnemyRadius > 0)
         {
-            EnemyPosition = contexts[0].Position;
-            for (var i = 0; i < contexts.Count; i++)
+            if (contexts.Count > 0)
             {
-                var emitterSettings = Settings.Emitters[contexts[i].EmitterIndex];
-                var isEnabled = Live.EmitterIsEnabled?.Invoke(contexts[i].EmitterIndex, time) ?? emitterSettings.IsEnabled;
-                if (isEnabled && EnemyRadius > 0)
+                EnemyPosition = contexts[0].Position;
+                for (var i = 0; i < contexts.Count; i++)
                 {
-                    EnemyHitboxes.Add(new EnemyHitbox(contexts[i].Position, EnemyRadius, contexts[i].EmitterIndex, Settings.Channel));
+                    var emitterSettings = Settings.Emitters[contexts[i].EmitterIndex];
+                    var isEnabled = Live.EmitterIsEnabled?.Invoke(contexts[i].EmitterIndex, time) ?? emitterSettings.IsEnabled;
+                    if (isEnabled)
+                    {
+                        EnemyHitboxes.Add(new EnemyHitbox(contexts[i].Position, EnemyRadius, contexts[i].EmitterIndex, Settings.Channel));
+                    }
                 }
+            }
+            else
+            {
+                var liveEnemy = Live.EnemyPosition?.Invoke(time);
+                EnemyPosition = liveEnemy ?? new Vec2(Settings.Collision.EnemyX, Settings.Collision.EnemyY);
+                EnemyHitboxes.Add(new EnemyHitbox(EnemyPosition, EnemyRadius, 0, Settings.Channel));
             }
         }
         else
         {
-            var liveEnemy = Live.EnemyPosition?.Invoke(time);
-            EnemyPosition = liveEnemy ?? new Vec2(Settings.Collision.EnemyX, Settings.Collision.EnemyY);
-            if (EnemyRadius > 0)
+            if (contexts.Count > 0)
             {
-                EnemyHitboxes.Add(new EnemyHitbox(EnemyPosition, EnemyRadius, 0, Settings.Channel));
+                EnemyPosition = contexts[0].Position;
+            }
+            else
+            {
+                var liveEnemy = Live.EnemyPosition?.Invoke(time);
+                EnemyPosition = liveEnemy ?? new Vec2(Settings.Collision.EnemyX, Settings.Collision.EnemyY);
             }
         }
 
-        // 外部レイヤーのエネミーを追加
+        // 外部レイヤーのエネミー (有効なもの) を追加
         if (Live.Enemies?.Invoke(time) is { Count: > 0 } liveEnemies)
         {
             EnemyHitboxes.AddRange(liveEnemies);
@@ -860,7 +879,7 @@ public sealed class DanmakuEngine
                 }
 
                 // --- 自機弾 vs エネミー (ボス) (マルチエネミー対応) ---
-                if (bullet.IsAlive && enemyHitEnabled && EnemyHitboxes.Count > 0)
+                if (bullet.IsAlive && EnemyHitboxes.Count > 0)
                 {
                     for (var k = 0; k < EnemyHitboxes.Count; k++)
                     {
@@ -918,7 +937,7 @@ public sealed class DanmakuEngine
                 }
 
                 // --- 敵弾 vs 自機 (ターゲット) (マルチターゲット対応) ---
-                if (collisionEnabled && TargetHitboxes.Count > 0)
+                if (TargetHitboxes.Count > 0)
                 {
                     for (var k = 0; k < TargetHitboxes.Count; k++)
                     {
