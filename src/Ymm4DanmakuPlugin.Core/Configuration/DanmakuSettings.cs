@@ -21,6 +21,9 @@ public sealed record SoundSettings
 
     /// <summary>同一フレーム内で複数の発音が起きた際にまとめるかどうか。</summary>
     public bool CoalesceSimultaneous { get; init; } = true;
+
+    /// <summary>まとめる最小時間幅 (秒)。0 で時間制限なし。</summary>
+    public double CoalesceIntervalSeconds { get; init; } = 0.001;
 }
 
 /// <summary>衝突判定 / ヒットエフェクトの設定。</summary>

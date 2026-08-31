@@ -2427,6 +2427,34 @@ public class KeyframeLiveValueTests
         Assert.DoesNotContain(engine.SoundLog.Events, e => e.Kind == DanmakuSoundKind.PlayerHit);
         Assert.DoesNotContain(engine.SoundLog.Events, e => e.Kind == DanmakuSoundKind.Hit);
     }
+
+    [Fact]
+    public void 同時発音まとめオフ時は超高頻度発射でもすべての発射音が記録される()
+    {
+        var settings = new DanmakuSettings
+        {
+            FireSound = new SoundSettings
+            {
+                IsEnabled = true,
+                CoalesceSimultaneous = false, // まとめオフ
+                CoalesceIntervalSeconds = 0.0,
+            },
+            Emitters = [
+                new EmitterSettings
+                {
+                    IsEnabled = true,
+                    Pattern = new PatternSettings { FireInterval = 0.001, BurstCount = 1, Way = 10 },
+                    Physics = new BulletPhysics { Speed = 200.0 }
+                }
+            ]
+        };
+
+        var engine = new DanmakuEngine(settings);
+        engine.Advance(0.01); // 10ms -> 10 shots
+
+        var fireEvents = engine.SoundLog.Events.Where(e => e.Kind == DanmakuSoundKind.Fire).ToList();
+        Assert.InRange(fireEvents.Count, 9, 11);
+    }
 }
 
 

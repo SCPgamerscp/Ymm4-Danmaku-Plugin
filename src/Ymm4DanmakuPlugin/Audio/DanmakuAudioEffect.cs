@@ -56,13 +56,28 @@ public abstract class DanmakuSingleSoundAudioEffectBase : AudioEffectBase
     public double TimeOffset { get => timeOffset; set => Set(ref timeOffset, value); }
     private double timeOffset;
 
-    [Display(GroupName = "基本設定", Name = "同時発音数",
+    [Display(GroupName = "発音制限", Name = "同時発音まとめ",
+        Description = "極小時間内の発音を1回にまとめます。オフにすると超連射時に全弾の音が重なり爆音・音割れします。")]
+    [ToggleSlider]
+    [DefaultValue(true)]
+    public bool CoalesceSimultaneous { get => coalesceSimultaneous; set => Set(ref coalesceSimultaneous, value); }
+    private bool coalesceSimultaneous = true;
+
+    [Display(GroupName = "発音制限", Name = "まとめ間隔",
+        Description = "まとめる時間幅 (ミリ秒)。0ms で同一タイムステップ以外の制限を完全解除します。")]
+    [TextBoxSlider("F1", "ms", 0, 50)]
+    [DefaultValue(1.0d)]
+    [Range(0, 1000)]
+    public double CoalesceIntervalMs { get => coalesceIntervalMs; set => Set(ref coalesceIntervalMs, value); }
+    private double coalesceIntervalMs = 1.0;
+
+    [Display(GroupName = "発音制限", Name = "同時発音数",
         Description = "同時に重ねられる効果音の上限。超えた分は古い音から打ち切られます。")]
-    [TextBoxSlider("F0", "音", 4, 1024)]
-    [DefaultValue(256)]
-    [Range(1, 4096)]
+    [TextBoxSlider("F0", "音", 4, 8192)]
+    [DefaultValue(1024)]
+    [Range(1, 16384)]
     public int MaxVoices { get => maxVoices; set => Set(ref maxVoices, value); }
-    private int maxVoices = 256;
+    private int maxVoices = 1024;
 
     [Display(GroupName = "再生範囲", Name = "開始位置",
         Description = "音源の何秒目から再生するかを指定します (先頭の無音カット等に便利)。")]
@@ -289,6 +304,23 @@ public sealed class DanmakuSingleSoundProcessor : AudioEffectProcessorBase
 
         isPrepared = true;
 
+        var customSound = settings.GetSound(soundKind) with
+        {
+            CoalesceSimultaneous = effect.CoalesceSimultaneous,
+            CoalesceIntervalSeconds = Math.Max(0.0, effect.CoalesceIntervalMs / 1000.0),
+        };
+
+        settings = soundKind switch
+        {
+            DanmakuSoundKind.Fire => settings with { FireSound = customSound },
+            DanmakuSoundKind.Change => settings with { ChangeSound = customSound },
+            DanmakuSoundKind.Hit => settings with { HitSound = customSound },
+            DanmakuSoundKind.EnemyHit => settings with { EnemyHitSound = customSound },
+            DanmakuSoundKind.PlayerHit => settings with { PlayerHitSound = customSound },
+            DanmakuSoundKind.PlayerShot => settings with { PlayerShotSound = customSound },
+            _ => settings with { VanishSound = customSound },
+        };
+
         var simulator = new DanmakuSimulator(settings)
         {
             MaxSimulationSeconds = Math.Max(1.0, duration.TotalSeconds + 1.0),
@@ -334,6 +366,11 @@ public sealed class DanmakuSingleSoundProcessor : AudioEffectProcessorBase
         }
 
         voices.Sort(static (a, b) => a.StartPosition.CompareTo(b.StartPosition));
+
+        if (effect.MaxVoices > 0 && voices.Count > effect.MaxVoices)
+        {
+            voices.RemoveRange(effect.MaxVoices, voices.Count - effect.MaxVoices);
+        }
     }
 
     protected override void seek(long position) => Input?.Seek(position);
