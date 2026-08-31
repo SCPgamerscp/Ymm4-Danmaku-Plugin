@@ -104,7 +104,9 @@ public sealed class DanmakuShapeSource : IShapeSource2
 
         // 外部レイヤー間の相互参照（自機・ボス・ダメージ）のためにシミュレーション前にレイヤーを登録
         Collision.DanmakuCollisionBus.RegisterLayer(this, parameter, fps, totalFrame);
-        Audio.DanmakuChannelBus.Register(parameter, this, fps, totalFrame);
+        var itemStartSeconds = description.TimelinePosition.Time.TotalSeconds - description.ItemPosition.Time.TotalSeconds;
+        var itemDurationSeconds = description.ItemDuration.Time.TotalSeconds;
+        Audio.DanmakuChannelBus.Register(parameter, this, fps, totalFrame, itemStartSeconds, itemDurationSeconds, description.Layer);
 
         // キーフレームやスライダーの編集が一時停止中に行われても確実に最新の弾幕状態を反映するため、
         // 常に先頭から現在フレームまで確定的にシミュレーションを再現して描画する
