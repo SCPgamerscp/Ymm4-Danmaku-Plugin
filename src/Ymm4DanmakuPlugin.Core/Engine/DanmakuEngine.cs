@@ -144,7 +144,7 @@ public sealed class DanmakuEngine
             ctx.Position = p;
         }
 
-        RefreshPositions();
+        RefreshPositions(0);
 
         foreach (var behavior in behaviors) behavior.Reset();
     }
@@ -234,7 +234,7 @@ public sealed class DanmakuEngine
     /// <summary>格子 1 ステップぶんの更新処理。</summary>
     private void StepGrid(double deltaTime)
     {
-        RefreshPositions();
+        var stepTime = (gridSteps + 1) * Settings.FixedTimeStep;
 
         // タイムラインによるキーフレーム HP 制御 ＆ 累積被弾ダメージの合算
         var baseHp = BossMaxHp;
@@ -256,13 +256,13 @@ public sealed class DanmakuEngine
         }
 
         UpdateEmitters(deltaTime);
-        RefreshPositions();
+        RefreshPositions(stepTime);
         var playerShotEnabled = Live.PlayerShotEnabled?.Invoke(CurrentTime) ?? Settings.PlayerShot.IsEnabled;
         if (playerShotEnabled) UpdatePlayerShots(deltaTime);
         UpdateBullets(deltaTime);
         ProcessSplits();
-        var collisionEnabled = Live.CollisionEnabled?.Invoke(CurrentTime) ?? Settings.Collision.IsEnabled;
-        if (collisionEnabled || playerShotEnabled) ProcessCollisions();
+        var collisionEnabled = Live.CollisionEnabled?.Invoke(stepTime) ?? Settings.Collision.IsEnabled;
+        if (collisionEnabled || playerShotEnabled) ProcessCollisions(stepTime);
         Pool.Compact();
 
         gridSteps++;
@@ -270,18 +270,18 @@ public sealed class DanmakuEngine
     }
 
     /// <summary>
-    /// ターゲット位置とエネミー位置を現在時刻の値に更新する。
+    /// ターゲット位置とエネミー位置を指定時刻の値に更新する。
     /// キーフレーム供給関数があればそれを優先し、なければ設定値を使う。
     /// </summary>
-    private void RefreshPositions()
+    private void RefreshPositions(double time)
     {
-        var liveTarget = Live.TargetPosition?.Invoke(CurrentTime);
+        var liveTarget = Live.TargetPosition?.Invoke(time);
         TargetPosition = liveTarget ?? new Vec2(Settings.Collision.TargetX, Settings.Collision.TargetY);
 
-        var liveTargetRadius = Live.TargetRadius?.Invoke(CurrentTime);
+        var liveTargetRadius = Live.TargetRadius?.Invoke(time);
         TargetRadius = liveTargetRadius ?? Settings.Collision.TargetRadius;
 
-        var liveEnemy = Live.EnemyPosition?.Invoke(CurrentTime);
+        var liveEnemy = Live.EnemyPosition?.Invoke(time);
         if (liveEnemy.HasValue)
         {
             EnemyPosition = liveEnemy.Value;
@@ -295,7 +295,7 @@ public sealed class DanmakuEngine
             EnemyPosition = new Vec2(Settings.Collision.EnemyX, Settings.Collision.EnemyY);
         }
 
-        var liveEnemyRadius = Live.EnemyRadius?.Invoke(CurrentTime);
+        var liveEnemyRadius = Live.EnemyRadius?.Invoke(time);
         EnemyRadius = liveEnemyRadius ?? Settings.Collision.EnemyRadius;
     }
 
@@ -416,7 +416,7 @@ public sealed class DanmakuEngine
             if (isHoming)
             {
                 bullet.HomingEnabled = true;
-                bullet.HomingTurnRate = 540.0;
+                bullet.HomingTurnRate = 360.0;
                 bullet.HomingRemaining = 2.5;
                 bullet.HomingDelay = 0.04;
                 bullet.HomingTarget = EnemyPosition;
@@ -687,14 +687,14 @@ public sealed class DanmakuEngine
         }
     }
 
-    private void ProcessCollisions()
+    private void ProcessCollisions(double stepTime)
     {
         var collision = Settings.Collision;
         var bullets = Pool.ActiveBullets;
 
-        var collisionEnabled = Live.CollisionEnabled?.Invoke(CurrentTime) ?? collision.IsEnabled;
-        var enemyHitEnabled = Live.EnemyHitEnabled?.Invoke(CurrentTime) ?? collision.EnemyHitEnabled;
-        var spawnHitEffect = Live.SpawnHitEffect?.Invoke(CurrentTime) ?? collision.SpawnHitEffect;
+        var collisionEnabled = Live.CollisionEnabled?.Invoke(stepTime) ?? collision.IsEnabled;
+        var enemyHitEnabled = Live.EnemyHitEnabled?.Invoke(stepTime) ?? collision.EnemyHitEnabled;
+        var spawnHitEffect = Live.SpawnHitEffect?.Invoke(stepTime) ?? collision.SpawnHitEffect;
 
         for (var i = 0; i < bullets.Count; i++)
         {
@@ -719,7 +719,7 @@ public sealed class DanmakuEngine
                             EmitSound(DanmakuSoundKind.Vanish, enemyBullet.EmitterIndex);
 
                             if (spawnHitEffect)
-                                SpawnHitEffectAt(enemyBullet.Position, enemyBullet, collision);
+                                SpawnHitEffectAt(enemyBullet.Position, enemyBullet, collision, stepTime);
 
                             if (bullet.DestroyOnHit)
                             {
@@ -740,10 +740,10 @@ public sealed class DanmakuEngine
                         bullet.HasHit = true;
                         EnemyHitCount++;
                         HitCount++;
-                        var dmg = Live.HpBarDamagePerHit?.Invoke(CurrentTime) ?? (Settings.HpBar.DamagePerHit > 0 ? Settings.HpBar.DamagePerHit : 15.0);
+                        var dmg = Live.HpBarDamagePerHit?.Invoke(stepTime) ?? (Settings.HpBar.DamagePerHit > 0 ? Settings.HpBar.DamagePerHit : 15.0);
                         TotalDamageDealt += dmg;
                         var baseHp = BossMaxHp;
-                        if (Live.BossHp?.Invoke(CurrentTime) is { } liveHp)
+                        if (Live.BossHp?.Invoke(stepTime) is { } liveHp)
                         {
                             baseHp = Math.Clamp(liveHp / 100.0, 0.0, 1.0) * BossMaxHp;
                         }
@@ -752,7 +752,7 @@ public sealed class DanmakuEngine
                         EmitSound(DanmakuSoundKind.Hit, bullet.EmitterIndex);
 
                         if (spawnHitEffect)
-                            SpawnHitEffectAt(bullet.Position, bullet, collision);
+                            SpawnHitEffectAt(bullet.Position, bullet, collision, stepTime);
 
                         if (bullet.DestroyOnHit)
                             Kill(bullet, BulletDeathReason.Hit, playSound: false);
@@ -773,7 +773,7 @@ public sealed class DanmakuEngine
                         EmitSound(DanmakuSoundKind.Hit, bullet.EmitterIndex);
 
                         if (spawnHitEffect)
-                            SpawnHitEffectAt(bullet.Position, bullet, collision);
+                            SpawnHitEffectAt(bullet.Position, bullet, collision, stepTime);
 
                         if (bullet.DestroyOnHit)
                             Kill(bullet, BulletDeathReason.Hit, playSound: false);
@@ -783,11 +783,11 @@ public sealed class DanmakuEngine
         }
     }
 
-    private void SpawnHitEffectAt(Vec2 position, Bullet source, CollisionSettings collision)
+    private void SpawnHitEffectAt(Vec2 position, Bullet source, CollisionSettings collision, double stepTime)
     {
-        var count = Math.Max(1, Live.HitEffectCount?.Invoke(CurrentTime) ?? collision.HitEffectCount);
-        var effectSpeed = Live.HitEffectSpeed?.Invoke(CurrentTime) ?? collision.HitEffectSpeed;
-        var effectLifetime = Math.Max(0.01, Live.HitEffectLifetime?.Invoke(CurrentTime) ?? collision.HitEffectLifetime);
+        var count = Math.Max(1, Live.HitEffectCount?.Invoke(stepTime) ?? collision.HitEffectCount);
+        var effectSpeed = Live.HitEffectSpeed?.Invoke(stepTime) ?? collision.HitEffectSpeed;
+        var effectLifetime = Math.Max(0.01, Live.HitEffectLifetime?.Invoke(stepTime) ?? collision.HitEffectLifetime);
         for (var i = 0; i < count; i++)
         {
             var particle = Pool.Rent();

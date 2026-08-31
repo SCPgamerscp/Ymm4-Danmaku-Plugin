@@ -2737,7 +2737,91 @@ public class CollisionHitboxFollowUpTests
         var particles = engine.AliveBullets().Where(b => b.Generation > 0).ToList();
         Assert.Equal(16, particles.Count);
     }
+
+    [Fact]
+    public void 公転運動中のボスの描画位置とエネミー当たり判定座標が全ステップで完全に一致する()
+    {
+        var settings = new DanmakuSettings
+        {
+            FixedTimeStep = 1.0 / 120.0,
+            Collision = new CollisionSettings
+            {
+                IsEnabled = true,
+                EnemyRadius = 25.0,
+            },
+            Emitters = [
+                new EmitterSettings
+                {
+                    IsEnabled = true,
+                    X = 0,
+                    Y = 0,
+                    OrbitRadius = 100.0,
+                    OrbitSpeed = 360.0, // 毎秒 360 度
+                    OrbitPhase = 0,
+                    Pattern = new PatternSettings { FireInterval = 10.0, Way = 1 }
+                }
+            ]
+        };
+
+        var engine = new DanmakuEngine(settings);
+
+        // 120 ステップ (1.0 秒間) にわたり、全ステップで EnemyPosition と Contexts[0].Position が 100% 一致することを検証
+        for (var step = 0; step < 120; step++)
+        {
+            engine.Advance(1.0 / 120.0);
+            var expectedAngle = 360.0 * engine.CurrentTime;
+            var expectedPos = Vec2.FromDegrees(expectedAngle, 100.0);
+
+            Assert.Equal(expectedPos.X, engine.Contexts[0].Position.X, precision: 2);
+            Assert.Equal(expectedPos.Y, engine.Contexts[0].Position.Y, precision: 2);
+            Assert.Equal(engine.Contexts[0].Position.X, engine.EnemyPosition.X, precision: 5);
+            Assert.Equal(engine.Contexts[0].Position.Y, engine.EnemyPosition.Y, precision: 5);
+        }
+    }
+
+    [Fact]
+    public void 公転運動中のボスへの自機ショット命中判定が遅延なく追従する()
+    {
+        var settings = new DanmakuSettings
+        {
+            FixedTimeStep = 1.0 / 120.0,
+            Collision = new CollisionSettings
+            {
+                IsEnabled = true,
+                EnemyRadius = 30.0,
+            },
+            PlayerShot = new PlayerShotSettings
+            {
+                IsEnabled = true,
+                Way = 1,
+                FireInterval = 0.05,
+                Speed = 1000,
+                AutoAim = true,
+            },
+            Emitters = [
+                new EmitterSettings
+                {
+                    IsEnabled = true,
+                    X = 0,
+                    Y = 0,
+                    OrbitRadius = 80.0,
+                    OrbitSpeed = 90.0, // 90 deg/s
+                    OrbitPhase = 0,
+                    Pattern = new PatternSettings { FireInterval = 10.0, Way = 1 }
+                }
+            ]
+        };
+
+        var engine = new DanmakuEngine(settings);
+        // 自機をボスの公転軌道上に配置
+        engine.Live.TargetPosition = _ => new Vec2(0, 150);
+
+        engine.Advance(0.5); // 0.5秒進める
+        Assert.True(engine.EnemyHitCount > 0);
+        Assert.True(engine.CurrentBossHp < engine.BossMaxHp);
+    }
 }
+
 
 
 

@@ -673,21 +673,8 @@ public static class DanmakuLiveWiring
             {
                 return pos;
             }
-            if (emitters.Count == 0) return null;
-            var emitter = emitters[0];
-            var frame = TimeToFrame(timeSeconds, fps, totalFrame);
-            var baseX = emitter.X.GetValue(frame, totalFrame, fps);
-            var baseY = emitter.Y.GetValue(frame, totalFrame, fps);
-            var orbitRadius = emitter.OrbitRadius.GetValue(frame, totalFrame, fps);
-            var orbitSpeed = emitter.OrbitSpeed.GetValue(frame, totalFrame, fps);
-            var orbitPhase = emitter.OrbitPhase.GetValue(frame, totalFrame, fps);
-            var resultPos = new Vec2(baseX, baseY);
-            if (orbitRadius != 0)
-            {
-                var orbitAngle = orbitPhase + orbitSpeed * timeSeconds;
-                resultPos += Vec2.FromDegrees(orbitAngle, orbitRadius);
-            }
-            return resultPos;
+            // 自レイヤーにエミッターが存在する場合はエンジン内部で正確に積分された contexts[0].Position を優先するため null を返す
+            return null;
         };
 
         sim.Live.EnemyRadius = timeSeconds =>
