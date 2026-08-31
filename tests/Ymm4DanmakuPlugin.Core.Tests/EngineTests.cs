@@ -3239,6 +3239,80 @@ public class CollisionHitboxFollowUpTests
         Assert.True(boss1Engine.BossHpRatio < 1.0);
         Assert.Equal(1.0, boss2Engine.BossHpRatio);
     }
+
+    [Fact]
+    public void 自動照準でターゲットが切り替わった後も前のボスのHPバーが100パーセントに復活しない()
+    {
+        var boss1Key = new object();
+        var boss2Key = new object();
+
+        // ボス1: (-100, -100)
+        var boss1Settings = new DanmakuSettings
+        {
+            Collision = new CollisionSettings { IsEnabled = true, EnemyRadius = 30.0, EnemyHitEnabled = true },
+            Emitters = [new EmitterSettings { IsEnabled = true, X = -100, Y = -100 }],
+            HpBar = new BossHpBarSettings { MaxHp = 1000.0, InitialHpPercentage = 100.0, DamagePerHit = 20.0 }
+        };
+        var boss1Engine = new DanmakuEngine(boss1Settings);
+        boss1Engine.Live.LayerKey = boss1Key;
+
+        // ボス2: (100, -100)
+        var boss2Settings = new DanmakuSettings
+        {
+            Collision = new CollisionSettings { IsEnabled = true, EnemyRadius = 30.0, EnemyHitEnabled = true },
+            Emitters = [new EmitterSettings { IsEnabled = true, X = 100, Y = -100 }],
+            HpBar = new BossHpBarSettings { MaxHp = 1000.0, InitialHpPercentage = 100.0, DamagePerHit = 20.0 }
+        };
+        var boss2Engine = new DanmakuEngine(boss2Settings);
+        boss2Engine.Live.LayerKey = boss2Key;
+
+        // プレイヤー: 自動照準 ON で自機位置が移動 (t=0〜0.3 はボス1の真下 (-100, 100), t=0.4〜0.8 はボス2の真下 (100, 100))
+        var playerSettings = new DanmakuSettings
+        {
+            Collision = new CollisionSettings { IsEnabled = true },
+            PlayerShot = new PlayerShotSettings
+            {
+                IsEnabled = true,
+                AutoAim = true,
+                Way = 1,
+                Speed = 1000,
+                FireInterval = 0.05
+            }
+        };
+        var playerEngine = new DanmakuEngine(playerSettings);
+        playerEngine.Live.TargetPosition = t => t < 0.35 ? new Vec2(-100, 100) : new Vec2(100, 100);
+
+        // 両ボスのエネミー判定を動的に供給
+        playerEngine.Live.Enemies = _ => [
+            new EnemyHitbox(new Vec2(-100, -100), 30.0, 0, 0, boss1Key),
+            new EnemyHitbox(new Vec2(100, -100), 30.0, 0, 0, boss2Key)
+        ];
+
+        playerEngine.Advance(0.8); // 0.8秒シミュレーション (前半ボス1、後半ボス2へ射撃)
+
+        // 前半でボス1に命中、後半でボス2に命中していること
+        var b1Damage = playerEngine.DamageHistory
+            .Where(h => ReferenceEquals(h.TargetLayerKey, boss1Key))
+            .Sum(h => h.Damage);
+        var b2Damage = playerEngine.DamageHistory
+            .Where(h => ReferenceEquals(h.TargetLayerKey, boss2Key))
+            .Sum(h => h.Damage);
+
+        Assert.True(b1Damage > 0, "ボス1にダメージが蓄積していること");
+        Assert.True(b2Damage > 0, "ボス2にダメージが蓄積していること");
+
+        // ボス1のHP計算: ターゲット切り替え後もダメージが維持されること
+        boss1Engine.Live.ExternalDamage = _ => b1Damage;
+        boss1Engine.Advance(0.01);
+        Assert.Equal(1000.0 - b1Damage, boss1Engine.CurrentBossHp);
+        Assert.True(boss1Engine.CurrentBossHp < 1000.0, "ターゲット切り替え後もボス1のHPは復活せず減少を維持");
+
+        // ボス2のHP計算: 切り替え後に受けたダメージのみが反映されること
+        boss2Engine.Live.ExternalDamage = _ => b2Damage;
+        boss2Engine.Advance(0.01);
+        Assert.Equal(1000.0 - b2Damage, boss2Engine.CurrentBossHp);
+        Assert.True(boss2Engine.CurrentBossHp < 1000.0, "ボス2も被弾してHPが減少していること");
+    }
 }
 
 

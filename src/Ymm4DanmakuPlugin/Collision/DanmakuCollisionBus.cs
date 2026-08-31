@@ -105,6 +105,7 @@ public static class DanmakuCollisionBus
 
     /// <summary>
     /// 指定した時刻 <paramref name="timeSeconds"/> におけるすべての相手方ターゲット (自機) のリストを取得する。
+    /// 指定時刻のアニメーション・キーフレーム値から正確な自機座標を算出する。
     /// </summary>
     public static List<TargetHitbox> GetTargetsAt(int targetChannel, object? callerKey, double timeSeconds)
     {
@@ -119,12 +120,6 @@ public static class DanmakuCollisionBus
                 var frame = TimeToFrame(timeSeconds, reg.Fps, reg.TotalFrame);
                 var ch = (int)Math.Round(reg.Parameter.Channel.GetValue(frame, reg.TotalFrame, reg.Fps));
                 if (targetChannel >= 0 && ch != targetChannel) continue;
-
-                if (reg.TargetPositionsSnapshot is not null)
-                {
-                    list.AddRange(reg.TargetPositionsSnapshot);
-                    continue;
-                }
 
                 var col = reg.Parameter.CollisionEnabled.GetValue(frame, reg.TotalFrame, reg.Fps) >= 0.5;
                 if (!col) continue;
@@ -143,6 +138,7 @@ public static class DanmakuCollisionBus
 
     /// <summary>
     /// 指定した時刻 <paramref name="timeSeconds"/> におけるすべての相手方エネミー (ボス) のリストを取得する。
+    /// 指定時刻のアニメーション・公転運動から正確なボス座標を算出する。
     /// </summary>
     public static List<EnemyHitbox> GetEnemiesAt(int targetChannel, object? callerKey, double timeSeconds)
     {
@@ -156,19 +152,6 @@ public static class DanmakuCollisionBus
                 var frame = TimeToFrame(timeSeconds, reg.Fps, reg.TotalFrame);
                 var ch = (int)Math.Round(reg.Parameter.Channel.GetValue(frame, reg.TotalFrame, reg.Fps));
                 if (targetChannel >= 0 && ch != targetChannel) continue;
-
-                if (reg.EnemyPositionsSnapshot is not null)
-                {
-                    for (var s = 0; s < reg.EnemyPositionsSnapshot.Length; s++)
-                    {
-                        var e = reg.EnemyPositionsSnapshot[s];
-                        if (targetChannel < 0 || e.Channel < 0 || e.Channel == targetChannel)
-                        {
-                            list.Add(e);
-                        }
-                    }
-                    continue;
-                }
 
                 var enemyHitEnabled = reg.Parameter.EnemyHitEnabled.GetValue(frame, reg.TotalFrame, reg.Fps) >= 0.5;
                 if (!enemyHitEnabled) continue;
@@ -250,10 +233,6 @@ public static class DanmakuCollisionBus
             foreach (var (key, reg) in Registrations)
             {
                 if (ReferenceEquals(key, callerKey)) continue;
-
-                var frame = TimeToFrame(timeSeconds, reg.Fps, reg.TotalFrame);
-                var shotEnabled = reg.Parameter.PlayerShotEnabled.GetValue(frame, reg.TotalFrame, reg.Fps) >= 0.5;
-                if (!shotEnabled) continue;
 
                 var targetCh = reg.Parameter.PlayerShotTargetChannel;
                 if (channel >= 0 && targetCh >= 0 && targetCh != channel) continue;
