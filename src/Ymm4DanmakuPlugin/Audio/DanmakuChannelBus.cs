@@ -81,6 +81,27 @@ public static class DanmakuChannelBus
         return null;
     }
 
+    /// <summary>
+    /// 指定チャンネルに登録されているすべての弾幕パラメータインスタンスを取得する。
+    /// </summary>
+    public static List<DanmakuShapeParameter> GetParameters(int channel)
+    {
+        lock (Gate)
+        {
+            Prune();
+            var list = new List<DanmakuShapeParameter>();
+            foreach (var entry in Entries)
+            {
+                if (!entry.TryGetTarget(out var parameter)) continue;
+                var paramChannel = (int)Math.Round(parameter.Channel.GetFirstValue());
+                if (channel != -1 && paramChannel != -1 && paramChannel != channel) continue;
+
+                list.Add(parameter);
+            }
+            return list;
+        }
+    }
+
     /// <summary>現在登録されているチャンネル番号の一覧。</summary>
     public static IReadOnlyList<int> GetChannels()
     {

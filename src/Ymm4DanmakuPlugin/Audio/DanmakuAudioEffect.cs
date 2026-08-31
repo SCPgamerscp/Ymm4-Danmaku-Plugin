@@ -10,6 +10,7 @@ using Ymm4DanmakuPlugin.Core.Audio;
 using Ymm4DanmakuPlugin.Core.Configuration;
 using Ymm4DanmakuPlugin.Core.Engine;
 using Ymm4DanmakuPlugin.Core.Mathematics;
+using Ymm4DanmakuPlugin.Parameters;
 
 namespace Ymm4DanmakuPlugin.Audio;
 
@@ -218,6 +219,8 @@ public sealed class DanmakuSingleSoundProcessor : AudioEffectProcessorBase
         var regionStart = Position;
         var regionEnd = Position + count;
         var gain = (float)Math.Clamp(effect.Volume, 0.0, 4.0);
+        var activeVoiceCount = 0;
+        var maxVoices = effect.MaxVoices > 0 ? effect.MaxVoices : int.MaxValue;
 
         foreach (var voice in voices)
         {
@@ -227,6 +230,8 @@ public sealed class DanmakuSingleSoundProcessor : AudioEffectProcessorBase
             if (voiceEnd <= regionStart || voice.StartPosition >= regionEnd) continue;
 
             MixVoice(destBuffer, offset, count, regionStart, voice, gain);
+            activeVoiceCount++;
+            if (activeVoiceCount >= maxVoices) break;
         }
 
         return count;
@@ -283,12 +288,10 @@ public sealed class DanmakuSingleSoundProcessor : AudioEffectProcessorBase
     {
         if (isPrepared) return;
 
-        var parameter = DanmakuChannelBus.TryGetParameter(effect.Channel);
-        var settings = parameter is not null
-            ? parameter.ToSettings(parameter.LastCanvasWidth, parameter.LastCanvasHeight)
-            : DanmakuChannelBus.TryGetSettings(effect.Channel);
+        var parameters = DanmakuChannelBus.GetParameters(effect.Channel);
+        var fallbackSettings = parameters.Count == 0 ? DanmakuChannelBus.TryGetSettings(effect.Channel) : null;
 
-        if (settings is null)
+        if (parameters.Count == 0 && fallbackSettings is null)
         {
             Diagnostics = $"チャンネル {effect.Channel} の弾幕アイテムが見つかりません。";
             return;
@@ -303,22 +306,56 @@ public sealed class DanmakuSingleSoundProcessor : AudioEffectProcessorBase
         }
 
         isPrepared = true;
+        voices.Clear();
 
-        var customSound = settings.GetSound(soundKind) with
+        var hz = Hz;
+        var startFrame = Math.Max(0.0, effect.TrimStart * hz);
+        var totalAvailableFrames = Math.Max(0.0, buffer.FrameCount - startFrame);
+        var maxFrames = effect.PlayDuration > 0
+            ? Math.Min(totalAvailableFrames, effect.PlayDuration * hz)
+            : totalAvailableFrames;
+        var fadeOutFrames = Math.Max(0.0, effect.FadeOut * hz);
+
+        if (parameters.Count > 0)
+        {
+            foreach (var parameter in parameters)
+            {
+                var settings = parameter.ToSettings(parameter.LastCanvasWidth, parameter.LastCanvasHeight);
+                ProcessSettings(settings, parameter, buffer, hz, startFrame, maxFrames, fadeOutFrames);
+            }
+        }
+        else if (fallbackSettings is not null)
+        {
+            ProcessSettings(fallbackSettings, null, buffer, hz, startFrame, maxFrames, fadeOutFrames);
+        }
+
+        voices.Sort(static (a, b) => a.StartPosition.CompareTo(b.StartPosition));
+    }
+
+    private void ProcessSettings(
+        DanmakuSettings baseSettings,
+        DanmakuShapeParameter? parameter,
+        DanmakuSoundBuffer buffer,
+        int hz,
+        double startFrame,
+        double maxFrames,
+        double fadeOutFrames)
+    {
+        var customSound = baseSettings.GetSound(soundKind) with
         {
             CoalesceSimultaneous = effect.CoalesceSimultaneous,
             CoalesceIntervalSeconds = Math.Max(0.0, effect.CoalesceIntervalMs / 1000.0),
         };
 
-        settings = soundKind switch
+        var settings = soundKind switch
         {
-            DanmakuSoundKind.Fire => settings with { FireSound = customSound },
-            DanmakuSoundKind.Change => settings with { ChangeSound = customSound },
-            DanmakuSoundKind.Hit => settings with { HitSound = customSound },
-            DanmakuSoundKind.EnemyHit => settings with { EnemyHitSound = customSound },
-            DanmakuSoundKind.PlayerHit => settings with { PlayerHitSound = customSound },
-            DanmakuSoundKind.PlayerShot => settings with { PlayerShotSound = customSound },
-            _ => settings with { VanishSound = customSound },
+            DanmakuSoundKind.Fire => baseSettings with { FireSound = customSound },
+            DanmakuSoundKind.Change => baseSettings with { ChangeSound = customSound },
+            DanmakuSoundKind.Hit => baseSettings with { HitSound = customSound },
+            DanmakuSoundKind.EnemyHit => baseSettings with { EnemyHitSound = customSound },
+            DanmakuSoundKind.PlayerHit => baseSettings with { PlayerHitSound = customSound },
+            DanmakuSoundKind.PlayerShot => baseSettings with { PlayerShotSound = customSound },
+            _ => baseSettings with { VanishSound = customSound },
         };
 
         var simulator = new DanmakuSimulator(settings)
@@ -338,15 +375,7 @@ public sealed class DanmakuSingleSoundProcessor : AudioEffectProcessorBase
         var log = simulator.SoundLog;
         if (log.Count == 0) return;
 
-        var hz = Hz;
         var random = new DeterministicRandom(settings.Seed + (int)soundKind * 1000);
-
-        var startFrame = Math.Max(0.0, effect.TrimStart * hz);
-        var totalAvailableFrames = Math.Max(0.0, buffer.FrameCount - startFrame);
-        var maxFrames = effect.PlayDuration > 0
-            ? Math.Min(totalAvailableFrames, effect.PlayDuration * hz)
-            : totalAvailableFrames;
-        var fadeOutFrames = Math.Max(0.0, effect.FadeOut * hz);
 
         foreach (var e in log.Events)
         {
@@ -363,13 +392,6 @@ public sealed class DanmakuSingleSoundProcessor : AudioEffectProcessorBase
             var pitchRatio = e.PitchRatio * DanmakuMath.SemitoneToRatio(semitones);
 
             voices.Add(new Voice(buffer, startPosition, pitchRatio, e.Volume, startFrame, maxFrames, fadeOutFrames));
-        }
-
-        voices.Sort(static (a, b) => a.StartPosition.CompareTo(b.StartPosition));
-
-        if (effect.MaxVoices > 0 && voices.Count > effect.MaxVoices)
-        {
-            voices.RemoveRange(effect.MaxVoices, voices.Count - effect.MaxVoices);
         }
     }
 
