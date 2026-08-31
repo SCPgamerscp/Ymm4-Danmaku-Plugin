@@ -179,19 +179,19 @@ public class DanmakuShapeParameter : ShapeParameterBase
         set => MainEmitter.PatternKind = value;
     }
 
-    [Display(GroupName = "発射パターン", Name = "ウェイ数 (方向数)", Description = "同時に放つ方向の数。0 で発射しません。")]
+    [Display(GroupName = "発射パターン", Name = "Way数", Description = "同時に放つ方向の数。0 で発射しません。")]
     [AnimationSlider("F0", "方向", 0, 128)]
     public Animation Way => MainEmitter.Way;
 
-    [Display(GroupName = "発射パターン", Name = "段数 (連数)", Description = "1 方向あたりに連続して放つ弾数。0 で発射しません。")]
+    [Display(GroupName = "発射パターン", Name = "段数", Description = "1 方向あたりに連続して放つ弾数。0 で発射しません。")]
     [AnimationSlider("F0", "段", 0, 32)]
     public Animation Stack => MainEmitter.Stack;
 
-    [Display(GroupName = "発射パターン", Name = "段ごとの速度差")]
+    [Display(GroupName = "発射パターン", Name = "段速度差", Description = "段ごとの弾速の差 (px/秒)。")]
     [AnimationSlider("F0", "px/秒", -200, 200)]
     public Animation StackSpeedStep => MainEmitter.StackSpeedStep;
 
-    [Display(GroupName = "発射パターン", Name = "段ごとの角度差")]
+    [Display(GroupName = "発射パターン", Name = "段角度差", Description = "段ごとの発射角度の差 (度)。")]
     [AnimationSlider("F1", "度", -90, 90)]
     public Animation StackAngleStep => MainEmitter.StackAngleStep;
 
@@ -203,11 +203,11 @@ public class DanmakuShapeParameter : ShapeParameterBase
     [AnimationSlider("F1", "度", -360, 360)]
     public Animation SpreadAngle => MainEmitter.SpreadAngle;
 
-    [Display(GroupName = "発射パターン", Name = "回転速度 (発射毎)", Description = "1 回撃つごとに発射方向を回転させる角度。渦巻き弾幕を作れます。")]
+    [Display(GroupName = "発射パターン", Name = "発射毎回転", Description = "1 回撃つごとに発射方向を回転させる角度。渦巻き弾幕を作れます。")]
     [AnimationSlider("F1", "度/発", -180, 180)]
     public Animation AngleStepPerShot => MainEmitter.AngleStepPerShot;
 
-    [Display(GroupName = "発射パターン", Name = "角度ゆらぎ")]
+    [Display(GroupName = "発射パターン", Name = "角度ブレ", Description = "発射角度のランダムな揺らぎ (±度)。")]
     [AnimationSlider("F1", "度", -90, 90)]
     public Animation AngleJitter => MainEmitter.AngleJitter;
 
@@ -215,15 +215,15 @@ public class DanmakuShapeParameter : ShapeParameterBase
     [AnimationSlider("F3", "秒", 0, 2)]
     public Animation FireInterval => MainEmitter.FireInterval;
 
-    [Display(GroupName = "発射パターン", Name = "バースト発射数")]
+    [Display(GroupName = "発射パターン", Name = "連射数", Description = "1 回のバーストで連続発射する弾数。")]
     [AnimationSlider("F0", "発", 0, 32)]
     public Animation BurstCount => MainEmitter.BurstCount;
 
-    [Display(GroupName = "発射パターン", Name = "バースト内間隔")]
+    [Display(GroupName = "発射パターン", Name = "連射間隔", Description = "バースト内の弾と弾の発射間隔 (秒)。")]
     [AnimationSlider("F3", "秒", 0, 0.5)]
     public Animation BurstInterval => MainEmitter.BurstInterval;
 
-    [Display(GroupName = "発射パターン", Name = "バースト後休止")]
+    [Display(GroupName = "発射パターン", Name = "連射後休止", Description = "バースト終了後の待機時間 (秒)。")]
     [AnimationSlider("F3", "秒", 0, 3)]
     public Animation BurstCooldown => MainEmitter.BurstCooldown;
 
@@ -235,31 +235,31 @@ public class DanmakuShapeParameter : ShapeParameterBase
     [AnimationSlider("F2", "秒", 0, 60)]
     public Animation EndTime => MainEmitter.EndTime;
 
-    [Display(GroupName = "発射パターン", Name = "生成半径", Description = "エミッター中心から離れた円周上から弾を発生させます。負の値で後方から発生。")]
+    [Display(GroupName = "発射パターン", Name = "発生半径", Description = "エミッター中心から離れた円周上から弾を発生させます。負の値で後方から発生。")]
     [AnimationSlider("F1", "px", -300, 300)]
     public Animation SpawnRadius => MainEmitter.SpawnRadius;
 
-    [Display(GroupName = "発射パターン", Name = "発生位置ゆらぎ")]
+    [Display(GroupName = "発射パターン", Name = "発生位置ブレ", Description = "弾の発生位置のランダムなズレ (px)。")]
     [AnimationSlider("F1", "px", -200, 200)]
     public Animation SpawnJitter => MainEmitter.SpawnJitter;
 
-    [Display(GroupName = "発射パターン", Name = "自機狙い度 (ターゲット追尾)", Description = "ターゲット (自機) 方向へ向ける割合。0% で固定角、100% で完全自機狙い、-100% で自機の真反対へ発射。")]
+    [Display(GroupName = "発射パターン", Name = "自機狙い度", Description = "ターゲット (自機) 方向へ向ける割合。0% で固定角、100% で完全自機狙い、-100% で自機の真反対へ発射。")]
     [AnimationSlider("F1", "%", -100, 100)]
     public Animation AimRate => MainEmitter.AimRate;
 
-    [Display(GroupName = "発射パターン", Name = "壁の横幅")]
+    [Display(GroupName = "発射パターン", Name = "壁の横幅", Description = "横一列に並べて配置する横幅。0 で点発生。")]
     [AnimationSlider("F0", "px", -3840, 3840)]
     public Animation WallWidth => MainEmitter.WallWidth;
 
-    [Display(GroupName = "発射パターン", Name = "レーザー間隔")]
+    [Display(GroupName = "発射パターン", Name = "レーザー間隔", Description = "進行方向に弾を並べる間隔。0 で前後オフセットなし。")]
     [AnimationSlider("F1", "px", -120, 120)]
     public Animation LaserSpacing => MainEmitter.LaserSpacing;
 
-    [Display(GroupName = "発射パターン", Name = "鞭の振れ幅")]
+    [Display(GroupName = "発射パターン", Name = "鞭の振幅", Description = "左右に首を振る振れ幅。0 で首振りなし。")]
     [AnimationSlider("F1", "度", -180, 180)]
     public Animation WhipAmplitude => MainEmitter.WhipAmplitude;
 
-    [Display(GroupName = "発射パターン", Name = "鞭の周期")]
+    [Display(GroupName = "発射パターン", Name = "鞭の周期", Description = "首振りの 1 周期にかかる時間 (秒)。")]
     [AnimationSlider("F2", "秒", -6, 6)]
     public Animation WhipPeriod => MainEmitter.WhipPeriod;
 
@@ -267,7 +267,7 @@ public class DanmakuShapeParameter : ShapeParameterBase
     // 弾の見た目
     // =====================================================================
 
-    [Display(GroupName = "弾の見た目", Name = "弾の形")]
+    [Display(GroupName = "弾の見た目", Name = "弾の形状", Description = "12 種類の組み込み形状から選択します。画像未指定時に使用されます。")]
     [EnumComboBox]
     public BulletShape Shape
     {
@@ -275,7 +275,7 @@ public class DanmakuShapeParameter : ShapeParameterBase
         set => MainEmitter.Shape = value;
     }
 
-    [Display(GroupName = "弾の見た目", Name = "画像", Description = "指定すると「弾の形」の代わりにこの画像を使います。")]
+    [Display(GroupName = "弾の見た目", Name = "カスタム画像", Description = "指定すると「弾の形状」の代わりにこの画像を使います。")]
     [FileSelector(YukkuriMovieMaker.Settings.FileGroupType.ImageItem)]
     public string ImagePath
     {
@@ -283,11 +283,11 @@ public class DanmakuShapeParameter : ShapeParameterBase
         set => MainEmitter.ImagePath = value;
     }
 
-    [Display(GroupName = "弾の見た目", Name = "大きさ", Description = "拡大倍率。負の値で画像を反転 (ミラー) 描画します。")]
+    [Display(GroupName = "弾の見た目", Name = "サイズ", Description = "拡大倍率。負の値で画像を反転 (ミラー) 描画します。")]
     [AnimationSlider("F2", "倍", -4, 4)]
     public Animation Scale => MainEmitter.Scale;
 
-    [Display(GroupName = "弾の見た目", Name = "大きさゆらぎ")]
+    [Display(GroupName = "弾の見た目", Name = "サイズブレ", Description = "弾ごとの大きさのランダムな揺らぎ (±倍率)。")]
     [AnimationSlider("F2", "倍", -1, 1)]
     public Animation ScaleJitter => MainEmitter.ScaleJitter;
 
@@ -295,7 +295,7 @@ public class DanmakuShapeParameter : ShapeParameterBase
     [AnimationSlider("F2", "倍/秒", -2, 2)]
     public Animation ScaleVelocity => MainEmitter.ScaleVelocity;
 
-    [Display(GroupName = "弾の見た目", Name = "進行方向に向ける", Description = "弾が飛んでいく向きに合わせて弾の向き・画像を回転させます。")]
+    [Display(GroupName = "弾の見た目", Name = "弾向き追従", Description = "弾が飛んでいく向きに合わせて弾の向き・画像を回転させます。")]
     [ToggleSlider]
     public bool AlignToDirection
     {
@@ -303,7 +303,7 @@ public class DanmakuShapeParameter : ShapeParameterBase
         set => MainEmitter.AlignToDirection = value;
     }
 
-    [Display(GroupName = "弾の見た目", Name = "着色モード")]
+    [Display(GroupName = "弾の見た目", Name = "着色モード", Description = "単色・グラデーション・虹色・パレット・ランダムから選択します。")]
     [EnumComboBox]
     public ColorMode ColorMode
     {
@@ -311,7 +311,7 @@ public class DanmakuShapeParameter : ShapeParameterBase
         set => MainEmitter.ColorMode = value;
     }
 
-    [Display(GroupName = "弾の見た目", Name = "メイン色 / ティント色")]
+    [Display(GroupName = "弾の見た目", Name = "メイン色", Description = "弾の基本色、またはカスタム画像への着色 (ティント) 色。")]
     [ColorPicker]
     public Color PrimaryColor
     {
@@ -319,7 +319,7 @@ public class DanmakuShapeParameter : ShapeParameterBase
         set => MainEmitter.PrimaryColor = value;
     }
 
-    [Display(GroupName = "弾の見た目", Name = "サブ色 (グラデーション用)")]
+    [Display(GroupName = "弾の見た目", Name = "サブ色", Description = "「グラデーション」選択時の終端色。")]
     [ColorPicker]
     public Color SecondaryColor
     {
@@ -327,15 +327,15 @@ public class DanmakuShapeParameter : ShapeParameterBase
         set => MainEmitter.SecondaryColor = value;
     }
 
-    [Display(GroupName = "弾の見た目", Name = "色相の速度", Description = "「虹色」のときの色の流れる速さ。")]
+    [Display(GroupName = "弾の見た目", Name = "虹色速度", Description = "「虹色」選択時の色が流れる回転速度 (度/秒)。")]
     [AnimationSlider("F0", "度/秒", -720, 720)]
     public Animation HueVelocity => MainEmitter.HueVelocity;
 
-    [Display(GroupName = "弾の見た目", Name = "弾ごとの色相差")]
+    [Display(GroupName = "弾の見た目", Name = "弾毎の色差", Description = "way ごとにずらす色相の差 (度)。")]
     [AnimationSlider("F1", "度", -180, 180)]
     public Animation HueStep => MainEmitter.HueStep;
 
-    [Display(GroupName = "弾の見た目", Name = "加算合成 (発光)")]
+    [Display(GroupName = "弾の見た目", Name = "加算発光", Description = "東方風の光る弾 (加算合成グロー) にします。")]
     [ToggleSlider]
     public bool Additive
     {
@@ -343,35 +343,35 @@ public class DanmakuShapeParameter : ShapeParameterBase
         set => MainEmitter.Additive = value;
     }
 
-    [Display(GroupName = "弾の見た目", Name = "グロー発光強度")]
+    [Display(GroupName = "弾の見た目", Name = "発光強度", Description = "加算グローの輝度倍率。")]
     [AnimationSlider("F2", "倍", 0, 3)]
     public Animation GlowIntensity => MainEmitter.GlowIntensity;
 
-    [Display(GroupName = "弾の見た目", Name = "弾の不透明度")]
+    [Display(GroupName = "弾の見た目", Name = "不透明度", Description = "弾の濃さ (0.0 で透明、1.0 で完全不透明)。")]
     [AnimationSlider("F2", "", -1, 1)]
     public Animation Opacity => MainEmitter.Opacity;
 
-    [Display(GroupName = "弾の見た目", Name = "フェードイン")]
+    [Display(GroupName = "弾の見た目", Name = "フェードイン", Description = "発生時に透明から浮かび上がる秒数。")]
     [AnimationSlider("F2", "秒", 0, 1)]
     public Animation FadeInDuration => MainEmitter.FadeInDuration;
 
-    [Display(GroupName = "弾の見た目", Name = "フェードアウト")]
+    [Display(GroupName = "弾の見た目", Name = "フェードアウト", Description = "消滅時に透明へと消える秒数。")]
     [AnimationSlider("F2", "秒", 0, 2)]
     public Animation FadeOutDuration => MainEmitter.FadeOutDuration;
 
-    [Display(GroupName = "弾の見た目", Name = "残像の長さ")]
+    [Display(GroupName = "弾の見た目", Name = "残像数", Description = "弾の後ろに残す軌跡スプライトの個数。0 で残像なし。")]
     [AnimationSlider("F0", "個", 0, 32)]
     public Animation TrailLength => MainEmitter.TrailLength;
 
-    [Display(GroupName = "弾の見た目", Name = "残像の間隔")]
+    [Display(GroupName = "弾の見た目", Name = "残像間隔", Description = "残像を記録・配置する時間間隔 (秒)。")]
     [AnimationSlider("F3", "秒", 0, 0.2)]
     public Animation TrailInterval => MainEmitter.TrailInterval;
 
-    [Display(GroupName = "弾の見た目", Name = "残像のフェード")]
+    [Display(GroupName = "弾の見た目", Name = "残像濃度", Description = "残像の末端に向かって減衰する不透明度。")]
     [AnimationSlider("F2", "", 0, 1)]
     public Animation TrailFade => MainEmitter.TrailFade;
 
-    [Display(GroupName = "弾の見た目", Name = "残像の縮小")]
+    [Display(GroupName = "弾の見た目", Name = "残像サイズ", Description = "残像の末端に向かって変化するスケール倍率。")]
     [AnimationSlider("F2", "倍", -1.5, 1.5)]
     public Animation TrailScale => MainEmitter.TrailScale;
 
@@ -379,15 +379,15 @@ public class DanmakuShapeParameter : ShapeParameterBase
     // 弾の物理
     // =====================================================================
 
-    [Display(GroupName = "弾の物理", Name = "弾速")]
+    [Display(GroupName = "弾の物理", Name = "初速", Description = "弾が発射された瞬間の基本スピード (px/秒)。")]
     [AnimationSlider("F0", "px/秒", -900, 900)]
     public Animation Speed => MainEmitter.Speed;
 
-    [Display(GroupName = "弾の物理", Name = "初速ゆらぎ")]
+    [Display(GroupName = "弾の物理", Name = "初速ブレ", Description = "初速のランダムな揺らぎ (±px/秒)。")]
     [AnimationSlider("F0", "px/秒", -300, 300)]
     public Animation SpeedJitter => MainEmitter.SpeedJitter;
 
-    [Display(GroupName = "弾の物理", Name = "弾ごとの速度差")]
+    [Display(GroupName = "弾の物理", Name = "弾毎の速度差", Description = "n-way の外側と内側でつける速度差。")]
     [AnimationSlider("F1", "px/秒", -50, 50)]
     public Animation SpeedStep => MainEmitter.SpeedStep;
 
@@ -395,43 +395,43 @@ public class DanmakuShapeParameter : ShapeParameterBase
     [AnimationSlider("F1", "px/秒²", -400, 400)]
     public Animation Acceleration => MainEmitter.Acceleration;
 
-    [Display(GroupName = "弾の物理", Name = "角速度 (カーブ)", Description = "弾の進行方向を曲げる速度。正で時計回り。")]
+    [Display(GroupName = "弾の物理", Name = "カーブ速度", Description = "弾の進行方向を曲げる角速度。正で時計回り。")]
     [AnimationSlider("F1", "度/秒", -360, 360)]
     public Animation AngularVelocity => MainEmitter.AngularVelocity;
 
-    [Display(GroupName = "弾の物理", Name = "旋回ゆらぎ")]
+    [Display(GroupName = "弾の物理", Name = "カーブブレ", Description = "曲がる強さのランダムな揺らぎ (±度/秒)。")]
     [AnimationSlider("F1", "度/秒", -180, 180)]
     public Animation AngularVelocityJitter => MainEmitter.AngularVelocityJitter;
 
-    [Display(GroupName = "弾の物理", Name = "減速", Description = "1 秒後に残る速度の割合。1 で減速なし。0 で瞬時に静止。")]
+    [Display(GroupName = "弾の物理", Name = "減速割合", Description = "空気抵抗。1 秒後に残る速度の割合。1.0 で減速なし。")]
     [AnimationSlider("F2", "", -1, 1)]
     public Animation Damping => MainEmitter.Damping;
 
-    [Display(GroupName = "弾の物理", Name = "最低速度")]
+    [Display(GroupName = "弾の物理", Name = "最低速度", Description = "減速時の速度の下限リミッター。")]
     [AnimationSlider("F0", "px/秒", -3000, 3000)]
     public Animation MinSpeed => MainEmitter.MinSpeed;
 
-    [Display(GroupName = "弾の物理", Name = "最高速度")]
+    [Display(GroupName = "弾の物理", Name = "最高速度", Description = "加速時の速度の上限リミッター。")]
     [AnimationSlider("F0", "px/秒", -3000, 3000)]
     public Animation MaxSpeed => MainEmitter.MaxSpeed;
 
-    [Display(GroupName = "弾の物理", Name = "重力", Description = "正で下向きの加速度。")]
+    [Display(GroupName = "弾の物理", Name = "重力", Description = "正で下向きにかかる重力加速度。")]
     [AnimationSlider("F0", "px/秒²", -600, 600)]
     public Animation Gravity => MainEmitter.Gravity;
 
-    [Display(GroupName = "弾の物理", Name = "風", Description = "正で右向きの加速度。")]
+    [Display(GroupName = "弾の物理", Name = "風", Description = "正で右向きにかかる横風加速度。")]
     [AnimationSlider("F0", "px/秒²", -600, 600)]
     public Animation Wind => MainEmitter.Wind;
 
-    [Display(GroupName = "弾の物理", Name = "弾の寿命", Description = "0 で画面外に出るまで存続。")]
+    [Display(GroupName = "弾の物理", Name = "弾の寿命", Description = "弾が存在できる秒数。0 で画面外に出るまで存続。")]
     [AnimationSlider("F2", "秒", 0, 20)]
     public Animation Lifetime => MainEmitter.Lifetime;
 
-    [Display(GroupName = "弾の物理", Name = "寿命ゆらぎ")]
+    [Display(GroupName = "弾の物理", Name = "寿命ブレ", Description = "寿命のランダムな揺らぎ (±秒)。")]
     [AnimationSlider("F2", "秒", -5, 5)]
     public Animation LifetimeJitter => MainEmitter.LifetimeJitter;
 
-    [Display(GroupName = "弾の物理", Name = "自転速度")]
+    [Display(GroupName = "弾の物理", Name = "自転速度", Description = "弾自体のスプライト自転速度 (度/秒)。")]
     [AnimationSlider("F0", "度/秒", -720, 720)]
     public Animation RotationVelocity => MainEmitter.RotationVelocity;
 
@@ -439,7 +439,7 @@ public class DanmakuShapeParameter : ShapeParameterBase
     // ホーミング (誘導弾)
     // =====================================================================
 
-    [Display(GroupName = "ホーミング", Name = "ホーミング有効")]
+    [Display(GroupName = "ホーミング", Name = "ホーミング", Description = "ターゲット (自機) を追いかける誘導弾にします。")]
     [ToggleSlider]
     public bool HomingEnabled
     {
@@ -447,15 +447,15 @@ public class DanmakuShapeParameter : ShapeParameterBase
         set => MainEmitter.HomingEnabled = value;
     }
 
-    [Display(GroupName = "ホーミング", Name = "旋回性能", Description = "正で自機を追尾、負で自機から逃げるように反発旋回します。")]
+    [Display(GroupName = "ホーミング", Name = "追尾力", Description = "正で自機を追尾、負で自機から逃げるように反発旋回します。")]
     [AnimationSlider("F0", "度/秒", -720, 720)]
     public Animation HomingTurnRate => MainEmitter.HomingTurnRate;
 
-    [Display(GroupName = "ホーミング", Name = "誘導時間")]
+    [Display(GroupName = "ホーミング", Name = "追尾時間", Description = "0 で寿命いっぱい追尾します。")]
     [AnimationSlider("F2", "秒", 0, 10)]
     public Animation HomingDuration => MainEmitter.HomingDuration;
 
-    [Display(GroupName = "ホーミング", Name = "誘導開始遅延")]
+    [Display(GroupName = "ホーミング", Name = "追尾遅延", Description = "発射から追尾を開始するまでの時間 (秒)。")]
     [AnimationSlider("F2", "秒", 0, 3)]
     public Animation HomingDelay => MainEmitter.HomingDelay;
 
@@ -463,7 +463,7 @@ public class DanmakuShapeParameter : ShapeParameterBase
     // 弾の分裂
     // =====================================================================
 
-    [Display(GroupName = "弾の分裂", Name = "分裂を有効化")]
+    [Display(GroupName = "弾の分裂", Name = "分裂", Description = "一定時間後に弾を多方向へ分裂させます。")]
     [ToggleSlider]
     public bool SplitEnabled
     {
@@ -471,27 +471,27 @@ public class DanmakuShapeParameter : ShapeParameterBase
         set => MainEmitter.SplitEnabled = value;
     }
 
-    [Display(GroupName = "弾の分裂", Name = "分裂までの時間")]
+    [Display(GroupName = "弾の分裂", Name = "分裂時間", Description = "発射から分裂するまでの遅延秒数。")]
     [AnimationSlider("F2", "秒", 0, 5)]
     public Animation SplitDelay => MainEmitter.SplitDelay;
 
-    [Display(GroupName = "弾の分裂", Name = "分裂数")]
+    [Display(GroupName = "弾の分裂", Name = "分裂数", Description = "1 発の弾から発生する子弾の個数。")]
     [AnimationSlider("F0", "個", 0, 32)]
     public Animation SplitCount => MainEmitter.SplitCount;
 
-    [Display(GroupName = "弾の分裂", Name = "分裂拡散角")]
+    [Display(GroupName = "弾の分裂", Name = "分裂拡散角", Description = "子弾を広げる扇の角度。360 で全方位。")]
     [AnimationSlider("F1", "度", -360, 360)]
     public Animation SplitSpread => MainEmitter.SplitSpread;
 
-    [Display(GroupName = "弾の分裂", Name = "分裂初速")]
+    [Display(GroupName = "弾の分裂", Name = "分裂速度", Description = "分裂直後の子弾の初速 (px/秒)。")]
     [AnimationSlider("F0", "px/秒", -800, 800)]
     public Animation SplitSpeed => MainEmitter.SplitSpeed;
 
-    [Display(GroupName = "弾の分裂", Name = "分裂サイズ倍率")]
+    [Display(GroupName = "弾の分裂", Name = "分裂サイズ", Description = "親弾に対する子弾の大きさ倍率。")]
     [AnimationSlider("F2", "倍", -2, 2)]
     public Animation SplitScaleFactor => MainEmitter.SplitScaleFactor;
 
-    [Display(GroupName = "弾の分裂", Name = "親弾を消滅させる")]
+    [Display(GroupName = "弾の分裂", Name = "親弾消滅", Description = "分裂時に元の親弾を消去します。")]
     [ToggleSlider]
     public bool SplitDestroyParent
     {
@@ -499,7 +499,7 @@ public class DanmakuShapeParameter : ShapeParameterBase
         set => MainEmitter.SplitDestroyParent = value;
     }
 
-    [Display(GroupName = "弾の分裂", Name = "多段分裂の回数")]
+    [Display(GroupName = "弾の分裂", Name = "多段世代数", Description = "2 以上でさらに分裂を繰り返します。")]
     [AnimationSlider("F0", "世代", 0, 5)]
     public Animation SplitMaxGeneration => MainEmitter.SplitMaxGeneration;
 
@@ -507,7 +507,7 @@ public class DanmakuShapeParameter : ShapeParameterBase
     // 外部スクリプト
     // =====================================================================
 
-    [Display(GroupName = "外部スクリプト", Name = "データ形式")]
+    [Display(GroupName = "外部スクリプト", Name = "形式", Description = "内部パターン・JSON・BulletML・Lua から選択。")]
     [EnumComboBox]
     public DanmakuSourceMode SourceMode
     {
@@ -515,7 +515,7 @@ public class DanmakuShapeParameter : ShapeParameterBase
         set => MainEmitter.SourceMode = value;
     }
 
-    [Display(GroupName = "外部スクリプト", Name = "スクリプトファイル")]
+    [Display(GroupName = "外部スクリプト", Name = "外部ファイル", Description = "読み込む外部スクリプトのパス。")]
     [FileSelector(FileGroupType.None)]
     public string SourcePath
     {
@@ -523,7 +523,7 @@ public class DanmakuShapeParameter : ShapeParameterBase
         set => MainEmitter.SourcePath = value;
     }
 
-    [Display(GroupName = "外部スクリプト", Name = "スクリプト本文")]
+    [Display(GroupName = "外部スクリプト", Name = "コード編集", Description = "直接スクリプトコードを記述・編集できます。")]
     [TextEditor(AcceptsReturn = true, PropertyEditorSize = PropertyEditorSize.FullWidth)]
     public string SourceText
     {
@@ -531,15 +531,15 @@ public class DanmakuShapeParameter : ShapeParameterBase
         set => MainEmitter.SourceText = value;
     }
 
-    [Display(GroupName = "外部スクリプト", Name = "BulletML 速度換算")]
+    [Display(GroupName = "外部スクリプト", Name = "BulletML速度", Description = "BulletML の speed 1.0 あたりの px/秒 換算値。")]
     [AnimationSlider("F0", "px/秒", -240, 240)]
     public Animation ScriptSpeedScale => MainEmitter.ScriptSpeedScale;
 
-    [Display(GroupName = "外部スクリプト", Name = "難易度 ($rank)")]
+    [Display(GroupName = "外部スクリプト", Name = "難易度(rank)", Description = "BulletML / Lua スクリプト内の $rank パラメータ (0.0〜1.0)。")]
     [AnimationSlider("F2", "", -1, 1)]
     public Animation ScriptRank => MainEmitter.ScriptRank;
 
-    [Display(GroupName = "外部スクリプト", Name = "繰り返し")]
+    [Display(GroupName = "外部スクリプト", Name = "ループ再生", Description = "スクリプト終了時に先頭から繰り返し実行します。")]
     [ToggleSlider]
     public bool ScriptLoop
     {
@@ -551,7 +551,7 @@ public class DanmakuShapeParameter : ShapeParameterBase
     // 当たり判定 (被弾シミュレーション & 自機設定)
     // =====================================================================
 
-    [Display(GroupName = "当たり判定", Name = "当たり判定を\n有効化", Description = "自機と敵弾との被弾判定を行います。")]
+    [Display(GroupName = "当たり判定", Name = "当たり判定", Description = "自機と敵弾との被弾判定を行います。")]
     [ToggleSlider]
     public bool CollisionEnabled { get => collisionEnabled; set => Set(ref collisionEnabled, value); }
     private bool collisionEnabled;
@@ -575,36 +575,36 @@ public class DanmakuShapeParameter : ShapeParameterBase
 
     public bool HasCustomTargetImage => !string.IsNullOrWhiteSpace(TargetImagePath);
 
-    [Display(GroupName = "当たり判定", Name = "自機画像\nサイズ", Description = "自機画像の拡大倍率。負の値で左右/上下反転。")]
+    [Display(GroupName = "当たり判定", Name = "自機サイズ", Description = "自機画像の拡大倍率。負の値で左右/上下反転。")]
     [AnimationSlider("F2", "倍", -10, 10)]
     public Animation TargetScale { get; } = new Animation(1.0, -1000, 1000);
 
-    [Display(GroupName = "当たり判定", Name = "自機画像の\n回転", Description = "自機画像の回転角度。")]
+    [Display(GroupName = "当たり判定", Name = "自機回転", Description = "自機画像の回転角度。")]
     [AnimationSlider("F1", "度", -360, 360)]
     public Animation TargetRotation { get; } = new Animation(0, -100000, 100000);
 
-    [Display(GroupName = "当たり判定", Name = "自機画像の\n不透明度")]
+    [Display(GroupName = "当たり判定", Name = "自機濃度", Description = "自機画像の不透明度 (0.0〜1.0)。")]
     [AnimationSlider("F2", "", -1, 1)]
     public Animation TargetOpacity { get; } = new Animation(1.0, -1, 1);
 
-    [Display(GroupName = "当たり判定", Name = "自機判定半径\n(喰らい判定)", Description = "自機の被弾判定半径 (喰らい判定)。0 で無敵になります。")]
+    [Display(GroupName = "当たり判定", Name = "自機判定半径", Description = "自機の被弾判定半径 (喰らい判定)。0 で無敵になります。")]
     [AnimationSlider("F1", "px", -200, 200)]
     public Animation TargetRadius { get; } = new Animation(30, -10000, 10000);
 
-    [Display(GroupName = "当たり判定", Name = "エネミー\n被弾判定", Description = "エネミー (ボス) への自機ショット被弾判定を行います。")]
+    [Display(GroupName = "当たり判定", Name = "ボス判定有効", Description = "エネミー (ボス) への自機ショット被弾判定を行います。")]
     [ToggleSlider]
     public bool EnemyHitEnabled { get => enemyHitEnabled; set => Set(ref enemyHitEnabled, value); }
     private bool enemyHitEnabled = true;
 
-    [Display(GroupName = "当たり判定", Name = "エネミー\n判定半径", Description = "エネミーの被弾判定半径 (px)。")]
+    [Display(GroupName = "当たり判定", Name = "ボス判定半径", Description = "エネミーの被弾判定半径 (px)。")]
     [AnimationSlider("F1", "px", -500, 500)]
     public Animation EnemyRadius { get; } = new Animation(40, -10000, 10000);
 
-    [Display(GroupName = "当たり判定", Name = "弾の判定半径")]
+    [Display(GroupName = "当たり判定", Name = "敵弾判定半径", Description = "エミッターから発射される敵弾の被弾判定半径 (px)。0 で判定なし。")]
     [AnimationSlider("F1", "px", -40, 40)]
     public Animation HitRadius => MainEmitter.HitRadius;
 
-    [Display(GroupName = "当たり判定", Name = "被弾時に\n弾を消す")]
+    [Display(GroupName = "当たり判定", Name = "当たると消滅", Description = "被弾時に敵弾を消去します。")]
     [ToggleSlider]
     public bool DestroyOnHit
     {
@@ -612,24 +612,24 @@ public class DanmakuShapeParameter : ShapeParameterBase
         set => MainEmitter.DestroyOnHit = value;
     }
 
-    [Display(GroupName = "当たり判定", Name = "被弾エフェクト\n(飛沫)")]
+    [Display(GroupName = "当たり判定", Name = "被弾スパーク", Description = "被弾時に飛沫エフェクトを発生させます。")]
     [ToggleSlider]
     public bool SpawnHitEffect { get => spawnHitEffect; set => Set(ref spawnHitEffect, value); }
     private bool spawnHitEffect = true;
 
-    [Display(GroupName = "当たり判定", Name = "飛沫の数")]
+    [Display(GroupName = "当たり判定", Name = "スパーク数", Description = "被弾時に飛び散る破片の個数。")]
     [AnimationSlider("F0", "個", 0, 64)]
     public Animation HitEffectCount { get; } = new Animation(8, 0, 500);
 
-    [Display(GroupName = "当たり判定", Name = "飛沫の速度")]
+    [Display(GroupName = "当たり判定", Name = "スパーク速度", Description = "破片が飛び散る初速 (px/秒)。")]
     [AnimationSlider("F0", "px/秒", -600, 600)]
     public Animation HitEffectSpeed { get; } = new Animation(160, -100000, 100000);
 
-    [Display(GroupName = "当たり判定", Name = "飛沫の寿命")]
+    [Display(GroupName = "当たり判定", Name = "スパーク寿命", Description = "破片エフェクトの表示秒数。")]
     [AnimationSlider("F2", "秒", 0, 2)]
     public Animation HitEffectLifetime { get; } = new Animation(0.35, 0, 1000);
 
-    [Display(GroupName = "当たり判定", Name = "自機マーカー\nを表示", Description = "自機画像や当たり判定枠 (喰らい判定) を描画します。")]
+    [Display(GroupName = "当たり判定", Name = "自機マーカー", Description = "自機画像や当たり判定枠 (喰らい判定) を描画します。")]
     [ToggleSlider]
     public bool ShowTargetMarker { get => showTargetMarker; set => Set(ref showTargetMarker, value); }
     private bool showTargetMarker = true;
@@ -638,12 +638,12 @@ public class DanmakuShapeParameter : ShapeParameterBase
     // 自機ショット
     // =====================================================================
 
-    [Display(GroupName = "自機ショット", Name = "自機射撃を\n有効化", Description = "自機 (ターゲット) からショットを発射します。")]
+    [Display(GroupName = "自機ショット", Name = "自機射撃", Description = "自機 (ターゲット) からショットを発射します。")]
     [ToggleSlider]
     public bool PlayerShotEnabled { get => playerShotEnabled; set => Set(ref playerShotEnabled, value); }
     private bool playerShotEnabled;
 
-    [Display(GroupName = "自機ショット", Name = "ショット種別")]
+    [Display(GroupName = "自機ショット", Name = "ショット種別", Description = "正面集中・ワイド・多重・ホーミング・全方位から選択。")]
     [EnumComboBox]
     public PlayerShotType PlayerShotType { get => playerShotType; set => Set(ref playerShotType, value); }
     private PlayerShotType playerShotType = PlayerShotType.FocusStraight;
@@ -659,61 +659,61 @@ public class DanmakuShapeParameter : ShapeParameterBase
 
     public bool HasCustomPlayerShotImage => !string.IsNullOrWhiteSpace(PlayerShotImagePath);
 
-    [Display(GroupName = "自機ショット", Name = "発射数\n(Way数)", Description = "同時に発射する弾数。0 で射撃休止。")]
+    [Display(GroupName = "自機ショット", Name = "自機Way数", Description = "同時に発射する弾数。0 で射撃休止。")]
     [AnimationSlider("F0", "本", -16, 128)]
     public Animation PlayerShotWay { get; } = new Animation(2, -128, 128);
 
-    [Display(GroupName = "自機ショット", Name = "連射間隔", Description = "発射間隔 (秒)。0.08 で秒間約 12 回連射。0 以下で射撃休止。")]
+    [Display(GroupName = "自機ショット", Name = "射撃間隔", Description = "発射間隔 (秒)。0.08 で秒間約 12 回連射。0 以下で射撃休止。")]
     [AnimationSlider("F3", "秒", -1.0, 10.0)]
     public Animation PlayerShotInterval { get; } = new Animation(0.08, -100.0, 100.0);
 
-    [Display(GroupName = "自機ショット", Name = "弾速")]
+    [Display(GroupName = "自機ショット", Name = "ショット弾速", Description = "自機弾の飛行スピード (px/秒)。")]
     [AnimationSlider("F0", "px/秒", -3000, 3000)]
     public Animation PlayerShotSpeed { get; } = new Animation(1200, -10000, 10000);
 
-    [Display(GroupName = "自機ショット", Name = "拡散角度", Description = "発射角の広がり。0 で平行に並んで直進します。")]
+    [Display(GroupName = "自機ショット", Name = "ショット拡散角", Description = "発射角の広がり。0 で平行に並んで直進します。")]
     [AnimationSlider("F1", "度", -360, 360)]
     public Animation PlayerShotSpread { get; } = new Animation(15, -360, 360);
 
-    [Display(GroupName = "自機ショット", Name = "弾の大きさ")]
+    [Display(GroupName = "自機ショット", Name = "ショットサイズ", Description = "自機弾の大きさ倍率。")]
     [AnimationSlider("F2", "倍", -10, 10)]
     public Animation PlayerShotScale { get; } = new Animation(1.0, -1000, 1000);
 
-    [Display(GroupName = "自機ショット", Name = "進行方向に\n向ける")]
+    [Display(GroupName = "自機ショット", Name = "弾向き追従", Description = "自機弾の進行方向に向きを合わせます。")]
     [ToggleSlider]
     public bool PlayerShotAlignToDirection { get => playerShotAlignToDirection; set => Set(ref playerShotAlignToDirection, value); }
     private bool playerShotAlignToDirection = true;
 
-    [Display(GroupName = "自機ショット", Name = "弾の色")]
+    [Display(GroupName = "自機ショット", Name = "ショット色", Description = "自機弾の色。")]
     [ColorPicker]
     public Color PlayerShotColor { get => playerShotColor; set => Set(ref playerShotColor, value); }
     private Color playerShotColor = Color.FromArgb(255, 255, 255, 255);
 
-    [Display(GroupName = "自機ショット", Name = "加算合成\n(発光)")]
+    [Display(GroupName = "自機ショット", Name = "ショット発光", Description = "自機弾を加算合成で発光させます。")]
     [ToggleSlider]
     public bool PlayerShotAdditive { get => playerShotAdditive; set => Set(ref playerShotAdditive, value); }
     private bool playerShotAdditive = true;
 
-    [Display(GroupName = "自機ショット", Name = "エネミー\n自動照準", Description = "ボスの方向へ自動で狙いを定めて発射します。")]
+    [Display(GroupName = "自機ショット", Name = "自動照準", Description = "ボスの方向へ自動で狙いを定めて発射します。")]
     [ToggleSlider]
     public bool PlayerShotAutoAim { get => playerShotAutoAim; set => Set(ref playerShotAutoAim, value); }
     private bool playerShotAutoAim;
 
-    [Display(GroupName = "自機ショット", Name = "判定半径")]
+    [Display(GroupName = "自機ショット", Name = "ショット判定", Description = "自機弾の被弾判定半径 (px)。")]
     [AnimationSlider("F1", "px", -100, 500)]
     public Animation PlayerShotHitRadius { get; } = new Animation(12, -1000, 1000);
 
-    [Display(GroupName = "自機ショット", Name = "被弾時に\n消滅")]
+    [Display(GroupName = "自機ショット", Name = "命中時消滅", Description = "敵に命中した自機弾を消滅させます。")]
     [ToggleSlider]
     public bool PlayerShotDestroyOnHit { get => playerShotDestroyOnHit; set => Set(ref playerShotDestroyOnHit, value); }
     private bool playerShotDestroyOnHit = true;
 
-    [Display(GroupName = "自機ショット", Name = "敵弾を相殺\n・消去", Description = "自機ショットが敵弾と接触した際に敵弾を消滅させます。")]
+    [Display(GroupName = "自機ショット", Name = "敵弾相殺", Description = "自機ショットが敵弾と接触した際に敵弾を消滅させます。")]
     [ToggleSlider]
     public bool PlayerShotCancelEnemyBullets { get => playerShotCancelEnemyBullets; set => Set(ref playerShotCancelEnemyBullets, value); }
     private bool playerShotCancelEnemyBullets;
 
-    [Display(GroupName = "自機ショット", Name = "対象\nチャンネル", Description = "当たり判定・自動照準の相手となる弾幕アイテムのチャンネル番号 (-1 で全チャンネル対象)。")]
+    [Display(GroupName = "自機ショット", Name = "対象ch", Description = "当たり判定・自動照準の相手となる弾幕アイテムのチャンネル番号 (-1 で全チャンネル対象)。")]
     [TextBoxSlider("F0", "ch", -1, 255)]
     public int PlayerShotTargetChannel { get => playerShotTargetChannel; set => Set(ref playerShotTargetChannel, value); }
     private int playerShotTargetChannel = -1;
@@ -722,21 +722,21 @@ public class DanmakuShapeParameter : ShapeParameterBase
     // ボス体力バー (HP ゲージ)
     // =====================================================================
 
-    [Display(GroupName = "体力バー", Name = "体力バーを\n表示する")]
+    [Display(GroupName = "体力バー", Name = "体力バー", Description = "ボス体力バーを表示します。")]
     [ToggleSlider]
     public bool HpBarEnabled { get => hpBarEnabled; set => Set(ref hpBarEnabled, value); }
     private bool hpBarEnabled;
 
-    [Display(GroupName = "体力バー", Name = "表示スタイル")]
+    [Display(GroupName = "体力バー", Name = "ゲージ形状", Description = "円形リング・画面上部バーから選択。")]
     [EnumComboBox]
     public HpBarStyle HpBarStyle { get => hpBarStyle; set => Set(ref hpBarStyle, value); }
     private HpBarStyle hpBarStyle = HpBarStyle.CircularRing;
 
-    [Display(GroupName = "体力バー", Name = "現在HP\n(割合)", Description = "タイムラインで 100% から 0% へアニメーション可能です。")]
+    [Display(GroupName = "体力バー", Name = "現在HP", Description = "現在のHP残量割合 (100%〜0%)。タイムラインでアニメーション可能です。")]
     [AnimationSlider("F1", "%", 0, 100)]
     public Animation BossHp { get; } = new Animation(100.0, 0, 100);
 
-    [Display(GroupName = "体力バー", Name = "最大HP\n(実数値)")]
+    [Display(GroupName = "体力バー", Name = "最大HP", Description = "ボスの最大HP実数値。")]
     [TextBoxSlider("F0", "HP", 1, 1000000)]
     public double BossMaxHp { get => bossMaxHp; set => Set(ref bossMaxHp, value); }
     private double bossMaxHp = 1000.0;
@@ -746,7 +746,7 @@ public class DanmakuShapeParameter : ShapeParameterBase
     public double DamagePerHit { get => damagePerHit; set => Set(ref damagePerHit, value); }
     private double damagePerHit = 15.0;
 
-    [Display(GroupName = "体力バー", Name = "円形ゲージ\n半径", Description = "円形ゲージの半径 (px)。")]
+    [Display(GroupName = "体力バー", Name = "リング半径", Description = "円形ゲージの半径 (px)。")]
     [AnimationSlider("F0", "px", 10, 800)]
     public Animation HpBarRadius { get; } = new Animation(140, -10000, 10000);
 
@@ -758,50 +758,50 @@ public class DanmakuShapeParameter : ShapeParameterBase
     [AnimationSlider("F0", "px", 2, 100)]
     public Animation HpBarHeight { get; } = new Animation(16, -10000, 10000);
 
-    [Display(GroupName = "体力バー", Name = "バー位置 X")]
+    [Display(GroupName = "体力バー", Name = "バー X", Description = "横長バーの X 座標。")]
     [AnimationSlider("F0", "px", -1920, 1920)]
     public Animation HpBarX { get; } = new Animation(0, -100000, 100000);
 
-    [Display(GroupName = "体力バー", Name = "バー位置 Y", Description = "画面上部バーの Y 座標 (通常 -480 付近)。")]
+    [Display(GroupName = "体力バー", Name = "バー Y", Description = "画面上部バーの Y 座標 (通常 -480 付近)。")]
     [AnimationSlider("F0", "px", -1080, 1080)]
     public Animation HpBarY { get; } = new Animation(-480, -100000, 100000);
 
-    [Display(GroupName = "体力バー", Name = "ゲージ線の\n太さ")]
+    [Display(GroupName = "体力バー", Name = "ゲージ太さ", Description = "ゲージ枠線の太さ (px)。")]
     [TextBoxSlider("F1", "px", 1, 50)]
     public double HpBarThickness { get => hpBarThickness; set => Set(ref hpBarThickness, value); }
     private double hpBarThickness = 6.0;
 
-    [Display(GroupName = "体力バー", Name = "通常HPの色")]
+    [Display(GroupName = "体力バー", Name = "通常色", Description = "通常時のゲージ色。")]
     [ColorPicker]
     public Color HpBarColor { get => hpBarColor; set => Set(ref hpBarColor, value); }
     private Color hpBarColor = Color.FromArgb(255, 60, 220, 100);
 
-    [Display(GroupName = "体力バー", Name = "ピンチ時の\n警告色", Description = "HP 25% 以下でこの色に変化します。")]
+    [Display(GroupName = "体力バー", Name = "警告色", Description = "HP 25% 以下の危険警告色。")]
     [ColorPicker]
     public Color HpBarDangerColor { get => hpBarDangerColor; set => Set(ref hpBarDangerColor, value); }
     private Color hpBarDangerColor = Color.FromArgb(255, 240, 50, 50);
 
-    [Display(GroupName = "体力バー", Name = "被弾追従\nラグバー色")]
+    [Display(GroupName = "体力バー", Name = "ラグ色", Description = "被弾追従ラグバーの色。")]
     [ColorPicker]
     public Color HpBarDamageLagColor { get => hpBarDamageLagColor; set => Set(ref hpBarDamageLagColor, value); }
     private Color hpBarDamageLagColor = Color.FromArgb(230, 255, 230, 80);
 
-    [Display(GroupName = "体力バー", Name = "背景枠の色")]
+    [Display(GroupName = "体力バー", Name = "背景色", Description = "ゲージ背景枠の色。")]
     [ColorPicker]
     public Color HpBarBackgroundColor { get => hpBarBackgroundColor; set => Set(ref hpBarBackgroundColor, value); }
     private Color hpBarBackgroundColor = Color.FromArgb(180, 25, 25, 40);
 
-    [Display(GroupName = "体力バー", Name = "スペルカード\n区切り数", Description = "ゲージ上に表示するフェーズ区切り目 (1〜10)。")]
+    [Display(GroupName = "体力バー", Name = "星マーク数", Description = "ゲージ上に表示するフェーズ区切り目 (1〜10)。")]
     [TextBoxSlider("F0", "段階", 1, 10)]
     public int HpBarPhaseCount { get => hpBarPhaseCount; set => Set(ref hpBarPhaseCount, value); }
     private int hpBarPhaseCount = 3;
 
-    [Display(GroupName = "体力バー", Name = "発光グロー\n効果")]
+    [Display(GroupName = "体力バー", Name = "発光グロー", Description = "ゲージの発光グロー効果。")]
     [ToggleSlider]
     public bool HpBarGlow { get => hpBarGlow; set => Set(ref hpBarGlow, value); }
     private bool hpBarGlow = true;
 
-    [Display(GroupName = "体力バー", Name = "不透明度")]
+    [Display(GroupName = "体力バー", Name = "ゲージ濃度", Description = "ゲージ全体の不透明度 (0〜100%)。")]
     [AnimationSlider("F1", "%", 0, 100)]
     public Animation HpBarOpacity { get; } = new Animation(100.0, 0, 100);
 
@@ -809,7 +809,7 @@ public class DanmakuShapeParameter : ShapeParameterBase
     // 全体設定
     // =====================================================================
 
-    [Display(GroupName = "全体", Name = "乱数シード", Description = "同じシードなら常に同じ弾幕になります。値を変えると弾のばらけ方が変わります。")]
+    [Display(GroupName = "全体", Name = "シード値", Description = "同じシードなら常に同じ弾幕になります。値を変えると弾のばらけ方が変わります。")]
     [AnimationSlider("F0", "", 0, 100000)]
     public Animation Seed { get; } = new Animation(20240101, 0, 10000000);
 
@@ -821,25 +821,25 @@ public class DanmakuShapeParameter : ShapeParameterBase
     [AnimationSlider("F2", "倍", -3, 3)]
     public Animation TimeScale { get; } = new Animation(1.0, -100, 100);
 
-    [Display(GroupName = "全体", Name = "計算の細かさ", Description = "物理計算 1 ステップの時間。小さいほど正確ですが重くなります。")]
+    [Display(GroupName = "全体", Name = "計算精度", Description = "物理計算 1 ステップの時間。小さいほど正確ですが重くなります。")]
     [EnumComboBox]
     public SimulationStep SimulationStep { get => simulationStep; set => Set(ref simulationStep, value); }
     private SimulationStep simulationStep = SimulationStep.Hz120;
 
-    [Display(GroupName = "全体", Name = "画面外の扱い")]
+    [Display(GroupName = "全体", Name = "画面外処理", Description = "画面外に出た弾の挙動 (消滅・バウンド・画面端ループ)。")]
     [EnumComboBox]
     public OutOfBoundsBehavior OutOfBounds { get => outOfBounds; set => Set(ref outOfBounds, value); }
     private OutOfBoundsBehavior outOfBounds = OutOfBoundsBehavior.Destroy;
 
-    [Display(GroupName = "全体", Name = "画面外の余裕", Description = "画面の外側にこの距離ぶん余裕を持たせ、その外へ出た弾を処理します。")]
+    [Display(GroupName = "全体", Name = "画面外余白", Description = "画面の外側にこの距離ぶん余裕を持たせ、その外へ出た弾を処理します。")]
     [AnimationSlider("F0", "px", -2000, 2000)]
     public Animation BoundsMargin { get; } = new Animation(160, -100000, 100000);
 
-    [Display(GroupName = "全体", Name = "全体の不透明度")]
+    [Display(GroupName = "全体", Name = "全体濃度", Description = "弾幕全体の不透明度 (0〜100%)。")]
     [AnimationSlider("F1", "%", -100, 100)]
     public Animation GlobalOpacity { get; } = new Animation(100, -100, 100);
 
-    [Display(GroupName = "全体", Name = "効果音チャンネル",
+    [Display(GroupName = "全体", Name = "効果音ch",
         Description = "「弾幕効果音」音声エフェクト側で同じ番号を指定すると、この弾幕に合わせて効果音が鳴ります。-1 で全チャンネル連動。")]
     [AnimationSlider("F0", "ch", -1, 255)]
     public Animation Channel { get; } = new Animation(0, -1, 255);
