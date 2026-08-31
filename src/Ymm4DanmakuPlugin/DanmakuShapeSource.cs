@@ -103,7 +103,7 @@ public sealed class DanmakuShapeSource : IShapeSource2
         LoadCustomImages();
 
         // 外部レイヤー間の相互参照（自機・ボス・ダメージ）のためにシミュレーション前にレイヤーを登録
-        Collision.DanmakuCollisionBus.RegisterLayer(this, parameter, fps, totalFrame, simulator);
+        Collision.DanmakuCollisionBus.RegisterLayer(this, parameter, fps, totalFrame);
 
         // キーフレームやスライダーの編集が一時停止中に行われても確実に最新の弾幕状態を反映するため、
         // 常に先頭から現在フレームまで確定的にシミュレーションを再現して描画する
@@ -111,6 +111,23 @@ public sealed class DanmakuShapeSource : IShapeSource2
         var simTime = ComputeSimulatedTime(frame, fps, totalFrame);
         simulator.SeekTo(simTime);
         LastBulletCount = simulator.Bullets.Count;
+
+        // シミュレーション結果のスナップショットを不変配列として公開 (他スレッドから安全に参照可能)
+        var damageSnapshot = simulator.Engine.DamageHistory.ToArray();
+        Collision.BulletCancelArea[]? cancelersSnapshot = null;
+        if (parameter.PlayerShotCancelEnemyBullets.GetValue(frame, totalFrame, fps) >= 0.5)
+        {
+            var cancelList = new List<Collision.BulletCancelArea>();
+            foreach (var bullet in simulator.Bullets)
+            {
+                if (bullet.IsPlayerShot && bullet.IsAlive && bullet.CancelEnemyBullets)
+                {
+                    cancelList.Add(new Collision.BulletCancelArea(bullet.Position, bullet.HitRadius * Math.Abs(bullet.Scale)));
+                }
+            }
+            if (cancelList.Count > 0) cancelersSnapshot = cancelList.ToArray();
+        }
+        Collision.DanmakuCollisionBus.PublishSnapshots(this, damageSnapshot, cancelersSnapshot);
 
         lastFrame = frame;
         lastFps = fps;

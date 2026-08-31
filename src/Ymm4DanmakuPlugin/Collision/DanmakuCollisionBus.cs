@@ -19,21 +19,22 @@ public sealed class DanmakuLayerRegistration
     public DanmakuShapeParameter Parameter { get; }
     public int Fps { get; set; }
     public int TotalFrame { get; set; }
-    public DanmakuSimulator? Simulator { get; set; }
+    public (double Time, double Damage, int TargetChannel)[]? DamageHistorySnapshot { get; set; }
+    public BulletCancelArea[]? CancelersSnapshot { get; set; }
 
-    public DanmakuLayerRegistration(object sourceKey, DanmakuShapeParameter parameter, int fps, int totalFrame, DanmakuSimulator? simulator)
+    public DanmakuLayerRegistration(object sourceKey, DanmakuShapeParameter parameter, int fps, int totalFrame)
     {
         SourceKey = sourceKey;
         Parameter = parameter;
         Fps = fps > 0 ? fps : 60;
         TotalFrame = Math.Max(1, totalFrame);
-        Simulator = simulator;
     }
 }
 
 /// <summary>
 /// 異なるタイムラインレイヤーに配置された弾幕図形アイテム同士を
 /// チャンネル番号で結び付け、エネミー位置、自機位置、被弾ダメージ、弾相殺を時系列で完全に同期・共有するための連絡バス。
+/// マルチスレッド並列更新（YMM4 Parallel.ForEach）に対して完全に安全。
 /// </summary>
 public static class DanmakuCollisionBus
 {
@@ -48,9 +49,9 @@ public static class DanmakuCollisionBus
     }
 
     /// <summary>
-    /// レイヤーのパラメータとシミュレータを登録・更新する。
+    /// レイヤーのパラメータを登録・更新する。
     /// </summary>
-    public static void RegisterLayer(object sourceKey, DanmakuShapeParameter parameter, int fps, int totalFrame, DanmakuSimulator? simulator)
+    public static void RegisterLayer(object sourceKey, DanmakuShapeParameter parameter, int fps, int totalFrame)
     {
         lock (Gate)
         {
@@ -58,11 +59,26 @@ public static class DanmakuCollisionBus
             {
                 reg.Fps = fps > 0 ? fps : 60;
                 reg.TotalFrame = Math.Max(1, totalFrame);
-                reg.Simulator = simulator;
             }
             else
             {
-                Registrations[sourceKey] = new DanmakuLayerRegistration(sourceKey, parameter, fps, totalFrame, simulator);
+                Registrations[sourceKey] = new DanmakuLayerRegistration(sourceKey, parameter, fps, totalFrame);
+            }
+        }
+    }
+
+    /// <summary>
+    /// シミュレーション完了後にスナップショット (ダメージ履歴・相殺領域) を公開する。
+    /// スナップショットは不変配列のため、別スレッドから同時に読まれても安全。
+    /// </summary>
+    public static void PublishSnapshots(object sourceKey, (double Time, double Damage, int TargetChannel)[]? damageHistory, BulletCancelArea[]? cancelers)
+    {
+        lock (Gate)
+        {
+            if (Registrations.TryGetValue(sourceKey, out var reg))
+            {
+                reg.DamageHistorySnapshot = damageHistory;
+                reg.CancelersSnapshot = cancelers;
             }
         }
     }
@@ -195,6 +211,7 @@ public static class DanmakuCollisionBus
 
     /// <summary>
     /// 指定した時刻 <paramref name="timeSeconds"/> までに他レイヤーの自機ショットから受けた累積ダメージを取得する。
+    /// 不変スナップショット配列から読み取るため、マルチスレッド並列実行でも完全安全。
     /// </summary>
     public static double GetExternalDamageAt(int channel, object callerKey, double timeSeconds, int fps, int totalFrame)
     {
@@ -212,17 +229,12 @@ public static class DanmakuCollisionBus
                 var targetCh = reg.Parameter.PlayerShotTargetChannel;
                 if (channel >= 0 && targetCh >= 0 && targetCh != channel) continue;
 
-                if (reg.Simulator is { } sim)
+                var snapshot = reg.DamageHistorySnapshot;
+                if (snapshot is not null)
                 {
-                    // シミュレータがまだ現在時刻まで進んでいなければ進める
-                    if (sim.CurrentTime < timeSeconds)
+                    for (var i = 0; i < snapshot.Length; i++)
                     {
-                        sim.SeekTo(timeSeconds);
-                    }
-
-                    // 履歴から timeSeconds までの被弾ダメージを合算
-                    foreach (var (hitTime, dmg, hitTargetCh) in sim.Engine.DamageHistory)
-                    {
+                        var (hitTime, dmg, hitTargetCh) = snapshot[i];
                         if (hitTime <= timeSeconds && (channel < 0 || hitTargetCh < 0 || hitTargetCh == channel))
                         {
                             total += dmg;
@@ -236,6 +248,7 @@ public static class DanmakuCollisionBus
 
     /// <summary>
     /// 敵弾が他レイヤーの自機ショット（相殺有効）によって相殺されるか判定する。
+    /// 不変スナップショット配列から読み取るため、コレクション変更例外は起きない。
     /// </summary>
     public static bool TryCancelEnemyBulletAt(int channel, object callerKey, Vec2 bulletPos, double bulletRadius)
     {
@@ -245,17 +258,17 @@ public static class DanmakuCollisionBus
             {
                 if (ReferenceEquals(key, callerKey)) continue;
 
-                if (reg.Simulator is not { } sim) continue;
-
                 var targetCh = reg.Parameter.PlayerShotTargetChannel;
                 if (channel >= 0 && targetCh >= 0 && targetCh != channel) continue;
 
-                foreach (var bullet in sim.Bullets)
+                var cancelers = reg.CancelersSnapshot;
+                if (cancelers is not null)
                 {
-                    if (bullet.IsPlayerShot && bullet.IsAlive && bullet.CancelEnemyBullets)
+                    for (var i = 0; i < cancelers.Length; i++)
                     {
-                        var r = bullet.HitRadius * Math.Abs(bullet.Scale) + bulletRadius;
-                        if (bulletPos.DistanceSquaredTo(bullet.Position) <= r * r)
+                        var c = cancelers[i];
+                        var r = c.Radius + bulletRadius;
+                        if (bulletPos.DistanceSquaredTo(c.Position) <= r * r)
                         {
                             return true;
                         }
