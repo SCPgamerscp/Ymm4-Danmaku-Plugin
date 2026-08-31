@@ -40,11 +40,6 @@ public static class DanmakuLiveWiring
         sim.Live.TargetPosition = timeSeconds =>
         {
             var frame = TimeToFrame(timeSeconds, fps, totalFrame);
-            var channel = (int)Math.Round(parameter.Channel.GetValue(frame, totalFrame, fps));
-            if (sourceKey is not null && DanmakuCollisionBus.TryGetTargetAt(channel, sourceKey, timeSeconds, fps, totalFrame, out var extTargetPos, out _))
-            {
-                return extTargetPos;
-            }
             return new Vec2(
                 parameter.TargetX.GetValue(frame, totalFrame, fps),
                 parameter.TargetY.GetValue(frame, totalFrame, fps));
@@ -596,11 +591,6 @@ public static class DanmakuLiveWiring
         sim.Live.TargetRadius = timeSeconds =>
         {
             var frame = TimeToFrame(timeSeconds, fps, totalFrame);
-            var channel = (int)Math.Round(parameter.Channel.GetValue(frame, totalFrame, fps));
-            if (sourceKey is not null && DanmakuCollisionBus.TryGetTargetAt(channel, sourceKey, timeSeconds, fps, totalFrame, out _, out var extTargetRadius))
-            {
-                return extTargetRadius;
-            }
             return parameter.TargetRadius.GetValue(frame, totalFrame, fps);
         };
 
@@ -681,26 +671,72 @@ public static class DanmakuLiveWiring
         {
             var frame = TimeToFrame(timeSeconds, fps, totalFrame);
             var channel = (int)Math.Round(parameter.Channel.GetValue(frame, totalFrame, fps));
-            var externalTargets = sourceKey is not null
-                ? DanmakuCollisionBus.GetTargetsAt(channel, sourceKey, timeSeconds)
-                : null;
-            if (externalTargets is { Count: > 0 })
+            var list = new List<TargetHitbox>();
+
+            // 1. 自レイヤーの自機が有効なら追加
+            var col = parameter.CollisionEnabled.GetValue(frame, totalFrame, fps) >= 0.5;
+            var show = parameter.ShowTargetMarker.GetValue(frame, totalFrame, fps) >= 0.5;
+            var hasTarget = col && (show || parameter.HasCustomTargetImage);
+            var selfRadius = parameter.TargetRadius.GetValue(frame, totalFrame, fps);
+            if (hasTarget && selfRadius > 0)
             {
-                return externalTargets;
+                var selfPos = new Vec2(
+                    parameter.TargetX.GetValue(frame, totalFrame, fps),
+                    parameter.TargetY.GetValue(frame, totalFrame, fps));
+                list.Add(new TargetHitbox(selfPos, selfRadius, 0));
             }
-            return null;
+
+            // 2. 他レイヤーの自機を追加
+            if (sourceKey is not null)
+            {
+                var externalTargets = DanmakuCollisionBus.GetTargetsAt(channel, sourceKey, timeSeconds);
+                if (externalTargets is { Count: > 0 })
+                {
+                    list.AddRange(externalTargets);
+                }
+            }
+
+            return list.Count > 0 ? list : null;
         };
 
         sim.Live.Enemies = timeSeconds =>
         {
-            var externalEnemies = sourceKey is not null
-                ? DanmakuCollisionBus.GetEnemiesAt(parameter.PlayerShotTargetChannel, sourceKey, timeSeconds)
-                : null;
-            if (externalEnemies is { Count: > 0 })
+            var list = new List<EnemyHitbox>();
+
+            // 1. 自レイヤーのエミッターが有効なら追加
+            var frame = TimeToFrame(timeSeconds, fps, totalFrame);
+            var enemyRadius = parameter.EnemyRadius.GetValue(frame, totalFrame, fps);
+            if (enemyRadius > 0)
             {
-                return externalEnemies;
+                for (var i = 0; i < parameter.Emitters.Count && i < DanmakuShapeParameter.MaxEmitters; i++)
+                {
+                    var emitter = parameter.Emitters[i];
+                    if (emitter.IsEnabled.GetValue(frame, totalFrame, fps) >= 0.5)
+                    {
+                        var baseX = emitter.X.GetValue(frame, totalFrame, fps);
+                        var baseY = emitter.Y.GetValue(frame, totalFrame, fps);
+                        var orbitRadius = emitter.OrbitRadius.GetValue(frame, totalFrame, fps);
+                        var orbitSpeed = emitter.OrbitSpeed.GetValue(frame, totalFrame, fps);
+                        var orbitPhase = emitter.OrbitPhase.GetValue(frame, totalFrame, fps);
+                        var orbitAngle = orbitPhase + orbitSpeed * timeSeconds;
+                        var pos = new Vec2(baseX, baseY);
+                        if (orbitRadius != 0) pos += Vec2.FromDegrees(orbitAngle, orbitRadius);
+                        list.Add(new EnemyHitbox(pos, enemyRadius, i, (int)Math.Round(parameter.Channel.GetValue(frame, totalFrame, fps))));
+                    }
+                }
             }
-            return null;
+
+            // 2. 他レイヤーのエネミーを追加
+            if (sourceKey is not null)
+            {
+                var externalEnemies = DanmakuCollisionBus.GetEnemiesAt(parameter.PlayerShotTargetChannel, sourceKey, timeSeconds);
+                if (externalEnemies is { Count: > 0 })
+                {
+                    list.AddRange(externalEnemies);
+                }
+            }
+
+            return list.Count > 0 ? list : null;
         };
 
         sim.Live.EnemyPosition = timeSeconds =>
