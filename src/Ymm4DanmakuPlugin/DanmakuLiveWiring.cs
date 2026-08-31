@@ -677,6 +677,32 @@ public static class DanmakuLiveWiring
             return parameter.PlayerShotHitRadius.GetValue(frame, totalFrame, fps);
         };
 
+        sim.Live.Targets = timeSeconds =>
+        {
+            var frame = TimeToFrame(timeSeconds, fps, totalFrame);
+            var channel = (int)Math.Round(parameter.Channel.GetValue(frame, totalFrame, fps));
+            var externalTargets = sourceKey is not null
+                ? DanmakuCollisionBus.GetTargetsAt(channel, sourceKey, timeSeconds)
+                : null;
+            if (externalTargets is { Count: > 0 })
+            {
+                return externalTargets;
+            }
+            return null;
+        };
+
+        sim.Live.Enemies = timeSeconds =>
+        {
+            var externalEnemies = sourceKey is not null
+                ? DanmakuCollisionBus.GetEnemiesAt(parameter.PlayerShotTargetChannel, sourceKey, timeSeconds)
+                : null;
+            if (externalEnemies is { Count: > 0 })
+            {
+                return externalEnemies;
+            }
+            return null;
+        };
+
         sim.Live.EnemyPosition = timeSeconds =>
         {
             if (sourceKey is not null && DanmakuCollisionBus.TryGetEnemyAt(parameter.PlayerShotTargetChannel, sourceKey, timeSeconds, fps, totalFrame, out var pos, out _))

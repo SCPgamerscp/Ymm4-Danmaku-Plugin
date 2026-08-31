@@ -79,42 +79,95 @@ public static class DanmakuCollisionBus
     }
 
     /// <summary>
-    /// 指定した時刻 <paramref name="timeSeconds"/> における相手方エネミー (ボス) の位置と判定半径を取得する。
+    /// 指定した時刻 <paramref name="timeSeconds"/> におけるすべての相手方ターゲット (自機) のリストを取得する。
     /// </summary>
-    public static bool TryGetEnemyAt(int targetChannel, object callerKey, double timeSeconds, int fps, int totalFrame, out Vec2 position, out double radius)
+    public static List<TargetHitbox> GetTargetsAt(int targetChannel, object? callerKey, double timeSeconds)
     {
+        var list = new List<TargetHitbox>();
         lock (Gate)
         {
+            var targetId = 0;
             foreach (var (key, reg) in Registrations)
             {
-                if (ReferenceEquals(key, callerKey)) continue;
+                if (callerKey is not null && ReferenceEquals(key, callerKey)) continue;
 
                 var frame = TimeToFrame(timeSeconds, reg.Fps, reg.TotalFrame);
                 var ch = (int)Math.Round(reg.Parameter.Channel.GetValue(frame, reg.TotalFrame, reg.Fps));
                 if (targetChannel >= 0 && ch != targetChannel) continue;
 
-                var hasEnemy = reg.Parameter.Emitters.Count > 0 &&
-                               reg.Parameter.Emitters.Any(e => e.IsEnabled.GetValue(frame, reg.TotalFrame, reg.Fps) >= 0.5);
-                if (!hasEnemy) continue;
+                var col = reg.Parameter.CollisionEnabled.GetValue(frame, reg.TotalFrame, reg.Fps) >= 0.5;
+                var show = reg.Parameter.ShowTargetMarker.GetValue(frame, reg.TotalFrame, reg.Fps) >= 0.5;
+                var hasTarget = col && (show || reg.Parameter.HasCustomTargetImage);
+                if (!hasTarget) continue;
 
-                var emitter = reg.Parameter.Emitters[0];
-                var baseX = emitter.X.GetValue(frame, reg.TotalFrame, reg.Fps);
-                var baseY = emitter.Y.GetValue(frame, reg.TotalFrame, reg.Fps);
-                var orbitRadius = emitter.OrbitRadius.GetValue(frame, reg.TotalFrame, reg.Fps);
-                var orbitSpeed = emitter.OrbitSpeed.GetValue(frame, reg.TotalFrame, reg.Fps);
-                var orbitPhase = emitter.OrbitPhase.GetValue(frame, reg.TotalFrame, reg.Fps);
-                var orbitAngle = orbitPhase + orbitSpeed * timeSeconds;
+                var radius = reg.Parameter.TargetRadius.GetValue(frame, reg.TotalFrame, reg.Fps);
+                if (radius <= 0) continue;
 
-                var pos = new Vec2(baseX, baseY);
-                if (orbitRadius != 0)
-                {
-                    pos += Vec2.FromDegrees(orbitAngle, orbitRadius);
-                }
-
-                position = pos;
-                radius = reg.Parameter.EnemyRadius.GetValue(frame, reg.TotalFrame, reg.Fps);
-                return true;
+                var pos = new Vec2(
+                    reg.Parameter.TargetX.GetValue(frame, reg.TotalFrame, reg.Fps),
+                    reg.Parameter.TargetY.GetValue(frame, reg.TotalFrame, reg.Fps));
+                list.Add(new TargetHitbox(pos, radius, targetId++));
             }
+        }
+        return list;
+    }
+
+    /// <summary>
+    /// 指定した時刻 <paramref name="timeSeconds"/> におけるすべての相手方エネミー (ボス) のリストを取得する。
+    /// </summary>
+    public static List<EnemyHitbox> GetEnemiesAt(int targetChannel, object? callerKey, double timeSeconds)
+    {
+        var list = new List<EnemyHitbox>();
+        lock (Gate)
+        {
+            foreach (var (key, reg) in Registrations)
+            {
+                if (callerKey is not null && ReferenceEquals(key, callerKey)) continue;
+
+                var frame = TimeToFrame(timeSeconds, reg.Fps, reg.TotalFrame);
+                var ch = (int)Math.Round(reg.Parameter.Channel.GetValue(frame, reg.TotalFrame, reg.Fps));
+                if (targetChannel >= 0 && ch != targetChannel) continue;
+
+                var enemyRadius = reg.Parameter.EnemyRadius.GetValue(frame, reg.TotalFrame, reg.Fps);
+                if (enemyRadius <= 0) continue;
+
+                for (var i = 0; i < reg.Parameter.Emitters.Count && i < DanmakuShapeParameter.MaxEmitters; i++)
+                {
+                    var emitter = reg.Parameter.Emitters[i];
+                    var isEnabled = emitter.IsEnabled.GetValue(frame, reg.TotalFrame, reg.Fps) >= 0.5;
+                    if (!isEnabled) continue;
+
+                    var baseX = emitter.X.GetValue(frame, reg.TotalFrame, reg.Fps);
+                    var baseY = emitter.Y.GetValue(frame, reg.TotalFrame, reg.Fps);
+                    var orbitRadius = emitter.OrbitRadius.GetValue(frame, reg.TotalFrame, reg.Fps);
+                    var orbitSpeed = emitter.OrbitSpeed.GetValue(frame, reg.TotalFrame, reg.Fps);
+                    var orbitPhase = emitter.OrbitPhase.GetValue(frame, reg.TotalFrame, reg.Fps);
+                    var orbitAngle = orbitPhase + orbitSpeed * timeSeconds;
+
+                    var pos = new Vec2(baseX, baseY);
+                    if (orbitRadius != 0)
+                    {
+                        pos += Vec2.FromDegrees(orbitAngle, orbitRadius);
+                    }
+
+                    list.Add(new EnemyHitbox(pos, enemyRadius, i, ch));
+                }
+            }
+        }
+        return list;
+    }
+
+    /// <summary>
+    /// 指定した時刻 <paramref name="timeSeconds"/> における相手方エネミー (ボス) の位置と判定半径を取得する。
+    /// </summary>
+    public static bool TryGetEnemyAt(int targetChannel, object callerKey, double timeSeconds, int fps, int totalFrame, out Vec2 position, out double radius)
+    {
+        var enemies = GetEnemiesAt(targetChannel, callerKey, timeSeconds);
+        if (enemies.Count > 0)
+        {
+            position = enemies[0].Position;
+            radius = enemies[0].Radius;
+            return true;
         }
 
         position = Vec2.Zero;
@@ -127,27 +180,12 @@ public static class DanmakuCollisionBus
     /// </summary>
     public static bool TryGetTargetAt(int targetChannel, object callerKey, double timeSeconds, int fps, int totalFrame, out Vec2 position, out double radius)
     {
-        lock (Gate)
+        var targets = GetTargetsAt(targetChannel, callerKey, timeSeconds);
+        if (targets.Count > 0)
         {
-            foreach (var (key, reg) in Registrations)
-            {
-                if (ReferenceEquals(key, callerKey)) continue;
-
-                var frame = TimeToFrame(timeSeconds, reg.Fps, reg.TotalFrame);
-                var ch = (int)Math.Round(reg.Parameter.Channel.GetValue(frame, reg.TotalFrame, reg.Fps));
-                if (targetChannel >= 0 && ch != targetChannel) continue;
-
-                var col = reg.Parameter.CollisionEnabled.GetValue(frame, reg.TotalFrame, reg.Fps) >= 0.5;
-                var show = reg.Parameter.ShowTargetMarker.GetValue(frame, reg.TotalFrame, reg.Fps) >= 0.5;
-                var hasTarget = col && (show || reg.Parameter.HasCustomTargetImage);
-                if (!hasTarget) continue;
-
-                position = new Vec2(
-                    reg.Parameter.TargetX.GetValue(frame, reg.TotalFrame, reg.Fps),
-                    reg.Parameter.TargetY.GetValue(frame, reg.TotalFrame, reg.Fps));
-                radius = reg.Parameter.TargetRadius.GetValue(frame, reg.TotalFrame, reg.Fps);
-                return true;
-            }
+            position = targets[0].Position;
+            radius = targets[0].Radius;
+            return true;
         }
 
         position = Vec2.Zero;

@@ -83,6 +83,9 @@ public sealed record DanmakuSettings
     /// <summary>画面外判定のマージン (px)。画面外に出た弾を即座に消去して軽量化。</summary>
     public double BoundsMargin { get; init; } = 160;
 
+    /// <summary>所属チャンネル番号 (0〜255)。-1 で全チャンネル共有。</summary>
+    public int Channel { get; init; } = 0;
+
     /// <summary>同時に存在できる弾の最大数。</summary>
     public int MaxBullets { get; init; } = 100000;
 

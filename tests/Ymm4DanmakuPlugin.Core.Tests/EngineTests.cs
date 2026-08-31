@@ -2891,6 +2891,107 @@ public class CollisionHitboxFollowUpTests
         Assert.Equal(0, mainBulletsAlive); // 1発発射された弾が相殺されて0発に
         Assert.True(engine.TotalSpawned > 1); // 相殺スパークが生成された
     }
+
+    [Fact]
+    public void 複数自機に対して敵弾の当たり判定がそれぞれ機能する()
+    {
+        var settings = new DanmakuSettings
+        {
+            Collision = new CollisionSettings { IsEnabled = true },
+            Emitters = [
+                // 左下 (-100, 100) へ発射するエミッター
+                new EmitterSettings
+                {
+                    IsEnabled = true,
+                    X = 0,
+                    Y = 0,
+                    Pattern = new PatternSettings { FireInterval = 10.0, Way = 1, BaseAngle = 135 },
+                    Physics = new BulletPhysics { Speed = 200, HitRadius = 10.0 }
+                },
+                // 右下 (100, 100) へ発射するエミッター
+                new EmitterSettings
+                {
+                    IsEnabled = true,
+                    X = 0,
+                    Y = 0,
+                    Pattern = new PatternSettings { FireInterval = 10.0, Way = 1, BaseAngle = 45 },
+                    Physics = new BulletPhysics { Speed = 200, HitRadius = 10.0 }
+                }
+            ]
+        };
+
+        var engine = new DanmakuEngine(settings);
+        // 2機の自機 (1P: -100, 100, 2P: 100, 100)
+        engine.Live.Targets = _ => [
+            new TargetHitbox(new Vec2(-100, 100), 20.0, 0),
+            new TargetHitbox(new Vec2(100, 100), 20.0, 1)
+        ];
+
+        engine.Advance(1.0); // 両方の弾がそれぞれの自機に到達
+        Assert.True(engine.HitCount >= 2, $"Both targets should be hit (HitCount: {engine.HitCount})");
+    }
+
+    [Fact]
+    public void 複数ボスに対して自機ショットの当たり判定がそれぞれ機能する()
+    {
+        var settings = new DanmakuSettings
+        {
+            Collision = new CollisionSettings { IsEnabled = true, EnemyHitEnabled = true },
+            PlayerShot = new PlayerShotSettings
+            {
+                IsEnabled = true,
+                ShotType = PlayerShotType.FocusStraight,
+                Way = 2,
+                SpreadAngle = 0,
+                Speed = 1000,
+                HitRadius = 15.0,
+                FireInterval = 0.05
+            }
+        };
+
+        var engine = new DanmakuEngine(settings);
+        engine.TargetPosition = new Vec2(0, 200);
+        // 2体のボス (Boss A: -8, -100, Boss B: 8, -100) -> 2-way 直進弾 (間隔16px) がそれぞれに命中
+        engine.Live.Enemies = _ => [
+            new EnemyHitbox(new Vec2(-8, -100), 25.0, 0, 0),
+            new EnemyHitbox(new Vec2(8, -100), 25.0, 1, 1)
+        ];
+
+        engine.Advance(0.5); // 上向きショットが両方のボスに到達
+        Assert.True(engine.EnemyHitCount >= 2, $"Both bosses should take hits (EnemyHitCount: {engine.EnemyHitCount})");
+        Assert.True(engine.DamageHistory.Count >= 2);
+    }
+
+    [Fact]
+    public void 自動照準ショットが最も近いボスを狙う()
+    {
+        var settings = new DanmakuSettings
+        {
+            Collision = new CollisionSettings { IsEnabled = true, EnemyHitEnabled = true },
+            PlayerShot = new PlayerShotSettings
+            {
+                IsEnabled = true,
+                AutoAim = true,
+                Way = 1,
+                Speed = 1000,
+                FireInterval = 0.05
+            }
+        };
+
+        var engine = new DanmakuEngine(settings);
+        engine.Live.TargetPosition = _ => new Vec2(0, 0);
+        // 遠いボス (0, -300) と近いボス (100, 0)
+        engine.Live.Enemies = _ => [
+            new EnemyHitbox(new Vec2(0, -300), 20.0, 0, 0),
+            new EnemyHitbox(new Vec2(100, 0), 20.0, 1, 1)
+        ];
+
+        engine.Advance(0.06); // 1バースト発射
+        var shots = engine.AliveBullets().Where(b => b.IsPlayerShot).ToList();
+        Assert.NotEmpty(shots);
+        // 近いボス (100, 0) は右方向 (0度)
+        Assert.Equal(0.0, shots[0].Direction, precision: 1);
+    }
 }
 
 

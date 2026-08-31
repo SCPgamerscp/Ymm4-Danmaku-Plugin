@@ -3,6 +3,16 @@ using Ymm4DanmakuPlugin.Core.Mathematics;
 namespace Ymm4DanmakuPlugin.Core.Engine;
 
 /// <summary>
+/// 自機 (ターゲット) の当たり判定領域。
+/// </summary>
+public readonly record struct TargetHitbox(Vec2 Position, double Radius, int TargetId = 0);
+
+/// <summary>
+/// エネミー (ボス) の当たり判定領域。
+/// </summary>
+public readonly record struct EnemyHitbox(Vec2 Position, double Radius, int EmitterIndex = 0, int Channel = 0);
+
+/// <summary>
 /// キーフレーム (YMM4 の <c>Animation</c>) によって時間変化する値をエンジンへ供給する差し込み口。
 /// <para>
 /// 弾幕の全パラメータをタイムライン上でアニメーション可能にするため、
@@ -167,6 +177,12 @@ public sealed class LiveValueSource
 
     /// <summary>このレイヤーの敵弾が他レイヤーの自機ショットによって相殺されたか判定する関数 (position, radius) -> cancelled。</summary>
     public Func<Vec2, double, bool>? IsBulletCancelledByExternalShot { get; set; }
+
+    /// <summary>画面内に存在するすべての自機判定 (マルチターゲット)。</summary>
+    public Func<double, IReadOnlyList<TargetHitbox>?>? Targets { get; set; }
+
+    /// <summary>画面内に存在するすべてのエネミー判定 (マルチエネミー)。</summary>
+    public Func<double, IReadOnlyList<EnemyHitbox>?>? Enemies { get; set; }
 
     /// <summary>いずれかの供給関数が設定されているかどうか。</summary>
     public bool HasAny =>

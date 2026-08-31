@@ -55,8 +55,27 @@ public sealed class EmitterContext(DanmakuEngine engine, int emitterIndex)
     /// <summary>弾を 1 発生成する。</summary>
     public Bullet? Spawn(in BulletSpawnRequest request) => Engine.Spawn(in request);
 
-    /// <summary>ターゲットへの角度 (度) を返す。</summary>
-    public double AngleToTarget() => (TargetPosition - Position).Degrees;
+    /// <summary>ターゲットへの角度 (度) を返す。複数自機がある場合は最も近い自機を狙う。</summary>
+    public double AngleToTarget()
+    {
+        if (Engine.TargetHitboxes.Count > 1)
+        {
+            var minDistSq = double.PositiveInfinity;
+            var nearest = TargetPosition;
+            foreach (var t in Engine.TargetHitboxes)
+            {
+                if (t.Radius <= 0) continue;
+                var dSq = (t.Position - Position).LengthSquared;
+                if (dSq < minDistSq)
+                {
+                    minDistSq = dSq;
+                    nearest = t.Position;
+                }
+            }
+            return (nearest - Position).Degrees;
+        }
+        return (TargetPosition - Position).Degrees;
+    }
 
     // ---- 公転 & シード & スクリプト ----
     public double? EmitterOrbitRadius(double time) => Engine.Live.EmitterOrbitRadius?.Invoke(EmitterIndex, time);
