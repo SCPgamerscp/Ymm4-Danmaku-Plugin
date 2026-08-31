@@ -156,6 +156,18 @@ public sealed class LiveValueSource
     public Func<double, double?>? HitEffectSpeed { get; set; }
     public Func<double, double?>? HitEffectLifetime { get; set; }
 
+    /// <summary>他レイヤーからの累積被弾ダメージ供給関数。</summary>
+    public Func<double, double?>? ExternalDamage { get; set; }
+
+    /// <summary>自機ショットがエネミーに命中してダメージを与えた際のコールバック (damage, emitterIndex)。</summary>
+    public Action<double, int>? OnDamageDealt { get; set; }
+
+    /// <summary>他レイヤーの敵弾を相殺できるか判定・消滅させる関数 (position, radius) -> cancelled。</summary>
+    public Func<Vec2, double, bool>? CancelExternalBullet { get; set; }
+
+    /// <summary>このレイヤーの敵弾が他レイヤーの自機ショットによって相殺されたか判定する関数 (position, radius) -> cancelled。</summary>
+    public Func<Vec2, double, bool>? IsBulletCancelledByExternalShot { get; set; }
+
     /// <summary>いずれかの供給関数が設定されているかどうか。</summary>
     public bool HasAny =>
         EmitterPosition is not null ||

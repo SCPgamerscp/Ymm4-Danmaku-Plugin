@@ -2820,7 +2820,79 @@ public class CollisionHitboxFollowUpTests
         Assert.True(engine.EnemyHitCount > 0);
         Assert.True(engine.CurrentBossHp < engine.BossMaxHp);
     }
+
+    [Fact]
+    public void 外部レイヤーからのダメージがボスのHPおよびラグバーに正しく反映される()
+    {
+        var settings = new DanmakuSettings
+        {
+            FixedTimeStep = 1.0 / 60.0,
+            Collision = new CollisionSettings { IsEnabled = true, EnemyRadius = 30.0 },
+            Emitters = [
+                new EmitterSettings { IsEnabled = true, X = 0, Y = 0, Pattern = new PatternSettings { FireInterval = 10.0 } }
+            ]
+        };
+
+        var engine = new DanmakuEngine(settings) { BossMaxHp = 1000.0 };
+        engine.Live.ExternalDamage = _ => 300.0; // 他レイヤーから300ダメージ
+
+        engine.Advance(0.1);
+        Assert.Equal(700.0, engine.CurrentBossHp, precision: 1);
+        Assert.Equal(0.7, engine.BossHpRatio, precision: 2);
+    }
+
+    [Fact]
+    public void 自機ショット命中時にOnDamageDealtコールバックが発火する()
+    {
+        var settings = new DanmakuSettings
+        {
+            Collision = new CollisionSettings { IsEnabled = true, EnemyRadius = 30.0 },
+            HpBar = new BossHpBarSettings { DamagePerHit = 25.0 },
+            PlayerShot = new PlayerShotSettings { IsEnabled = true, Way = 1, FireInterval = 0.05, Speed = 1000 },
+            Emitters = [
+                new EmitterSettings { IsEnabled = true, X = 0, Y = 0, Pattern = new PatternSettings { FireInterval = 10.0 } }
+            ]
+        };
+
+        var engine = new DanmakuEngine(settings);
+        engine.Live.TargetPosition = _ => new Vec2(0, 50);
+
+        var reportedDamage = 0.0;
+        engine.Live.OnDamageDealt = (dmg, _) => reportedDamage += dmg;
+
+        engine.Advance(0.08); // 1発命中
+        Assert.Equal(25.0, reportedDamage, precision: 1);
+    }
+
+    [Fact]
+    public void 外部ショットによる敵弾相殺判定が機能する()
+    {
+        var settings = new DanmakuSettings
+        {
+            Collision = new CollisionSettings { IsEnabled = true, TargetRadius = 10.0 },
+            Emitters = [
+                new EmitterSettings
+                {
+                    IsEnabled = true,
+                    X = 0,
+                    Y = 0,
+                    Pattern = new PatternSettings { FireInterval = 10.0, Way = 1, BaseAngle = 90 }, // 1発のみ発射
+                    Physics = new BulletPhysics { Speed = 200, HitRadius = 8.0 }
+                }
+            ]
+        };
+
+        var engine = new DanmakuEngine(settings);
+        // (0, 50) 付近に外部ショットの相殺領域を設定
+        engine.Live.IsBulletCancelledByExternalShot = (pos, r) => pos.DistanceSquaredTo(new Vec2(0, 50)) <= (r + 10) * (r + 10);
+
+        engine.Advance(0.3); // 弾が (0, 50) を通過して相殺消滅
+        var mainBulletsAlive = engine.AliveBullets().Count(b => !b.IsPlayerShot && b.Generation == 0);
+        Assert.Equal(0, mainBulletsAlive); // 1発発射された弾が相殺されて0発に
+        Assert.True(engine.TotalSpawned > 1); // 相殺スパークが生成された
+    }
 }
+
 
 
 

@@ -40,6 +40,11 @@ public static class DanmakuLiveWiring
         sim.Live.TargetPosition = timeSeconds =>
         {
             var frame = TimeToFrame(timeSeconds, fps, totalFrame);
+            var channel = (int)Math.Round(parameter.Channel.GetValue(frame, totalFrame, fps));
+            if (sourceKey is not null && DanmakuCollisionBus.TryGetTarget(channel, sourceKey, out var extTargetPos, out _))
+            {
+                return extTargetPos;
+            }
             return new Vec2(
                 parameter.TargetX.GetValue(frame, totalFrame, fps),
                 parameter.TargetY.GetValue(frame, totalFrame, fps));
@@ -591,6 +596,11 @@ public static class DanmakuLiveWiring
         sim.Live.TargetRadius = timeSeconds =>
         {
             var frame = TimeToFrame(timeSeconds, fps, totalFrame);
+            var channel = (int)Math.Round(parameter.Channel.GetValue(frame, totalFrame, fps));
+            if (sourceKey is not null && DanmakuCollisionBus.TryGetTarget(channel, sourceKey, out _, out var extTargetRadius))
+            {
+                return extTargetRadius;
+            }
             return parameter.TargetRadius.GetValue(frame, totalFrame, fps);
         };
 
@@ -685,6 +695,28 @@ public static class DanmakuLiveWiring
             }
             var frame = TimeToFrame(timeSeconds, fps, totalFrame);
             return parameter.EnemyRadius.GetValue(frame, totalFrame, fps);
+        };
+
+        sim.Live.ExternalDamage = timeSeconds =>
+        {
+            if (sourceKey is null) return 0.0;
+            var frame = TimeToFrame(timeSeconds, fps, totalFrame);
+            var channel = (int)Math.Round(parameter.Channel.GetValue(frame, totalFrame, fps));
+            return DanmakuCollisionBus.GetExternalDamage(channel, sourceKey);
+        };
+
+        sim.Live.OnDamageDealt = (damage, emitterIndex) =>
+        {
+            if (sourceKey is null) return;
+            DanmakuCollisionBus.ReportDamage(parameter.PlayerShotTargetChannel, sourceKey, damage);
+        };
+
+        sim.Live.IsBulletCancelledByExternalShot = (bulletPos, bulletRadius) =>
+        {
+            if (sourceKey is null) return false;
+            var frame = TimeToFrame(sim.CurrentTime, fps, totalFrame);
+            var channel = (int)Math.Round(parameter.Channel.GetValue(frame, totalFrame, fps));
+            return DanmakuCollisionBus.TryCancelEnemyBullet(channel, sourceKey, bulletPos, bulletRadius);
         };
 
         // ボス体力バー (HP ゲージ)

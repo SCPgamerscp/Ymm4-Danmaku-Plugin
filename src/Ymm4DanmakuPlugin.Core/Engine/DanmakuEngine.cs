@@ -236,13 +236,14 @@ public sealed class DanmakuEngine
     {
         var stepTime = (gridSteps + 1) * Settings.FixedTimeStep;
 
-        // タイムラインによるキーフレーム HP 制御 ＆ 累積被弾ダメージの合算
+        // タイムラインによるキーフレーム HP 制御 ＆ 累積被弾ダメージの合算 (自レイヤー + 外部レイヤー)
         var baseHp = BossMaxHp;
         if (Live.BossHp?.Invoke(CurrentTime) is { } liveHp)
         {
             baseHp = Math.Clamp(liveHp / 100.0, 0.0, 1.0) * BossMaxHp;
         }
-        CurrentBossHp = Math.Max(0.0, baseHp - TotalDamageDealt);
+        var externalDmg = Live.ExternalDamage?.Invoke(CurrentTime) ?? 0.0;
+        CurrentBossHp = Math.Max(0.0, baseHp - (TotalDamageDealt + externalDmg));
 
         // 被弾追従ラグバーの滑らかなアニメーション補間
         if (DamageLagBossHp > CurrentBossHp)
@@ -706,6 +707,7 @@ public sealed class DanmakuEngine
                 // --- 自機弾 (相殺有効時) vs 敵弾 (ボスの手前の弾を先に相殺消去) ---
                 if (bullet.CancelEnemyBullets && bullet.IsAlive)
                 {
+                    // 内部敵弾の相殺
                     for (var j = 0; j < bullets.Count; j++)
                     {
                         var enemyBullet = bullets[j];
@@ -729,6 +731,23 @@ public sealed class DanmakuEngine
                             }
                         }
                     }
+
+                    // 外部レイヤー敵弾の相殺
+                    if (bullet.IsAlive && Live.CancelExternalBullet is not null)
+                    {
+                        var shotRadius = bullet.HitRadius * Math.Abs(bullet.Scale);
+                        if (Live.CancelExternalBullet(bullet.Position, shotRadius))
+                        {
+                            if (spawnHitEffect)
+                                SpawnHitEffectAt(bullet.Position, bullet, collision, stepTime);
+
+                            if (bullet.DestroyOnHit)
+                            {
+                                bullet.HasHit = true;
+                                Kill(bullet, BulletDeathReason.Hit, playSound: false);
+                            }
+                        }
+                    }
                 }
 
                 // --- 自機弾 vs エネミー (ボス) ---
@@ -742,12 +761,15 @@ public sealed class DanmakuEngine
                         HitCount++;
                         var dmg = Live.HpBarDamagePerHit?.Invoke(stepTime) ?? (Settings.HpBar.DamagePerHit > 0 ? Settings.HpBar.DamagePerHit : 15.0);
                         TotalDamageDealt += dmg;
+                        Live.OnDamageDealt?.Invoke(dmg, bullet.EmitterIndex);
+
                         var baseHp = BossMaxHp;
                         if (Live.BossHp?.Invoke(stepTime) is { } liveHp)
                         {
                             baseHp = Math.Clamp(liveHp / 100.0, 0.0, 1.0) * BossMaxHp;
                         }
-                        CurrentBossHp = Math.Max(0.0, baseHp - TotalDamageDealt);
+                        var externalDmg = Live.ExternalDamage?.Invoke(stepTime) ?? 0.0;
+                        CurrentBossHp = Math.Max(0.0, baseHp - (TotalDamageDealt + externalDmg));
                         EmitSound(DanmakuSoundKind.EnemyHit, bullet.EmitterIndex);
                         EmitSound(DanmakuSoundKind.Hit, bullet.EmitterIndex);
 
@@ -761,6 +783,21 @@ public sealed class DanmakuEngine
             }
             else
             {
+                // 外部レイヤー自機ショットによる敵弾相殺チェック
+                if (bullet.IsAlive && Live.IsBulletCancelledByExternalShot is not null)
+                {
+                    var bulletRadius = bullet.HitRadius * Math.Abs(bullet.Scale);
+                    if (Live.IsBulletCancelledByExternalShot(bullet.Position, bulletRadius))
+                    {
+                        bullet.HasHit = true;
+                        Kill(bullet, BulletDeathReason.Hit, playSound: false);
+                        EmitSound(DanmakuSoundKind.Vanish, bullet.EmitterIndex);
+                        if (spawnHitEffect)
+                            SpawnHitEffectAt(bullet.Position, bullet, collision, stepTime);
+                        continue;
+                    }
+                }
+
                 // --- 敵弾 vs 自機 (ターゲット) ---
                 if (collisionEnabled && TargetRadius > 0)
                 {

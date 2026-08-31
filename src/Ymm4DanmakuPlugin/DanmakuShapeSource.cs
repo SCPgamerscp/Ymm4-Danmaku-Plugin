@@ -147,18 +147,35 @@ public sealed class DanmakuShapeSource : IShapeSource2
         }
         var enemyRadius = (float)parameter.EnemyRadius.GetValue(frame, totalFrame, fps);
         var currentChannel = (int)Math.Round(parameter.Channel.GetValue(frame, totalFrame, fps));
+        var collisionEnabled = parameter.CollisionEnabled.GetValue(frame, totalFrame, fps) >= 0.5;
+        var showTargetMarker = parameter.ShowTargetMarker.GetValue(frame, totalFrame, fps) >= 0.5;
+        var hasTarget = collisionEnabled && (showTargetMarker || parameter.HasCustomTargetImage);
+        var hasEnemy = parameter.Emitters.Count > 0 && parameter.Emitters.Any(e => e.IsEnabled.GetValue(frame, totalFrame, fps) >= 0.5);
+
+        List<Collision.BulletCancelArea>? cancelers = null;
+        if (simulator != null && parameter.PlayerShotCancelEnemyBullets.GetValue(frame, totalFrame, fps) >= 0.5)
+        {
+            foreach (var bullet in simulator.Bullets)
+            {
+                if (bullet.IsPlayerShot && bullet.IsAlive && bullet.CancelEnemyBullets)
+                {
+                    cancelers ??= new List<Collision.BulletCancelArea>();
+                    cancelers.Add(new Collision.BulletCancelArea(bullet.Position, bullet.HitRadius * Math.Abs(bullet.Scale)));
+                }
+            }
+        }
 
         Collision.DanmakuCollisionBus.Publish(new Collision.DanmakuLayerState(
             SourceKey: this,
             Channel: currentChannel,
             EnemyPosition: enemyPos,
             EnemyRadius: enemyRadius,
+            HasEnemy: hasEnemy,
             TargetPosition: new Core.Mathematics.Vec2(targetX, targetY),
-            TargetRadius: targetRadius
+            TargetRadius: targetRadius,
+            HasTarget: hasTarget,
+            Cancelers: cancelers
         ));
-
-        var collisionEnabled = parameter.CollisionEnabled.GetValue(frame, totalFrame, fps) >= 0.5;
-        var showTargetMarker = parameter.ShowTargetMarker.GetValue(frame, totalFrame, fps) >= 0.5;
         var targetInfo = new TargetRenderInfo(
             Enabled: collisionEnabled && (parameter.HasCustomTargetImage || showTargetMarker),
             X: targetX,
