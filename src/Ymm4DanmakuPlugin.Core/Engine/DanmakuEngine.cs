@@ -122,6 +122,7 @@ public sealed class DanmakuEngine
         EnemyHitCount = 0;
         playerShotTimer = 0;
         TotalDamageDealt = 0;
+        SelfDamageReceived = 0;
 
         BossMaxHp = Settings.HpBar.MaxHp > 0 ? Settings.HpBar.MaxHp : 1000.0;
         var initPct = Live.BossHp?.Invoke(0) ?? Settings.HpBar.InitialHpPercentage;
@@ -237,8 +238,11 @@ public sealed class DanmakuEngine
     /// <summary>これまでに受けた累積ダメージ量。</summary>
     public double TotalDamageDealt { get; set; }
 
-    /// <summary>このエンジンが放った自機ショットの被弾ダメージ履歴 (時刻, ダメージ, 相手ch)。</summary>
-    public List<(double Time, double Damage, int TargetChannel)> DamageHistory { get; } = new();
+    /// <summary>このレイヤー自身のボスが受けた累積ダメージ量。</summary>
+    public double SelfDamageReceived { get; set; }
+
+    /// <summary>このエンジンが放った自機ショットの被弾ダメージ履歴 (時刻, ダメージ, 相手ch, 相手LayerKey)。</summary>
+    public List<(double Time, double Damage, int TargetChannel, object? TargetLayerKey)> DamageHistory { get; } = new();
 
     /// <summary>ボスの現在 HP 割合 (0.0〜1.0)。</summary>
     public double BossHpRatio => BossMaxHp > 0 ? Math.Clamp(CurrentBossHp / BossMaxHp, 0.0, 1.0) : 1.0;
@@ -260,7 +264,7 @@ public sealed class DanmakuEngine
             baseHp = Math.Clamp(liveHp / 100.0, 0.0, 1.0) * BossMaxHp;
         }
         var externalDmg = Live.ExternalDamage?.Invoke(CurrentTime) ?? 0.0;
-        CurrentBossHp = Math.Max(0.0, baseHp - (TotalDamageDealt + externalDmg));
+        CurrentBossHp = Math.Max(0.0, baseHp - (SelfDamageReceived + externalDmg));
 
         // 被弾追従ラグバーの滑らかなアニメーション補間
         if (DamageLagBossHp > CurrentBossHp)
@@ -340,7 +344,7 @@ public sealed class DanmakuEngine
                     var isEnabled = Live.EmitterIsEnabled?.Invoke(contexts[i].EmitterIndex, time) ?? emitterSettings.IsEnabled;
                     if (isEnabled)
                     {
-                        var hitbox = new EnemyHitbox(contexts[i].Position, EnemyRadius, contexts[i].EmitterIndex, Settings.Channel);
+                        var hitbox = new EnemyHitbox(contexts[i].Position, EnemyRadius, contexts[i].EmitterIndex, Settings.Channel, Live.LayerKey ?? this);
                         SelfEnemyHitboxes.Add(hitbox);
                         EnemyHitboxes.Add(hitbox);
                     }
@@ -350,7 +354,7 @@ public sealed class DanmakuEngine
             {
                 var liveEnemy = Live.EnemyPosition?.Invoke(time);
                 EnemyPosition = liveEnemy ?? new Vec2(Settings.Collision.EnemyX, Settings.Collision.EnemyY);
-                var hitbox = new EnemyHitbox(EnemyPosition, EnemyRadius, 0, Settings.Channel);
+                var hitbox = new EnemyHitbox(EnemyPosition, EnemyRadius, 0, Settings.Channel, Live.LayerKey ?? this);
                 SelfEnemyHitboxes.Add(hitbox);
                 EnemyHitboxes.Add(hitbox);
             }
@@ -911,7 +915,11 @@ public sealed class DanmakuEngine
                             HitCount++;
                             var dmg = Live.HpBarDamagePerHit?.Invoke(stepTime) ?? (Settings.HpBar.DamagePerHit > 0 ? Settings.HpBar.DamagePerHit : 15.0);
                             TotalDamageDealt += dmg;
-                            DamageHistory.Add((stepTime, dmg, enemy.Channel >= 0 ? enemy.Channel : Settings.PlayerShot.TargetChannel));
+                            DamageHistory.Add((stepTime, dmg, enemy.Channel >= 0 ? enemy.Channel : Settings.PlayerShot.TargetChannel, enemy.LayerKey));
+                            if (enemy.LayerKey is not null && (ReferenceEquals(enemy.LayerKey, Live.LayerKey) || ReferenceEquals(enemy.LayerKey, this)))
+                            {
+                                SelfDamageReceived += dmg;
+                            }
                             Live.OnDamageDealt?.Invoke(dmg, enemy.EmitterIndex);
 
                             var baseHp = BossMaxHp;
@@ -920,7 +928,7 @@ public sealed class DanmakuEngine
                                 baseHp = Math.Clamp(liveHp / 100.0, 0.0, 1.0) * BossMaxHp;
                             }
                             var externalDmg = Live.ExternalDamage?.Invoke(stepTime) ?? 0.0;
-                            CurrentBossHp = Math.Max(0.0, baseHp - (TotalDamageDealt + externalDmg));
+                            CurrentBossHp = Math.Max(0.0, baseHp - (SelfDamageReceived + externalDmg));
                             EmitSound(DanmakuSoundKind.EnemyHit, enemy.EmitterIndex);
                             EmitSound(DanmakuSoundKind.Hit, enemy.EmitterIndex);
 

@@ -25,6 +25,7 @@ public static class DanmakuLiveWiring
         int totalFrame,
         object? sourceKey = null)
     {
+        sim.Live.LayerKey = sourceKey;
         var emitters = parameter.Emitters;
 
         sim.Live.EmitterPosition = (index, timeSeconds) =>

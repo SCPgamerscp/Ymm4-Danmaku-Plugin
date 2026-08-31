@@ -10,7 +10,7 @@ public readonly record struct TargetHitbox(Vec2 Position, double Radius, int Tar
 /// <summary>
 /// エネミー (ボス) の当たり判定領域。
 /// </summary>
-public readonly record struct EnemyHitbox(Vec2 Position, double Radius, int EmitterIndex = 0, int Channel = 0);
+public readonly record struct EnemyHitbox(Vec2 Position, double Radius, int EmitterIndex = 0, int Channel = 0, object? LayerKey = null);
 
 /// <summary>
 /// キーフレーム (YMM4 の <c>Animation</c>) によって時間変化する値をエンジンへ供給する差し込み口。
@@ -21,6 +21,9 @@ public readonly record struct EnemyHitbox(Vec2 Position, double Radius, int Emit
 /// </summary>
 public sealed class LiveValueSource
 {
+    /// <summary>このレイヤーの一意識別キー (DanmakuShapeSource またはタイムラインアイテム)。</summary>
+    public object? LayerKey { get; set; }
+
     // ---- エミッター位置・ターゲット位置 ----
     public Func<int, double, Vec2?>? EmitterPosition { get; set; }
     public Func<double, Vec2?>? TargetPosition { get; set; }

@@ -3168,6 +3168,77 @@ public class CollisionHitboxFollowUpTests
         // 2Pの弾のみがヒットし、1P方向の弾はすり抜ける (HitCount = 1)
         Assert.Equal(1, bossEngine.HitCount);
     }
+
+    [Fact]
+    public void 複数ボス存在時にショットが命中した側のボスのHPバーのみが減少する()
+    {
+        var boss1Key = new object();
+        var boss2Key = new object();
+
+        // ボス1: (-100, -100)
+        var boss1Settings = new DanmakuSettings
+        {
+            Collision = new CollisionSettings { IsEnabled = true, EnemyRadius = 30.0, EnemyHitEnabled = true },
+            Emitters = [new EmitterSettings { IsEnabled = true, X = -100, Y = -100 }],
+            HpBar = new BossHpBarSettings { MaxHp = 1000.0, InitialHpPercentage = 100.0, DamagePerHit = 20.0 }
+        };
+        var boss1Engine = new DanmakuEngine(boss1Settings);
+        boss1Engine.Live.LayerKey = boss1Key;
+        boss1Engine.Advance(0.01);
+
+        // ボス2: (100, -100)
+        var boss2Settings = new DanmakuSettings
+        {
+            Collision = new CollisionSettings { IsEnabled = true, EnemyRadius = 30.0, EnemyHitEnabled = true },
+            Emitters = [new EmitterSettings { IsEnabled = true, X = 100, Y = -100 }],
+            HpBar = new BossHpBarSettings { MaxHp = 1000.0, InitialHpPercentage = 100.0, DamagePerHit = 20.0 }
+        };
+        var boss2Engine = new DanmakuEngine(boss2Settings);
+        boss2Engine.Live.LayerKey = boss2Key;
+        boss2Engine.Advance(0.01);
+
+        // プレイヤー: (-100, 100) から上向きに正面集中ショット (ボス1 (-100, -100) に命中する軌道)
+        var playerSettings = new DanmakuSettings
+        {
+            Collision = new CollisionSettings { IsEnabled = true, TargetX = -100, TargetY = 100 },
+            PlayerShot = new PlayerShotSettings
+            {
+                IsEnabled = true,
+                Way = 1,
+                Speed = 1000,
+                FireInterval = 0.05
+            }
+        };
+        var playerEngine = new DanmakuEngine(playerSettings);
+        // プレイヤーはボス1とボス2の自己判定を受け取る
+        var allEnemies = boss1Engine.SelfEnemyHitboxes.Concat(boss2Engine.SelfEnemyHitboxes).ToList();
+        playerEngine.Live.Enemies = _ => allEnemies;
+
+        playerEngine.Advance(0.3); // ショットが (-100, -100) のボス1に命中
+
+        Assert.NotEmpty(playerEngine.DamageHistory);
+        Assert.All(playerEngine.DamageHistory, h => Assert.Same(boss1Key, h.TargetLayerKey));
+
+        // ボス1は被弾したため外部ダメージを受け取る
+        var b1Damage = playerEngine.DamageHistory
+            .Where(h => ReferenceEquals(h.TargetLayerKey, boss1Key))
+            .Sum(h => h.Damage);
+        boss1Engine.Live.ExternalDamage = _ => b1Damage;
+        boss1Engine.Advance(0.01);
+
+        // ボス2は被弾していないため外部ダメージ0
+        var b2Damage = playerEngine.DamageHistory
+            .Where(h => ReferenceEquals(h.TargetLayerKey, boss2Key))
+            .Sum(h => h.Damage);
+        boss2Engine.Live.ExternalDamage = _ => b2Damage;
+        boss2Engine.Advance(0.01);
+
+        // ボス1のHPのみが減少し、ボス2のHPは1000のまま
+        Assert.True(boss1Engine.CurrentBossHp < 1000.0, "ボス1のHPが減少していること");
+        Assert.Equal(1000.0, boss2Engine.CurrentBossHp);
+        Assert.True(boss1Engine.BossHpRatio < 1.0);
+        Assert.Equal(1.0, boss2Engine.BossHpRatio);
+    }
 }
 
 

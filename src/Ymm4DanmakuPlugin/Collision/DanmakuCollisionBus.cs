@@ -19,7 +19,7 @@ public sealed class DanmakuLayerRegistration
     public DanmakuShapeParameter Parameter { get; }
     public int Fps { get; set; }
     public int TotalFrame { get; set; }
-    public (double Time, double Damage, int TargetChannel)[]? DamageHistorySnapshot { get; set; }
+    public (double Time, double Damage, int TargetChannel, object? TargetLayerKey)[]? DamageHistorySnapshot { get; set; }
     public BulletCancelArea[]? CancelersSnapshot { get; set; }
     public EnemyHitbox[]? EnemyPositionsSnapshot { get; set; }
     public TargetHitbox[]? TargetPositionsSnapshot { get; set; }
@@ -75,7 +75,7 @@ public static class DanmakuCollisionBus
     /// </summary>
     public static void PublishSnapshots(
         object sourceKey,
-        (double Time, double Damage, int TargetChannel)[]? damageHistory,
+        (double Time, double Damage, int TargetChannel, object? TargetLayerKey)[]? damageHistory,
         BulletCancelArea[]? cancelers,
         EnemyHitbox[]? enemyPositions = null,
         TargetHitbox[]? targetPositions = null)
@@ -195,7 +195,7 @@ public static class DanmakuCollisionBus
                         pos += Vec2.FromDegrees(orbitAngle, orbitRadius);
                     }
 
-                    list.Add(new EnemyHitbox(pos, enemyRadius, i, ch));
+                    list.Add(new EnemyHitbox(pos, enemyRadius, i, ch, reg.SourceKey));
                 }
             }
         }
@@ -263,10 +263,20 @@ public static class DanmakuCollisionBus
                 {
                     for (var i = 0; i < snapshot.Length; i++)
                     {
-                        var (hitTime, dmg, hitTargetCh) = snapshot[i];
-                        if (hitTime <= timeSeconds && (channel < 0 || hitTargetCh < 0 || hitTargetCh == channel))
+                        var (hitTime, dmg, hitTargetCh, targetLayerKey) = snapshot[i];
+                        if (hitTime <= timeSeconds)
                         {
-                            total += dmg;
+                            if (targetLayerKey is not null)
+                            {
+                                if (ReferenceEquals(targetLayerKey, callerKey))
+                                {
+                                    total += dmg;
+                                }
+                            }
+                            else if (channel < 0 || hitTargetCh < 0 || hitTargetCh == channel)
+                            {
+                                total += dmg;
+                            }
                         }
                     }
                 }
