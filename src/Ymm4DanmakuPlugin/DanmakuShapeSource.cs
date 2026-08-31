@@ -59,7 +59,7 @@ public sealed class DanmakuShapeSource : IShapeSource2
         disposer.Collect(renderer);
 
         // 音声エフェクト側から設定を引けるように登録する (弱参照なので解放を妨げない)
-        Audio.DanmakuChannelBus.Register(parameter);
+        Audio.DanmakuChannelBus.Register(parameter, this);
     }
 
     /// <summary>YMM4 が合成に使う描画結果。</summary>
@@ -104,6 +104,7 @@ public sealed class DanmakuShapeSource : IShapeSource2
 
         // 外部レイヤー間の相互参照（自機・ボス・ダメージ）のためにシミュレーション前にレイヤーを登録
         Collision.DanmakuCollisionBus.RegisterLayer(this, parameter, fps, totalFrame);
+        Audio.DanmakuChannelBus.Register(parameter, this, fps, totalFrame);
 
         // キーフレームやスライダーの編集が一時停止中に行われても確実に最新の弾幕状態を反映するため、
         // 常に先頭から現在フレームまで確定的にシミュレーションを再現して描画する
@@ -501,7 +502,7 @@ public sealed class DanmakuShapeSource : IShapeSource2
 
     public void Dispose()
     {
-        Audio.DanmakuChannelBus.Unregister(parameter);
+        Audio.DanmakuChannelBus.Unregister(this);
         Collision.DanmakuCollisionBus.UnregisterLayer(this);
         simulator = null;
         output = null;

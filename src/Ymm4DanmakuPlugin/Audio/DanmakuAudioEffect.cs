@@ -191,8 +191,6 @@ public sealed class DanmakuSingleSoundProcessor : AudioEffectProcessorBase
     private readonly TimeSpan duration;
     private readonly List<Voice> voices = [];
 
-    private bool isPrepared;
-
     public DanmakuSingleSoundProcessor(DanmakuSingleSoundAudioEffectBase effect, DanmakuSoundKind soundKind, TimeSpan duration)
     {
         this.effect = effect;
@@ -206,13 +204,22 @@ public sealed class DanmakuSingleSoundProcessor : AudioEffectProcessorBase
 
     public string? Diagnostics { get; private set; }
 
+    private DanmakuShapeParameter? currentParameter;
+    private int currentSeed;
+
     protected override int read(float[] destBuffer, int offset, int count)
     {
         // 音声アイテム自体の音はそのまま鳴らさず、弾幕イベントに合わせて発音するためクリア
         Input?.Seek(Position + count);
         Array.Clear(destBuffer, offset, count);
 
-        Prepare();
+        var activeParam = DanmakuChannelBus.TryGetParameter(effect.Channel);
+        var activeSeed = activeParam is not null ? (int)Math.Round(activeParam.Seed.GetFirstValue()) : 0;
+
+        if (voices.Count == 0 || !ReferenceEquals(activeParam, currentParameter) || activeSeed != currentSeed)
+        {
+            Prepare(activeParam);
+        }
 
         if (voices.Count == 0) return count;
 
@@ -284,14 +291,13 @@ public sealed class DanmakuSingleSoundProcessor : AudioEffectProcessorBase
         }
     }
 
-    private void Prepare()
+    private void Prepare(DanmakuShapeParameter? parameter)
     {
-        if (isPrepared) return;
+        var settings = parameter is not null
+            ? parameter.ToSettings(parameter.LastCanvasWidth, parameter.LastCanvasHeight)
+            : DanmakuChannelBus.TryGetSettings(effect.Channel);
 
-        var parameters = DanmakuChannelBus.GetParameters(effect.Channel);
-        var fallbackSettings = parameters.Count == 0 ? DanmakuChannelBus.TryGetSettings(effect.Channel) : null;
-
-        if (parameters.Count == 0 && fallbackSettings is null)
+        if (settings is null)
         {
             Diagnostics = $"チャンネル {effect.Channel} の弾幕アイテムが見つかりません。";
             return;
@@ -305,7 +311,8 @@ public sealed class DanmakuSingleSoundProcessor : AudioEffectProcessorBase
             return;
         }
 
-        isPrepared = true;
+        currentParameter = parameter;
+        currentSeed = settings.Seed;
         voices.Clear();
 
         var hz = Hz;
@@ -316,19 +323,7 @@ public sealed class DanmakuSingleSoundProcessor : AudioEffectProcessorBase
             : totalAvailableFrames;
         var fadeOutFrames = Math.Max(0.0, effect.FadeOut * hz);
 
-        if (parameters.Count > 0)
-        {
-            foreach (var parameter in parameters)
-            {
-                var settings = parameter.ToSettings(parameter.LastCanvasWidth, parameter.LastCanvasHeight);
-                ProcessSettings(settings, parameter, buffer, hz, startFrame, maxFrames, fadeOutFrames);
-            }
-        }
-        else if (fallbackSettings is not null)
-        {
-            ProcessSettings(fallbackSettings, null, buffer, hz, startFrame, maxFrames, fadeOutFrames);
-        }
-
+        ProcessSettings(settings, parameter, buffer, hz, startFrame, maxFrames, fadeOutFrames);
         voices.Sort(static (a, b) => a.StartPosition.CompareTo(b.StartPosition));
     }
 
@@ -395,5 +390,13 @@ public sealed class DanmakuSingleSoundProcessor : AudioEffectProcessorBase
         }
     }
 
-    protected override void seek(long position) => Input?.Seek(position);
+    protected override void seek(long position)
+    {
+        Input?.Seek(position);
+        if (position == 0)
+        {
+            var activeParam = DanmakuChannelBus.TryGetParameter(effect.Channel);
+            Prepare(activeParam);
+        }
+    }
 }

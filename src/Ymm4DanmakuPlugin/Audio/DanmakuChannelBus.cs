@@ -4,55 +4,66 @@ using Ymm4DanmakuPlugin.Parameters;
 namespace Ymm4DanmakuPlugin.Audio;
 
 /// <summary>
+/// 弾幕アイテムの登録情報。
+/// </summary>
+public sealed class DanmakuChannelRegistration
+{
+    public object SourceKey { get; }
+    public WeakReference<DanmakuShapeParameter> ParameterRef { get; }
+    public int Fps { get; set; } = 60;
+    public int TotalFrame { get; set; } = 1;
+    public DateTime LastActiveUtc { get; set; } = DateTime.UtcNow;
+
+    public DanmakuChannelRegistration(object sourceKey, DanmakuShapeParameter parameter, int fps, int totalFrame)
+    {
+        SourceKey = sourceKey;
+        ParameterRef = new WeakReference<DanmakuShapeParameter>(parameter);
+        Fps = fps > 0 ? fps : 60;
+        TotalFrame = Math.Max(1, totalFrame);
+        LastActiveUtc = DateTime.UtcNow;
+    }
+}
+
+/// <summary>
 /// 映像側の弾幕アイテムと音声側の効果音エフェクトを結び付けるための連絡簿。
-/// <para>
-/// <b>なぜ必要か:</b> YMM4 では図形アイテム (映像) と音声エフェクト (音声) は
-/// 別々のアイテムとして独立に処理される。音声側から映像側の設定を直接読む手段が無いため、
-/// 「チャンネル番号」で紐付けるこの仕組みを用意している。
-/// </para>
-/// <para>
-/// <b>決定論との関係:</b> 音声側は映像側の計算結果を受け取るのではなく、
-/// <b>同じ設定・同じシードで自前にシミュレーションをやり直す</b>。
-/// コアエンジンは決定論的なので、両者は必ず同一の効果音イベント列を得る。
-/// これにより「音声だけ先に書き出す」ような順序でも音ズレが起きない。
-/// </para>
-/// <para>
-/// 参照は <see cref="WeakReference{T}"/> で保持するため、
-/// アイテムを削除してもここが原因でメモリが残ることはない。
-/// </para>
+/// タイムライン上で再生中の弾幕アイテム（弾幕1、弾幕2）が切り替わった時にも
+/// 直近に更新されたアクティブな弾幕設定を自動で選択して追従する。
 /// </summary>
 public static class DanmakuChannelBus
 {
     private static readonly object Gate = new();
-    private static readonly List<WeakReference<DanmakuShapeParameter>> Entries = [];
+    private static readonly Dictionary<object, DanmakuChannelRegistration> Registrations = new();
 
-    /// <summary>弾幕アイテムを登録する。同じインスタンスの二重登録は行われない。</summary>
-    public static void Register(DanmakuShapeParameter parameter)
+    /// <summary>弾幕アイテムを登録・更新する。</summary>
+    public static void Register(DanmakuShapeParameter parameter, object? sourceKey = null, int fps = 60, int totalFrame = 1)
     {
         lock (Gate)
         {
-            Prune();
-            foreach (var entry in Entries)
+            var key = sourceKey ?? parameter;
+            if (Registrations.TryGetValue(key, out var reg))
             {
-                if (entry.TryGetTarget(out var existing) && ReferenceEquals(existing, parameter)) return;
+                reg.Fps = fps > 0 ? fps : 60;
+                reg.TotalFrame = Math.Max(1, totalFrame);
+                reg.LastActiveUtc = DateTime.UtcNow;
             }
-
-            Entries.Add(new WeakReference<DanmakuShapeParameter>(parameter));
+            else
+            {
+                Registrations[key] = new DanmakuChannelRegistration(key, parameter, fps, totalFrame);
+            }
         }
     }
 
     /// <summary>登録を解除する。</summary>
-    public static void Unregister(DanmakuShapeParameter parameter)
+    public static void Unregister(object sourceKey)
     {
         lock (Gate)
         {
-            Entries.RemoveAll(e => !e.TryGetTarget(out var t) || ReferenceEquals(t, parameter));
+            Registrations.Remove(sourceKey);
         }
     }
 
     /// <summary>
-    /// 指定チャンネルの弾幕設定を取得する。
-    /// 同じチャンネルが複数ある場合は最初に見つかったものを返す。
+    /// 指定チャンネルで直近に最もアクティブだった弾幕設定を取得する。
     /// </summary>
     public static DanmakuSettings? TryGetSettings(int channel)
     {
@@ -61,44 +72,31 @@ public static class DanmakuChannelBus
     }
 
     /// <summary>
-    /// 指定チャンネルの弾幕パラメータインスタンスを取得する。
+    /// 指定チャンネルで直近に最もアクティブだった弾幕パラメータインスタンスを取得する。
+    /// タイムライン上で再生中の弾幕アイテム（弾幕1、弾幕2）が切り替わった時に自動で追従する。
     /// </summary>
     public static DanmakuShapeParameter? TryGetParameter(int channel)
     {
         lock (Gate)
         {
             Prune();
-            foreach (var entry in Entries)
+            DanmakuShapeParameter? best = null;
+            var bestTime = DateTime.MinValue;
+
+            foreach (var (_, reg) in Registrations)
             {
-                if (!entry.TryGetTarget(out var parameter)) continue;
+                if (!reg.ParameterRef.TryGetTarget(out var parameter)) continue;
                 var paramChannel = (int)Math.Round(parameter.Channel.GetFirstValue());
                 if (channel != -1 && paramChannel != -1 && paramChannel != channel) continue;
 
-                return parameter;
+                if (reg.LastActiveUtc > bestTime)
+                {
+                    bestTime = reg.LastActiveUtc;
+                    best = parameter;
+                }
             }
-        }
 
-        return null;
-    }
-
-    /// <summary>
-    /// 指定チャンネルに登録されているすべての弾幕パラメータインスタンスを取得する。
-    /// </summary>
-    public static List<DanmakuShapeParameter> GetParameters(int channel)
-    {
-        lock (Gate)
-        {
-            Prune();
-            var list = new List<DanmakuShapeParameter>();
-            foreach (var entry in Entries)
-            {
-                if (!entry.TryGetTarget(out var parameter)) continue;
-                var paramChannel = (int)Math.Round(parameter.Channel.GetFirstValue());
-                if (channel != -1 && paramChannel != -1 && paramChannel != channel) continue;
-
-                list.Add(parameter);
-            }
-            return list;
+            return best;
         }
     }
 
@@ -108,15 +106,28 @@ public static class DanmakuChannelBus
         lock (Gate)
         {
             Prune();
-            return Entries
-                .Select(e => e.TryGetTarget(out var p) ? (int)Math.Round(p.Channel.GetFirstValue()) : -1)
-                .Where(c => c >= 0)
-                .Distinct()
-                .Order()
-                .ToArray();
+            var list = new List<int>();
+            foreach (var (_, reg) in Registrations)
+            {
+                if (reg.ParameterRef.TryGetTarget(out var p))
+                {
+                    var ch = (int)Math.Round(p.Channel.GetFirstValue());
+                    if (ch >= 0 && !list.Contains(ch)) list.Add(ch);
+                }
+            }
+            list.Sort();
+            return list;
         }
     }
 
     /// <summary>回収済みの参照を取り除く。呼び出し側で <see cref="Gate"/> をロックしていること。</summary>
-    private static void Prune() => Entries.RemoveAll(e => !e.TryGetTarget(out _));
+    private static void Prune()
+    {
+        var deadKeys = new List<object>();
+        foreach (var (key, reg) in Registrations)
+        {
+            if (!reg.ParameterRef.TryGetTarget(out _)) deadKeys.Add(key);
+        }
+        foreach (var k in deadKeys) Registrations.Remove(k);
+    }
 }
