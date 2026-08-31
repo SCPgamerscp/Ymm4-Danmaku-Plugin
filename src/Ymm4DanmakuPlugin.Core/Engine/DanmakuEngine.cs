@@ -287,68 +287,55 @@ public sealed class DanmakuEngine
     private void RefreshPositions(double time)
     {
         TargetHitboxes.Clear();
+        var liveTarget = Live.TargetPosition?.Invoke(time);
+        TargetPosition = liveTarget ?? new Vec2(Settings.Collision.TargetX, Settings.Collision.TargetY);
+
+        var liveTargetRadius = Live.TargetRadius?.Invoke(time);
+        TargetRadius = liveTargetRadius ?? Settings.Collision.TargetRadius;
+
+        if (TargetRadius > 0)
+        {
+            TargetHitboxes.Add(new TargetHitbox(TargetPosition, TargetRadius, 0));
+        }
+
+        // 外部レイヤーの自機を追加
         if (Live.Targets?.Invoke(time) is { Count: > 0 } liveTargets)
         {
             TargetHitboxes.AddRange(liveTargets);
-            TargetPosition = TargetHitboxes[0].Position;
-            TargetRadius = TargetHitboxes[0].Radius;
-        }
-        else
-        {
-            var liveTarget = Live.TargetPosition?.Invoke(time);
-            TargetPosition = liveTarget ?? new Vec2(Settings.Collision.TargetX, Settings.Collision.TargetY);
-
-            var liveTargetRadius = Live.TargetRadius?.Invoke(time);
-            TargetRadius = liveTargetRadius ?? Settings.Collision.TargetRadius;
-
-            if (TargetRadius > 0)
-            {
-                TargetHitboxes.Add(new TargetHitbox(TargetPosition, TargetRadius, 0));
-            }
         }
 
         EnemyHitboxes.Clear();
-        if (Live.Enemies?.Invoke(time) is { Count: > 0 } liveEnemies)
+        var liveEnemyRadius = Live.EnemyRadius?.Invoke(time);
+        EnemyRadius = liveEnemyRadius ?? Settings.Collision.EnemyRadius;
+
+        // 自レイヤーのエミッター位置 (contexts[i].Position は公転・位置が積分済みで画像と完全一致)
+        if (contexts.Count > 0)
         {
-            EnemyHitboxes.AddRange(liveEnemies);
-            EnemyPosition = EnemyHitboxes[0].Position;
-            EnemyRadius = EnemyHitboxes[0].Radius;
+            EnemyPosition = contexts[0].Position;
+            for (var i = 0; i < contexts.Count; i++)
+            {
+                var emitterSettings = Settings.Emitters[contexts[i].EmitterIndex];
+                var isEnabled = Live.EmitterIsEnabled?.Invoke(contexts[i].EmitterIndex, time) ?? emitterSettings.IsEnabled;
+                if (isEnabled && EnemyRadius > 0)
+                {
+                    EnemyHitboxes.Add(new EnemyHitbox(contexts[i].Position, EnemyRadius, contexts[i].EmitterIndex, Settings.Channel));
+                }
+            }
         }
         else
         {
             var liveEnemy = Live.EnemyPosition?.Invoke(time);
-            var liveEnemyRadius = Live.EnemyRadius?.Invoke(time);
-            EnemyRadius = liveEnemyRadius ?? Settings.Collision.EnemyRadius;
+            EnemyPosition = liveEnemy ?? new Vec2(Settings.Collision.EnemyX, Settings.Collision.EnemyY);
+            if (EnemyRadius > 0)
+            {
+                EnemyHitboxes.Add(new EnemyHitbox(EnemyPosition, EnemyRadius, 0, Settings.Channel));
+            }
+        }
 
-            if (liveEnemy.HasValue)
-            {
-                EnemyPosition = liveEnemy.Value;
-                if (EnemyRadius > 0)
-                {
-                    EnemyHitboxes.Add(new EnemyHitbox(EnemyPosition, EnemyRadius, 0, Settings.Channel));
-                }
-            }
-            else if (contexts.Count > 0)
-            {
-                EnemyPosition = contexts[0].Position;
-                for (var i = 0; i < contexts.Count; i++)
-                {
-                    var emitterSettings = Settings.Emitters[contexts[i].EmitterIndex];
-                    var isEnabled = Live.EmitterIsEnabled?.Invoke(contexts[i].EmitterIndex, time) ?? emitterSettings.IsEnabled;
-                    if (isEnabled && EnemyRadius > 0)
-                    {
-                        EnemyHitboxes.Add(new EnemyHitbox(contexts[i].Position, EnemyRadius, contexts[i].EmitterIndex, Settings.Channel));
-                    }
-                }
-            }
-            else
-            {
-                EnemyPosition = new Vec2(Settings.Collision.EnemyX, Settings.Collision.EnemyY);
-                if (EnemyRadius > 0)
-                {
-                    EnemyHitboxes.Add(new EnemyHitbox(EnemyPosition, EnemyRadius, 0, Settings.Channel));
-                }
-            }
+        // 外部レイヤーのエネミーを追加
+        if (Live.Enemies?.Invoke(time) is { Count: > 0 } liveEnemies)
+        {
+            EnemyHitboxes.AddRange(liveEnemies);
         }
     }
 

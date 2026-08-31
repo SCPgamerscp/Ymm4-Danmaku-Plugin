@@ -21,6 +21,8 @@ public sealed class DanmakuLayerRegistration
     public int TotalFrame { get; set; }
     public (double Time, double Damage, int TargetChannel)[]? DamageHistorySnapshot { get; set; }
     public BulletCancelArea[]? CancelersSnapshot { get; set; }
+    public EnemyHitbox[]? EnemyPositionsSnapshot { get; set; }
+    public TargetHitbox[]? TargetPositionsSnapshot { get; set; }
 
     public DanmakuLayerRegistration(object sourceKey, DanmakuShapeParameter parameter, int fps, int totalFrame)
     {
@@ -68,10 +70,15 @@ public static class DanmakuCollisionBus
     }
 
     /// <summary>
-    /// シミュレーション完了後にスナップショット (ダメージ履歴・相殺領域) を公開する。
+    /// シミュレーション完了後にスナップショット (ダメージ履歴・相殺領域・エネミー位置・自機位置) を公開する。
     /// スナップショットは不変配列のため、別スレッドから同時に読まれても安全。
     /// </summary>
-    public static void PublishSnapshots(object sourceKey, (double Time, double Damage, int TargetChannel)[]? damageHistory, BulletCancelArea[]? cancelers)
+    public static void PublishSnapshots(
+        object sourceKey,
+        (double Time, double Damage, int TargetChannel)[]? damageHistory,
+        BulletCancelArea[]? cancelers,
+        EnemyHitbox[]? enemyPositions = null,
+        TargetHitbox[]? targetPositions = null)
     {
         lock (Gate)
         {
@@ -79,6 +86,8 @@ public static class DanmakuCollisionBus
             {
                 reg.DamageHistorySnapshot = damageHistory;
                 reg.CancelersSnapshot = cancelers;
+                if (enemyPositions is not null) reg.EnemyPositionsSnapshot = enemyPositions;
+                if (targetPositions is not null) reg.TargetPositionsSnapshot = targetPositions;
             }
         }
     }
@@ -110,6 +119,12 @@ public static class DanmakuCollisionBus
                 var frame = TimeToFrame(timeSeconds, reg.Fps, reg.TotalFrame);
                 var ch = (int)Math.Round(reg.Parameter.Channel.GetValue(frame, reg.TotalFrame, reg.Fps));
                 if (targetChannel >= 0 && ch != targetChannel) continue;
+
+                if (reg.TargetPositionsSnapshot is { Length: > 0 } snap)
+                {
+                    list.AddRange(snap);
+                    continue;
+                }
 
                 var col = reg.Parameter.CollisionEnabled.GetValue(frame, reg.TotalFrame, reg.Fps) >= 0.5;
                 var show = reg.Parameter.ShowTargetMarker.GetValue(frame, reg.TotalFrame, reg.Fps) >= 0.5;
@@ -143,6 +158,19 @@ public static class DanmakuCollisionBus
                 var frame = TimeToFrame(timeSeconds, reg.Fps, reg.TotalFrame);
                 var ch = (int)Math.Round(reg.Parameter.Channel.GetValue(frame, reg.TotalFrame, reg.Fps));
                 if (targetChannel >= 0 && ch != targetChannel) continue;
+
+                if (reg.EnemyPositionsSnapshot is { Length: > 0 } snap)
+                {
+                    for (var s = 0; s < snap.Length; s++)
+                    {
+                        var e = snap[s];
+                        if (targetChannel < 0 || e.Channel < 0 || e.Channel == targetChannel)
+                        {
+                            list.Add(e);
+                        }
+                    }
+                    continue;
+                }
 
                 var enemyRadius = reg.Parameter.EnemyRadius.GetValue(frame, reg.TotalFrame, reg.Fps);
                 if (enemyRadius <= 0) continue;

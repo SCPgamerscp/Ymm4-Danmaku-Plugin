@@ -127,7 +127,9 @@ public sealed class DanmakuShapeSource : IShapeSource2
             }
             if (cancelList.Count > 0) cancelersSnapshot = cancelList.ToArray();
         }
-        Collision.DanmakuCollisionBus.PublishSnapshots(this, damageSnapshot, cancelersSnapshot);
+        var enemyHitboxesSnapshot = simulator.Engine.EnemyHitboxes.ToArray();
+        var targetHitboxesSnapshot = simulator.Engine.TargetHitboxes.ToArray();
+        Collision.DanmakuCollisionBus.PublishSnapshots(this, damageSnapshot, cancelersSnapshot, enemyHitboxesSnapshot, targetHitboxesSnapshot);
 
         lastFrame = frame;
         lastFps = fps;

@@ -2992,6 +2992,43 @@ public class CollisionHitboxFollowUpTests
         // 近いボス (100, 0) は右方向 (0度)
         Assert.Equal(0.0, shots[0].Direction, precision: 1);
     }
+
+    [Fact]
+    public void 公転運動中のボスの当たり判定座標がエミッター描画座標と完全に一致する()
+    {
+        var settings = new DanmakuSettings
+        {
+            FixedTimeStep = 1.0 / 60.0,
+            Collision = new CollisionSettings { IsEnabled = true, EnemyRadius = 30.0 },
+            Emitters = [
+                new EmitterSettings
+                {
+                    IsEnabled = true,
+                    X = 100,
+                    Y = -200,
+                    OrbitRadius = 150,
+                    OrbitSpeed = 360, // 毎秒360度 (1フレームで6度回転)
+                    OrbitPhase = 0
+                }
+            ]
+        };
+
+        var engine = new DanmakuEngine(settings);
+
+        for (var step = 1; step <= 60; step++)
+        {
+            engine.Advance(1.0 / 60.0);
+            var expectedContextPos = engine.Contexts[0].Position;
+            Assert.NotEmpty(engine.EnemyHitboxes);
+            var hitboxPos = engine.EnemyHitboxes[0].Position;
+
+            // 当たり判定座標とエミッターコンテキスト描画座標が完全に一致していること
+            Assert.Equal(expectedContextPos.X, hitboxPos.X, precision: 4);
+            Assert.Equal(expectedContextPos.Y, hitboxPos.Y, precision: 4);
+            Assert.Equal(expectedContextPos.X, engine.EnemyPosition.X, precision: 4);
+            Assert.Equal(expectedContextPos.Y, engine.EnemyPosition.Y, precision: 4);
+        }
+    }
 }
 
 
