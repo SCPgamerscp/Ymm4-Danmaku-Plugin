@@ -3110,6 +3110,64 @@ public class CollisionHitboxFollowUpTests
         Assert.Empty(engine.DamageHistory); // ダメージも記録されない
         Assert.Empty(engine.EnemyHitboxes); // ボス判定リストも空
     }
+
+    [Fact]
+    public void 片方無敵自機と片方被弾自機が同時に存在する場合に被弾自機のみが被弾する()
+    {
+        // 1P: 無敵 (CollisionEnabled = false) at (-100, 100)
+        var p1Settings = new DanmakuSettings
+        {
+            Collision = new CollisionSettings { IsEnabled = false, TargetX = -100, TargetY = 100, TargetRadius = 20.0 }
+        };
+        var p1Engine = new DanmakuEngine(p1Settings);
+        p1Engine.Advance(0.01);
+        Assert.Empty(p1Engine.SelfTargetHitboxes); // 1Pは無敵なのでSelfTargetHitboxesは空
+
+        // 2P: 被弾有効 (CollisionEnabled = true) at (100, 100)
+        var p2Settings = new DanmakuSettings
+        {
+            Collision = new CollisionSettings { IsEnabled = true, TargetX = 100, TargetY = 100, TargetRadius = 20.0 }
+        };
+        var p2Engine = new DanmakuEngine(p2Settings);
+        p2Engine.Advance(0.01);
+        Assert.Single(p2Engine.SelfTargetHitboxes); // 2Pは有効なのでSelfTargetHitboxesに1件
+
+        // Boss: 両方向に敵弾を発射
+        var bossSettings = new DanmakuSettings
+        {
+            Collision = new CollisionSettings { IsEnabled = false },
+            Emitters = [
+                // 1P (-100, 100) 方向へ発射
+                new EmitterSettings
+                {
+                    IsEnabled = true,
+                    X = 0,
+                    Y = 0,
+                    Pattern = new PatternSettings { FireInterval = 10.0, Way = 1, BaseAngle = 135 },
+                    Physics = new BulletPhysics { Speed = 200, HitRadius = 10.0 }
+                },
+                // 2P (100, 100) 方向へ発射
+                new EmitterSettings
+                {
+                    IsEnabled = true,
+                    X = 0,
+                    Y = 0,
+                    Pattern = new PatternSettings { FireInterval = 10.0, Way = 1, BaseAngle = 45 },
+                    Physics = new BulletPhysics { Speed = 200, HitRadius = 10.0 }
+                }
+            ]
+        };
+
+        var bossEngine = new DanmakuEngine(bossSettings);
+        // Boss は 1P(空) と 2P(1件) の SelfTargetHitbox スナップショットを受け取る
+        var allTargets = p1Engine.SelfTargetHitboxes.Concat(p2Engine.SelfTargetHitboxes).ToList();
+        bossEngine.Live.Targets = _ => allTargets;
+
+        bossEngine.Advance(1.0); // 弾が両方の座標に到達
+
+        // 2Pの弾のみがヒットし、1P方向の弾はすり抜ける (HitCount = 1)
+        Assert.Equal(1, bossEngine.HitCount);
+    }
 }
 
 

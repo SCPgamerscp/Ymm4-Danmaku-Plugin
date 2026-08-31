@@ -207,7 +207,14 @@ public sealed class DanmakuEngine
     public double EnemyRadius { get; set; } = 32.0;
 
     /// <summary>ターゲット (自機) の当たり判定半径。</summary>
+    /// <summary>ターゲット (自機) の当たり判定半径。</summary>
     public double TargetRadius { get; set; } = 8.0;
+
+    /// <summary>このレイヤー自身の自機当たり判定 (自機無敵時は空)。</summary>
+    public List<TargetHitbox> SelfTargetHitboxes { get; } = new();
+
+    /// <summary>このレイヤー自身のエネミー当たり判定 (ボス無敵時は空)。</summary>
+    public List<EnemyHitbox> SelfEnemyHitboxes { get; } = new();
 
     /// <summary>画面内に存在するすべての自機判定 (マルチターゲット)。</summary>
     public List<TargetHitbox> TargetHitboxes { get; } = new();
@@ -288,7 +295,9 @@ public sealed class DanmakuEngine
     /// </summary>
     private void RefreshPositions(double time)
     {
+        SelfTargetHitboxes.Clear();
         TargetHitboxes.Clear();
+
         var liveTarget = Live.TargetPosition?.Invoke(time);
         TargetPosition = liveTarget ?? new Vec2(Settings.Collision.TargetX, Settings.Collision.TargetY);
 
@@ -297,10 +306,12 @@ public sealed class DanmakuEngine
 
         var collisionEnabled = Live.CollisionEnabled?.Invoke(time) ?? Settings.Collision.IsEnabled;
 
-        // 自機の当たり判定が有効 (CollisionEnabled=1) かつ 半径>0 の場合のみ被弾判定を生成 (0で無敵)
+        // 自機の当たり判定が有効 (CollisionEnabled=1) かつ 半径>0 の場合のみ自機判定を生成 (0で無敵)
         if (collisionEnabled && TargetRadius > 0)
         {
-            TargetHitboxes.Add(new TargetHitbox(TargetPosition, TargetRadius, 0));
+            var selfTarget = new TargetHitbox(TargetPosition, TargetRadius, 0);
+            SelfTargetHitboxes.Add(selfTarget);
+            TargetHitboxes.Add(selfTarget);
         }
 
         // 外部レイヤーの自機 (有効なもの) を追加
@@ -309,13 +320,15 @@ public sealed class DanmakuEngine
             TargetHitboxes.AddRange(liveTargets);
         }
 
+        SelfEnemyHitboxes.Clear();
         EnemyHitboxes.Clear();
+
         var liveEnemyRadius = Live.EnemyRadius?.Invoke(time);
         EnemyRadius = liveEnemyRadius ?? Settings.Collision.EnemyRadius;
 
         var enemyHitEnabled = Live.EnemyHitEnabled?.Invoke(time) ?? Settings.Collision.EnemyHitEnabled;
 
-        // ボス被弾判定が有効 (EnemyHitEnabled=1) かつ 半径>0 の場合のみ被弾判定を生成 (0でボス無敵)
+        // ボス被弾判定が有効 (EnemyHitEnabled=1) かつ 半径>0 の場合のみボス判定を生成 (0でボス無敵)
         if (enemyHitEnabled && EnemyRadius > 0)
         {
             if (contexts.Count > 0)
@@ -327,7 +340,9 @@ public sealed class DanmakuEngine
                     var isEnabled = Live.EmitterIsEnabled?.Invoke(contexts[i].EmitterIndex, time) ?? emitterSettings.IsEnabled;
                     if (isEnabled)
                     {
-                        EnemyHitboxes.Add(new EnemyHitbox(contexts[i].Position, EnemyRadius, contexts[i].EmitterIndex, Settings.Channel));
+                        var hitbox = new EnemyHitbox(contexts[i].Position, EnemyRadius, contexts[i].EmitterIndex, Settings.Channel);
+                        SelfEnemyHitboxes.Add(hitbox);
+                        EnemyHitboxes.Add(hitbox);
                     }
                 }
             }
@@ -335,7 +350,9 @@ public sealed class DanmakuEngine
             {
                 var liveEnemy = Live.EnemyPosition?.Invoke(time);
                 EnemyPosition = liveEnemy ?? new Vec2(Settings.Collision.EnemyX, Settings.Collision.EnemyY);
-                EnemyHitboxes.Add(new EnemyHitbox(EnemyPosition, EnemyRadius, 0, Settings.Channel));
+                var hitbox = new EnemyHitbox(EnemyPosition, EnemyRadius, 0, Settings.Channel);
+                SelfEnemyHitboxes.Add(hitbox);
+                EnemyHitboxes.Add(hitbox);
             }
         }
         else

@@ -127,8 +127,8 @@ public sealed class DanmakuShapeSource : IShapeSource2
             }
             if (cancelList.Count > 0) cancelersSnapshot = cancelList.ToArray();
         }
-        var enemyHitboxesSnapshot = simulator.Engine.EnemyHitboxes.ToArray();
-        var targetHitboxesSnapshot = simulator.Engine.TargetHitboxes.ToArray();
+        var enemyHitboxesSnapshot = simulator.Engine.SelfEnemyHitboxes.ToArray();
+        var targetHitboxesSnapshot = simulator.Engine.SelfTargetHitboxes.ToArray();
         Collision.DanmakuCollisionBus.PublishSnapshots(this, damageSnapshot, cancelersSnapshot, enemyHitboxesSnapshot, targetHitboxesSnapshot);
 
         lastFrame = frame;
@@ -146,9 +146,9 @@ public sealed class DanmakuShapeSource : IShapeSource2
 
         var collisionEnabled = parameter.CollisionEnabled.GetValue(frame, totalFrame, fps) >= 0.5;
         var showTargetMarker = parameter.ShowTargetMarker.GetValue(frame, totalFrame, fps) >= 0.5;
-        var hasTarget = collisionEnabled && (showTargetMarker || parameter.HasCustomTargetImage);
+        var hasTarget = showTargetMarker || parameter.HasCustomTargetImage;
         var targetInfo = new TargetRenderInfo(
-            Enabled: collisionEnabled && (parameter.HasCustomTargetImage || showTargetMarker),
+            Enabled: showTargetMarker || parameter.HasCustomTargetImage,
             X: targetX,
             Y: targetY,
             Scale: targetScale,
