@@ -205,6 +205,9 @@ public sealed class DanmakuEngine
     /// <summary>エネミー (ボス) の被弾判定半径。</summary>
     public double EnemyRadius { get; set; } = 32.0;
 
+    /// <summary>ターゲット (自機) の当たり判定半径。</summary>
+    public double TargetRadius { get; set; } = 8.0;
+
     /// <summary>エネミーへの自機ショット命中回数。</summary>
     public int EnemyHitCount { get; private set; }
 
@@ -274,6 +277,9 @@ public sealed class DanmakuEngine
     {
         var liveTarget = Live.TargetPosition?.Invoke(CurrentTime);
         TargetPosition = liveTarget ?? new Vec2(Settings.Collision.TargetX, Settings.Collision.TargetY);
+
+        var liveTargetRadius = Live.TargetRadius?.Invoke(CurrentTime);
+        TargetRadius = liveTargetRadius ?? Settings.Collision.TargetRadius;
 
         var liveEnemy = Live.EnemyPosition?.Invoke(CurrentTime);
         if (liveEnemy.HasValue)
@@ -370,6 +376,7 @@ public sealed class DanmakuEngine
         var cancelEnemy = Live.PlayerShotCancelEnemyBullets?.Invoke(CurrentTime) ?? shot.CancelEnemyBullets;
         var additive = Live.PlayerShotAdditive?.Invoke(CurrentTime) ?? shot.Additive;
         var alignToDir = Live.PlayerShotAlignToDirection?.Invoke(CurrentTime) ?? shot.AlignToDirection;
+        var destroyOnHit = Live.PlayerShotDestroyOnHit?.Invoke(CurrentTime) ?? shot.DestroyOnHit;
 
         for (var i = 0; i < way; i++)
         {
@@ -398,7 +405,7 @@ public sealed class DanmakuEngine
             bullet.Direction = angle;
             bullet.Speed = speed;
             bullet.HitRadius = hitRadius;
-            bullet.DestroyOnHit = shot.DestroyOnHit;
+            bullet.DestroyOnHit = destroyOnHit;
             bullet.Scale = scale;
             bullet.Color = shot.Color;
             bullet.Additive = additive;
@@ -733,7 +740,7 @@ public sealed class DanmakuEngine
                         bullet.HasHit = true;
                         EnemyHitCount++;
                         HitCount++;
-                        var dmg = Settings.HpBar.DamagePerHit > 0 ? Settings.HpBar.DamagePerHit : 15.0;
+                        var dmg = Live.HpBarDamagePerHit?.Invoke(CurrentTime) ?? (Settings.HpBar.DamagePerHit > 0 ? Settings.HpBar.DamagePerHit : 15.0);
                         TotalDamageDealt += dmg;
                         var baseHp = BossMaxHp;
                         if (Live.BossHp?.Invoke(CurrentTime) is { } liveHp)
@@ -755,9 +762,9 @@ public sealed class DanmakuEngine
             else
             {
                 // --- 敵弾 vs 自機 (ターゲット) ---
-                if (collisionEnabled && collision.TargetRadius > 0)
+                if (collisionEnabled && TargetRadius > 0)
                 {
-                    var radius = bullet.HitRadius * Math.Abs(bullet.Scale) + collision.TargetRadius;
+                    var radius = bullet.HitRadius * Math.Abs(bullet.Scale) + TargetRadius;
                     if (bullet.Position.DistanceSquaredTo(TargetPosition) <= radius * radius)
                     {
                         bullet.HasHit = true;
@@ -778,7 +785,9 @@ public sealed class DanmakuEngine
 
     private void SpawnHitEffectAt(Vec2 position, Bullet source, CollisionSettings collision)
     {
-        var count = Math.Max(1, collision.HitEffectCount);
+        var count = Math.Max(1, Live.HitEffectCount?.Invoke(CurrentTime) ?? collision.HitEffectCount);
+        var effectSpeed = Live.HitEffectSpeed?.Invoke(CurrentTime) ?? collision.HitEffectSpeed;
+        var effectLifetime = Math.Max(0.01, Live.HitEffectLifetime?.Invoke(CurrentTime) ?? collision.HitEffectLifetime);
         for (var i = 0; i < count; i++)
         {
             var particle = Pool.Rent();
@@ -791,15 +800,15 @@ public sealed class DanmakuEngine
             particle.Position = position;
             particle.PreviousPosition = position;
             particle.Direction = 360.0 / count * i + Random.NextSymmetric(15);
-            particle.Speed = collision.HitEffectSpeed * Random.NextDouble(0.6, 1.4);
+            particle.Speed = effectSpeed * Random.NextDouble(0.6, 1.4);
             particle.Damping = 0.02;
             particle.SpriteIndex = collision.HitEffectSpriteIndex;
             particle.Scale = Math.Abs(source.Scale) * 0.6;
-            particle.ScaleVelocity = -Math.Abs(source.Scale) * 0.6 / Math.Max(0.05, collision.HitEffectLifetime);
+            particle.ScaleVelocity = -Math.Abs(source.Scale) * 0.6 / Math.Max(0.05, effectLifetime);
             particle.Color = source.Color;
             particle.Additive = true;
-            particle.Lifetime = collision.HitEffectLifetime;
-            particle.FadeOutDuration = collision.HitEffectLifetime * 0.6;
+            particle.Lifetime = effectLifetime;
+            particle.FadeOutDuration = effectLifetime * 0.6;
             particle.HitRadius = 0;
         }
     }

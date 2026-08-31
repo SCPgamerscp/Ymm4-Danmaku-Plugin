@@ -145,4 +145,5 @@ public sealed class EmitterContext(DanmakuEngine engine, int emitterIndex)
     public bool? EmitterEnemyEnabled(double time) => Engine.Live.EmitterEnemyEnabled?.Invoke(EmitterIndex, time);
     public bool? EmitterEnemyBehindBullets(double time) => Engine.Live.EmitterEnemyBehindBullets?.Invoke(EmitterIndex, time);
     public bool? EmitterScriptLoop(double time) => Engine.Live.EmitterScriptLoop?.Invoke(EmitterIndex, time);
+    public bool? EmitterDestroyOnHit(double time) => Engine.Live.EmitterDestroyOnHit?.Invoke(EmitterIndex, time);
 }

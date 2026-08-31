@@ -132,6 +132,7 @@ public sealed class LiveValueSource
     public Func<int, double, bool?>? EmitterEnemyEnabled { get; set; }
     public Func<int, double, bool?>? EmitterEnemyBehindBullets { get; set; }
     public Func<int, double, bool?>? EmitterScriptLoop { get; set; }
+    public Func<int, double, bool?>? EmitterDestroyOnHit { get; set; }
 
     public Func<double, bool?>? CollisionEnabled { get; set; }
     public Func<double, bool?>? EnemyHitEnabled { get; set; }
@@ -142,7 +143,9 @@ public sealed class LiveValueSource
     public Func<double, bool?>? PlayerShotAdditive { get; set; }
     public Func<double, bool?>? PlayerShotAutoAim { get; set; }
     public Func<double, bool?>? PlayerShotCancelEnemyBullets { get; set; }
+    public Func<double, bool?>? PlayerShotDestroyOnHit { get; set; }
     public Func<double, bool?>? HpBarEnabled { get; set; }
+    public Func<double, double?>? HpBarDamagePerHit { get; set; }
 
     public Func<double, int?>? Seed { get; set; }
     public Func<double, int?>? MaxBullets { get; set; }

@@ -2606,6 +2606,140 @@ public class OrbitCollisionTests
     }
 }
 
+public class CollisionHitboxFollowUpTests
+{
+    [Fact]
+    public void 自機の当たり判定半径がキーフレームで動的に変化する()
+    {
+        var settings = new DanmakuSettings
+        {
+            Collision = new CollisionSettings
+            {
+                IsEnabled = true,
+                TargetRadius = 5.0, // 初期は極小
+            },
+            Emitters = [
+                new EmitterSettings
+                {
+                    IsEnabled = true,
+                    X = 0,
+                    Y = 0,
+                    Pattern = new PatternSettings { FireInterval = 0.05, Way = 1, BaseAngle = 90 }, // 下向き
+                    Physics = new BulletPhysics { Speed = 100.0, HitRadius = 5.0 }
+                }
+            ]
+        };
+
+        var engine = new DanmakuEngine(settings);
+        // ターゲットは X=15, Y=50 に配置 (弾の軌道 X=0 との距離は 15px)
+        // 初期判定: 弾(5px) + 自機(5px) = 10px <= 15px なのでかすりもせず当たらない
+        engine.Live.TargetPosition = _ => new Vec2(15, 50);
+
+        // 0.4秒までは TargetRadius=5px、0.4秒以降は TargetRadius=20px に拡大
+        // 拡大後判定: 弾(5px) + 自機(20px) = 25px > 15px で命中する
+        engine.Live.TargetRadius = t => t >= 0.4 ? 20.0 : 5.0;
+
+        engine.Advance(0.35); // 弾が Y=50 付近を通過中 (t=0.35s では TargetRadius=5px)
+        Assert.DoesNotContain(engine.SoundLog.Events, e => e.Kind == DanmakuSoundKind.PlayerHit);
+
+        engine.Advance(0.3); // t=0.65s (次の弾が通過、TargetRadius=20px)
+        Assert.Contains(engine.SoundLog.Events, e => e.Kind == DanmakuSoundKind.PlayerHit);
+    }
+
+    [Fact]
+    public void 自機弾の命中時消滅と貫通がキーフレームで切り替わる()
+    {
+        var settings = new DanmakuSettings
+        {
+            Collision = new CollisionSettings
+            {
+                IsEnabled = true,
+                EnemyRadius = 30.0,
+            },
+            PlayerShot = new PlayerShotSettings
+            {
+                IsEnabled = true,
+                Way = 1,
+                FireInterval = 0.1,
+                Speed = 500,
+                DestroyOnHit = true, // 初期は消滅
+            },
+            Emitters = [
+                new EmitterSettings
+                {
+                    IsEnabled = true,
+                    X = 0,
+                    Y = 0,
+                    Pattern = new PatternSettings { FireInterval = 10.0, Way = 1 }
+                }
+            ]
+        };
+
+        var engine = new DanmakuEngine(settings);
+        engine.Live.TargetPosition = _ => new Vec2(0, 50); // ボス (0, 0) のすぐ下
+
+        // 0.2秒までは DestroyOnHit=true (消滅)、0.2秒以降は DestroyOnHit=false (貫通)
+        engine.Live.PlayerShotDestroyOnHit = t => t < 0.2;
+
+        engine.Advance(0.08); // t=0.08: 1発目発射、命中して消滅
+        Assert.DoesNotContain(engine.AliveBullets(), b => b.IsPlayerShot);
+
+        engine.Advance(0.2); // t=0.28: 貫通弾が発射されてボスに命中後も存続
+        Assert.Contains(engine.AliveBullets(), b => b.IsPlayerShot && b.HasHit);
+    }
+
+    [Fact]
+    public void 被弾ダメージ量がキーフレームで動的に変化する()
+    {
+        var settings = new DanmakuSettings
+        {
+            Collision = new CollisionSettings { IsEnabled = true, EnemyRadius = 30.0 },
+            HpBar = new BossHpBarSettings { MaxHp = 1000, DamagePerHit = 10.0 },
+            PlayerShot = new PlayerShotSettings { IsEnabled = true, Way = 1, FireInterval = 0.05, Speed = 1000 },
+            Emitters = [
+                new EmitterSettings { IsEnabled = true, X = 0, Y = 0, Pattern = new PatternSettings { FireInterval = 10.0, Way = 1 } }
+            ]
+        };
+
+        var engine = new DanmakuEngine(settings);
+        engine.Live.TargetPosition = _ => new Vec2(0, 50);
+        // ダメージを 50 に強化
+        engine.Live.HpBarDamagePerHit = _ => 50.0;
+
+        engine.Advance(0.08); // 1発命中
+        Assert.Equal(50.0, engine.TotalDamageDealt, precision: 1);
+    }
+
+    [Fact]
+    public void 被弾スパーク数がキーフレームで動的に変化する()
+    {
+        var settings = new DanmakuSettings
+        {
+            Collision = new CollisionSettings
+            {
+                IsEnabled = true,
+                EnemyRadius = 30.0,
+                SpawnHitEffect = true,
+                HitEffectCount = 4
+            },
+            PlayerShot = new PlayerShotSettings { IsEnabled = true, Way = 1, FireInterval = 0.05, Speed = 1000 },
+            Emitters = [
+                new EmitterSettings { IsEnabled = true, X = 0, Y = 0, Pattern = new PatternSettings { FireInterval = 10.0, Way = 1 } }
+            ]
+        };
+
+        var engine = new DanmakuEngine(settings);
+        engine.Live.TargetPosition = _ => new Vec2(0, 50);
+        // スパーク数を 16 個に設定
+        engine.Live.HitEffectCount = _ => 16;
+
+        engine.Advance(0.08); // 1発命中
+        var particles = engine.AliveBullets().Where(b => b.Generation > 0).ToList();
+        Assert.Equal(16, particles.Count);
+    }
+}
+
+
 
 
 

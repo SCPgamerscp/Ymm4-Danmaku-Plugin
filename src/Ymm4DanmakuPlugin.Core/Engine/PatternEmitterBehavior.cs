@@ -207,9 +207,11 @@ public sealed class PatternEmitterBehavior(EmitterSettings settings) : IEmitterB
             for (var i = 0; i < way; i++)
             {
                 var homingEnabled = context.EmitterHomingEnabled(fireTime) ?? physics.HomingEnabled;
+                var destroyOnHit = context.EmitterDestroyOnHit(fireTime) ?? physics.DestroyOnHit;
                 var curPhysics = physics with
                 {
                     HomingEnabled = homingEnabled,
+                    DestroyOnHit = destroyOnHit,
                     SpeedJitter = speedJitter,
                     AngularVelocityJitter = angVelJitter,
                     LifetimeJitter = lifetimeJitter,

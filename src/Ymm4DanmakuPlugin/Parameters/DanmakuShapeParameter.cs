@@ -687,9 +687,8 @@ public class DanmakuShapeParameter : ShapeParameterBase
     private double bossMaxHp = 1000.0;
 
     [Display(GroupName = "体力バー", Name = "被弾ダメージ", Description = "自機ショット 1 発あたりのダメージ実数値。")]
-    [TextBoxSlider("F1", "ダメージ", 0, 10000)]
-    public double DamagePerHit { get => damagePerHit; set => Set(ref damagePerHit, value); }
-    private double damagePerHit = 15.0;
+    [AnimationSlider("F1", "ダメージ", 0, 10000)]
+    public Animation DamagePerHit { get; } = new Animation(15, 0, 10000);
 
     [Display(GroupName = "体力バー", Name = "リング半径", Description = "円形ゲージの半径 (px)。")]
     [AnimationSlider("F0", "px", 10, 800)]
@@ -858,6 +857,7 @@ public class DanmakuShapeParameter : ShapeParameterBase
 
         SubscribeAnimatable(HpBarEnabled, nameof(HpBarEnabled));
         SubscribeAnimatable(BossHp, nameof(BossHp));
+        SubscribeAnimatable(DamagePerHit, nameof(DamagePerHit));
         SubscribeAnimatable(HpBarRadius, nameof(HpBarRadius));
         SubscribeAnimatable(HpBarWidth, nameof(HpBarWidth));
         SubscribeAnimatable(HpBarHeight, nameof(HpBarHeight));
@@ -1006,7 +1006,7 @@ public class DanmakuShapeParameter : ShapeParameterBase
                 Style = HpBarStyle,
                 MaxHp = BossMaxHp,
                 InitialHpPercentage = BossHp.GetFirstValue(),
-                DamagePerHit = DamagePerHit,
+                DamagePerHit = DamagePerHit.GetFirstValue(),
                 Radius = HpBarRadius.GetFirstValue(),
                 Width = HpBarWidth.GetFirstValue(),
                 Height = HpBarHeight.GetFirstValue(),
@@ -1089,6 +1089,7 @@ public class DanmakuShapeParameter : ShapeParameterBase
 
         yield return HpBarEnabled;
         yield return BossHp;
+        yield return DamagePerHit;
         yield return HpBarRadius;
         yield return HpBarWidth;
         yield return HpBarHeight;
@@ -1167,7 +1168,7 @@ public class DanmakuShapeParameter : ShapeParameterBase
         private readonly HpBarStyle hpBarStyle;
         private readonly Animation bossHp = new(100.0, 0, 100);
         private readonly double bossMaxHp = 1000.0;
-        private readonly double damagePerHit = 15.0;
+        private readonly Animation damagePerHit = new(15.0, 0, 10000);
         private readonly Animation hpBarRadius = new(140, -10000, 10000);
         private readonly Animation hpBarWidth = new(800, -10000, 10000);
         private readonly Animation hpBarHeight = new(16, -10000, 10000);
@@ -1233,7 +1234,7 @@ public class DanmakuShapeParameter : ShapeParameterBase
             hpBarStyle = source.HpBarStyle;
             bossHp.CopyFrom(source.BossHp);
             bossMaxHp = source.BossMaxHp;
-            damagePerHit = source.DamagePerHit;
+            damagePerHit.CopyFrom(source.DamagePerHit);
             hpBarRadius.CopyFrom(source.HpBarRadius);
             hpBarWidth.CopyFrom(source.HpBarWidth);
             hpBarHeight.CopyFrom(source.HpBarHeight);
@@ -1307,7 +1308,7 @@ public class DanmakuShapeParameter : ShapeParameterBase
             target.HpBarStyle = hpBarStyle;
             target.BossHp.CopyFrom(bossHp);
             target.BossMaxHp = bossMaxHp;
-            target.DamagePerHit = damagePerHit;
+            target.DamagePerHit.CopyFrom(damagePerHit);
             target.HpBarRadius.CopyFrom(hpBarRadius);
             target.HpBarWidth.CopyFrom(hpBarWidth);
             target.HpBarHeight.CopyFrom(hpBarHeight);

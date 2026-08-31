@@ -861,10 +861,29 @@ public static class DanmakuLiveWiring
             return parameter.PlayerShotCancelEnemyBullets.GetValue(frame, totalFrame, fps) >= 0.5;
         };
 
+        sim.Live.PlayerShotDestroyOnHit = timeSeconds =>
+        {
+            var frame = TimeToFrame(timeSeconds, fps, totalFrame);
+            return parameter.PlayerShotDestroyOnHit.GetValue(frame, totalFrame, fps) >= 0.5;
+        };
+
+        sim.Live.EmitterDestroyOnHit = (index, timeSeconds) =>
+        {
+            if (index < 0 || index >= emitters.Count) return null;
+            var frame = TimeToFrame(timeSeconds, fps, totalFrame);
+            return emitters[index].DestroyOnHit.GetValue(frame, totalFrame, fps) >= 0.5;
+        };
+
         sim.Live.HpBarEnabled = timeSeconds =>
         {
             var frame = TimeToFrame(timeSeconds, fps, totalFrame);
             return parameter.HpBarEnabled.GetValue(frame, totalFrame, fps) >= 0.5;
+        };
+
+        sim.Live.HpBarDamagePerHit = timeSeconds =>
+        {
+            var frame = TimeToFrame(timeSeconds, fps, totalFrame);
+            return parameter.DamagePerHit.GetValue(frame, totalFrame, fps);
         };
     }
 }
