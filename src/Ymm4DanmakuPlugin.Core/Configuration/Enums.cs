@@ -97,7 +97,7 @@ public enum DanmakuSoundKind
     /// <summary>軌道変化 / 分裂音。</summary>
     Change = 1,
 
-    /// <summary>被弾音。</summary>
+    /// <summary>被弾音 (共通)。</summary>
     Hit = 2,
 
     /// <summary>消滅音。</summary>
@@ -105,6 +105,12 @@ public enum DanmakuSoundKind
 
     /// <summary>自機ショット発射音。</summary>
     PlayerShot = 4,
+
+    /// <summary>ボス被弾音 (自機ショット命中)。</summary>
+    EnemyHit = 5,
+
+    /// <summary>自機被弾音 (敵弾喰らい・ミス)。</summary>
+    PlayerHit = 6,
 }
 
 /// <summary>体力バー (HP ゲージ) の表示形式。</summary>

@@ -116,11 +116,27 @@ public sealed class DanmakuFireAudioEffect : DanmakuSingleSoundAudioEffectBase
     public override DanmakuSoundKind SoundKind => DanmakuSoundKind.Fire;
 }
 
-/// <summary>被弾音専用の弾幕効果音エフェクト。</summary>
-[AudioEffect("弾幕効果音 (被弾音)", ["弾幕", "被弾"], ["hit", "被弾", "命中", "効果音"], isAviUtlSupported: false)]
+/// <summary>ボス被弾音 (自機ショット命中) 専用の弾幕効果音エフェクト。</summary>
+[AudioEffect("弾幕効果音 (ボス被弾)", ["弾幕", "被弾"], ["hit", "ボス", "命中", "被弾", "ダメージ", "効果音"], isAviUtlSupported: false)]
+public sealed class DanmakuEnemyHitAudioEffect : DanmakuSingleSoundAudioEffectBase
+{
+    public override string Label => $"弾幕効果音:ボス被弾 (ch{Channel})";
+    public override DanmakuSoundKind SoundKind => DanmakuSoundKind.EnemyHit;
+}
+
+/// <summary>自機被弾音 (喰らい・ミス) 専用の弾幕効果音エフェクト。</summary>
+[AudioEffect("弾幕効果音 (自機被弾)", ["弾幕", "被弾"], ["miss", "ピチューン", "自機", "被弾", "喰らい", "ミス", "効果音"], isAviUtlSupported: false)]
+public sealed class DanmakuPlayerHitAudioEffect : DanmakuSingleSoundAudioEffectBase
+{
+    public override string Label => $"弾幕効果音:自機被弾 (ch{Channel})";
+    public override DanmakuSoundKind SoundKind => DanmakuSoundKind.PlayerHit;
+}
+
+/// <summary>被弾音 (共通) 専用の弾幕効果音エフェクト。</summary>
+[AudioEffect("弾幕効果音 (被弾音:共通)", ["弾幕", "被弾"], ["hit", "被弾", "命中", "効果音"], isAviUtlSupported: false)]
 public sealed class DanmakuHitAudioEffect : DanmakuSingleSoundAudioEffectBase
 {
-    public override string Label => $"弾幕効果音:被弾 (ch{Channel})";
+    public override string Label => $"弾幕効果音:被弾(共通) (ch{Channel})";
     public override DanmakuSoundKind SoundKind => DanmakuSoundKind.Hit;
 }
 

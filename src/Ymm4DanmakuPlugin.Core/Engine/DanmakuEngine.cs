@@ -728,6 +728,7 @@ public sealed class DanmakuEngine
                             baseHp = Math.Clamp(liveHp / 100.0, 0.0, 1.0) * BossMaxHp;
                         }
                         CurrentBossHp = Math.Max(0.0, baseHp - TotalDamageDealt);
+                        EmitSound(DanmakuSoundKind.EnemyHit, bullet.EmitterIndex);
                         EmitSound(DanmakuSoundKind.Hit, bullet.EmitterIndex);
 
                         if (collision.SpawnHitEffect)
@@ -748,6 +749,7 @@ public sealed class DanmakuEngine
                     {
                         bullet.HasHit = true;
                         HitCount++;
+                        EmitSound(DanmakuSoundKind.PlayerHit, bullet.EmitterIndex);
                         EmitSound(DanmakuSoundKind.Hit, bullet.EmitterIndex);
 
                         if (collision.SpawnHitEffect)

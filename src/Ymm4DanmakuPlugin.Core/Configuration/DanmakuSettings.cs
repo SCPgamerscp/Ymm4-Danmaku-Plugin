@@ -109,6 +109,10 @@ public sealed record DanmakuSettings
 
     public SoundSettings HitSound { get; init; } = new() { Volume = 0.8 };
 
+    public SoundSettings EnemyHitSound { get; init; } = new() { Volume = 0.8 };
+
+    public SoundSettings PlayerHitSound { get; init; } = new() { Volume = 1.0 };
+
     public SoundSettings VanishSound { get; init; } = new() { Volume = 0.35 };
 
     public SoundSettings PlayerShotSound { get; init; } = new() { Volume = 0.5 };
@@ -119,6 +123,8 @@ public sealed record DanmakuSettings
         DanmakuSoundKind.Fire => FireSound,
         DanmakuSoundKind.Change => ChangeSound,
         DanmakuSoundKind.Hit => HitSound,
+        DanmakuSoundKind.EnemyHit => EnemyHitSound,
+        DanmakuSoundKind.PlayerHit => PlayerHitSound,
         DanmakuSoundKind.PlayerShot => PlayerShotSound,
         _ => VanishSound,
     };

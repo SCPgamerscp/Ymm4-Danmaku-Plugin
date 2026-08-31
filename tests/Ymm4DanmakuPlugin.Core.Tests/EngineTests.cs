@@ -2320,6 +2320,80 @@ public class KeyframeLiveValueTests
         Assert.Equal(50.0, engine.CurrentBossHp, 1);
         Assert.Equal(0.1, engine.BossHpRatio, 0.05);
     }
+
+    [Fact]
+    public void 自機ショットがボスに命中した時はEnemyHitとHitが発音ログに記録される()
+    {
+        var settings = new DanmakuSettings
+        {
+            Collision = new CollisionSettings
+            {
+                IsEnabled = true,
+                EnemyHitEnabled = true,
+                EnemyRadius = 50.0,
+                SpawnHitEffect = false
+            },
+            PlayerShot = new PlayerShotSettings
+            {
+                IsEnabled = true,
+                Speed = 1000.0,
+                FireInterval = 0.1,
+                Way = 1,
+                HitRadius = 10.0,
+                DestroyOnHit = true
+            },
+            Emitters = [
+                new EmitterSettings
+                {
+                    IsEnabled = true,
+                    Pattern = new PatternSettings { FireInterval = 10.0, BurstCount = 1, Way = 0 }, // 敵弾は撃たない
+                }
+            ]
+        };
+
+        var engine = new DanmakuEngine(settings);
+        // 自機位置 Y=100、ボス位置 Y=0、初速1000で上方向に発射
+        engine.Live.TargetPosition = _ => new Vec2(0, 100);
+        engine.Live.EmitterPosition = (_, _) => new Vec2(0, 0);
+
+        engine.Advance(0.15);
+
+        Assert.Contains(engine.SoundLog.Events, e => e.Kind == DanmakuSoundKind.EnemyHit);
+        Assert.Contains(engine.SoundLog.Events, e => e.Kind == DanmakuSoundKind.Hit);
+    }
+
+    [Fact]
+    public void 敵弾が自機に命中した時はPlayerHitとHitが発音ログに記録される()
+    {
+        var settings = new DanmakuSettings
+        {
+            Collision = new CollisionSettings
+            {
+                IsEnabled = true,
+                TargetRadius = 30.0,
+                EnemyHitEnabled = false,
+                SpawnHitEffect = false
+            },
+            Emitters = [
+                new EmitterSettings
+                {
+                    IsEnabled = true,
+                    Pattern = new PatternSettings { FireInterval = 0.05, BurstCount = 1, Way = 1, BaseAngle = 90 }, // 下向き(90度)に発射
+                    Physics = new BulletPhysics { Speed = 500.0, HitRadius = 10.0, DestroyOnHit = true }
+                }
+            ]
+        };
+
+        var engine = new DanmakuEngine(settings);
+        // エミッター Y=0、自機 Y=50
+        engine.Live.EmitterPosition = (_, _) => new Vec2(0, 0);
+        engine.Live.TargetPosition = _ => new Vec2(0, 50);
+
+        engine.Advance(0.15);
+
+        Assert.Contains(engine.SoundLog.Events, e => e.Kind == DanmakuSoundKind.PlayerHit);
+        Assert.Contains(engine.SoundLog.Events, e => e.Kind == DanmakuSoundKind.Hit);
+    }
 }
 
 

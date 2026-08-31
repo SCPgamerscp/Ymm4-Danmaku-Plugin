@@ -139,7 +139,7 @@ public sealed class PatternEmitterBehavior(EmitterSettings settings) : IEmitterB
         var homingTurnRate = context.EmitterHomingTurnRate(fireTime);
         var homingDuration = context.EmitterHomingDuration(fireTime);
         var homingDelay = context.EmitterHomingDelay(fireTime);
-        var hitRadius = context.EmitterHitRadius(fireTime);
+        var hitRadius = context.EmitterHitRadius(fireTime) ?? physics.HitRadius;
 
         var scale = context.EmitterScale(fireTime) ?? appearance.Scale;
         var scaleJitter = context.EmitterScaleJitter(fireTime) ?? appearance.ScaleJitter;
