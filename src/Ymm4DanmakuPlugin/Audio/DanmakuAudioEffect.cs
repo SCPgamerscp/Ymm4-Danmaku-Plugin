@@ -192,7 +192,7 @@ public sealed class DanmakuSingleSoundProcessor : AudioEffectProcessorBase
     private readonly List<Voice> voices = [];
 
     private DanmakuSoundBuffer? soundBuffer;
-    private int preparedItemCount;
+    private int preparedVersion = -1;
 
     public DanmakuSingleSoundProcessor(DanmakuSingleSoundAudioEffectBase effect, DanmakuSoundKind soundKind, TimeSpan duration)
     {
@@ -211,9 +211,11 @@ public sealed class DanmakuSingleSoundProcessor : AudioEffectProcessorBase
     {
         Array.Clear(destBuffer, offset, count);
 
-        if (voices.Count == 0)
+        var busVersion = DanmakuChannelBus.Version;
+        if (voices.Count == 0 || busVersion != preparedVersion)
         {
             PrepareVoices();
+            preparedVersion = busVersion;
         }
 
         if (voices.Count == 0) return count;
@@ -313,7 +315,6 @@ public sealed class DanmakuSingleSoundProcessor : AudioEffectProcessorBase
         }
 
         voices.Clear();
-        preparedItemCount = registrations.Count;
 
         var hz = Hz;
         var startFrame = Math.Max(0.0, effect.TrimStart * hz);
@@ -326,20 +327,33 @@ public sealed class DanmakuSingleSoundProcessor : AudioEffectProcessorBase
         if (registrations.Count > 0)
         {
             var minTimelineStart = registrations.Min(r => r.TimelineStartSeconds);
+            var maxTimelineEnd = registrations.Max(r => r.TimelineStartSeconds + r.TimelineDurationSeconds);
+            var totalTimelineSpan = maxTimelineEnd - minTimelineStart;
 
-            foreach (var reg in registrations)
+            // 1本の長い音声アイテムで複数の弾幕アイテムを跨いでいる場合 (duration が全体の広がりをカバー)
+            if (registrations.Count > 1 && duration.TotalSeconds >= totalTimelineSpan * 0.8)
             {
-                if (!reg.ParameterRef.TryGetTarget(out var parameter)) continue;
+                foreach (var reg in registrations)
+                {
+                    if (!reg.ParameterRef.TryGetTarget(out var parameter)) continue;
 
-                var settings = parameter.ToSettings(parameter.LastCanvasWidth, parameter.LastCanvasHeight);
-                var timelineOffset = registrations.Count > 1
-                    ? Math.Max(0.0, reg.TimelineStartSeconds - minTimelineStart)
-                    : 0.0;
+                    var settings = parameter.ToSettings(parameter.LastCanvasWidth, parameter.LastCanvasHeight);
+                    var timelineOffset = Math.Max(0.0, reg.TimelineStartSeconds - minTimelineStart);
 
-                // タイムライン上のオフセットが音声アイテムの長さを超えている場合はスキップ
-                if (timelineOffset >= duration.TotalSeconds && registrations.Count > 1) continue;
+                    if (timelineOffset >= duration.TotalSeconds) continue;
 
-                ProcessSettings(settings, parameter, buffer, hz, timelineOffset, startFrame, maxFrames, fadeOutFrames);
+                    ProcessSettings(settings, parameter, buffer, hz, timelineOffset, startFrame, maxFrames, fadeOutFrames);
+                }
+            }
+            else
+            {
+                // 個別アイテムの場合: 直近にアクティブなアイテムまたは現在のアイテムを単独で使用
+                var activeParam = DanmakuChannelBus.TryGetParameter(effect.Channel);
+                if (activeParam is not null)
+                {
+                    var settings = activeParam.ToSettings(activeParam.LastCanvasWidth, activeParam.LastCanvasHeight);
+                    ProcessSettings(settings, activeParam, buffer, hz, 0.0, startFrame, maxFrames, fadeOutFrames);
+                }
             }
         }
         else if (fallbackSettings is not null)
@@ -419,13 +433,14 @@ public sealed class DanmakuSingleSoundProcessor : AudioEffectProcessorBase
 
     protected override void seek(long position)
     {
-        // 巻き戻し時 (position == 0) かつ登録アイテム数が変化していたら再準備
+        // 巻き戻し時 (position == 0) かつ登録バージョンが変化していたら再準備
         if (position == 0)
         {
-            var currentCount = DanmakuChannelBus.GetRegistrations(effect.Channel).Count;
-            if (currentCount != preparedItemCount || voices.Count == 0)
+            var busVersion = DanmakuChannelBus.Version;
+            if (busVersion != preparedVersion || voices.Count == 0)
             {
                 PrepareVoices();
+                preparedVersion = busVersion;
             }
         }
     }

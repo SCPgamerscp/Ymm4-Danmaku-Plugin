@@ -47,6 +47,9 @@ public static class DanmakuChannelBus
     private static readonly object Gate = new();
     private static readonly Dictionary<object, DanmakuChannelRegistration> Registrations = new();
 
+    /// <summary>登録状態の変更バージョン番号。登録・更新・削除のたびにインクリメントされる。</summary>
+    public static int Version { get; private set; }
+
     /// <summary>弾幕アイテムを登録・更新する。</summary>
     public static void Register(
         DanmakuShapeParameter parameter,
@@ -77,6 +80,7 @@ public static class DanmakuChannelBus
                 Registrations[key] = new DanmakuChannelRegistration(
                     key, parameter, fps, totalFrame, timelineStartSeconds, timelineDurationSeconds, layer);
             }
+            Version++;
         }
     }
 
@@ -85,7 +89,10 @@ public static class DanmakuChannelBus
     {
         lock (Gate)
         {
-            Registrations.Remove(sourceKey);
+            if (Registrations.Remove(sourceKey))
+            {
+                Version++;
+            }
         }
     }
 
