@@ -660,8 +660,8 @@ public class DanmakuShapeParameter : ShapeParameterBase
     public bool HasCustomPlayerShotImage => !string.IsNullOrWhiteSpace(PlayerShotImagePath);
 
     [Display(GroupName = "自機ショット", Name = "自機Way数", Description = "同時に発射する弾数。0 で射撃休止。")]
-    [AnimationSlider("F0", "本", -16, 128)]
-    public Animation PlayerShotWay { get; } = new Animation(2, -128, 128);
+    [AnimationSlider("F0", "本", 0, 1024)]
+    public Animation PlayerShotWay { get; } = new Animation(2, -10000, 10000);
 
     [Display(GroupName = "自機ショット", Name = "射撃間隔", Description = "発射間隔 (秒)。0.08 で秒間約 12 回連射。0 以下で射撃休止。")]
     [AnimationSlider("F3", "秒", -1.0, 10.0)]

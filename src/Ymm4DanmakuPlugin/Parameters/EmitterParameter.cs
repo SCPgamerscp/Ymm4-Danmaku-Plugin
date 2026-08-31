@@ -215,11 +215,11 @@ public class EmitterParameter : Animatable
     private PatternKind patternKind = Core.Configuration.PatternKind.Circle;
 
     [Display(GroupName = "パターン", Name = "Way数", Description = "1 回の発射で撃つ弾の本数。0 で発射しません。")]
-    [AnimationSlider("F0", "本", 0, 360)]
+    [AnimationSlider("F0", "本", 0, 1024)]
     public Animation Way { get; } = new Animation(24, 0, 10000);
 
     [Display(GroupName = "パターン", Name = "段数", Description = "速度差をつけて重ねる同心円の段数。way数 × 段数 が 1 回の発射数になります。0 で発射しません。")]
-    [AnimationSlider("F0", "段", 0, 64)]
+    [AnimationSlider("F0", "段", 0, 256)]
     public Animation Stack { get; } = new Animation(1, 0, 1000);
 
     [Display(GroupName = "パターン", Name = "段速度差", Description = "段ごとの弾速の差 (px/秒)。")]
@@ -491,8 +491,8 @@ public class EmitterParameter : Animatable
     public Animation SplitDelay { get; } = new Animation(0.6, 0, 100000);
 
     [Display(GroupName = "分裂", Name = "分裂数", Description = "1 発の弾から発生する子弾の個数。")]
-    [AnimationSlider("F0", "個", 0, 32)]
-    public Animation SplitCount { get; } = new Animation(8, 0, 500);
+    [AnimationSlider("F0", "個", 0, 1024)]
+    public Animation SplitCount { get; } = new Animation(8, 0, 10000);
 
     [Display(GroupName = "分裂", Name = "分裂拡散角", Description = "子弾を広げる扇の角度。360 で全方位。")]
     [AnimationSlider("F1", "度", -360, 360)]
