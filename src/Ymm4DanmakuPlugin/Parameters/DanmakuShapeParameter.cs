@@ -93,21 +93,13 @@ public class DanmakuShapeParameter : ShapeParameterBase
     [AnimationSlider("F2", "", -1, 1)]
     public Animation EnemyOpacity => MainEmitter.EnemyOpacity;
 
-    [Display(GroupName = "エネミー (敵)", Name = "弾の奥に描画", Description = "オンで弾幕の背後に配置、オフで弾幕の手前に配置します。")]
-    [ToggleSlider]
-    public bool EnemyBehindBullets
-    {
-        get => MainEmitter.EnemyBehindBullets;
-        set => MainEmitter.EnemyBehindBullets = value;
-    }
+    [Display(GroupName = "エネミー (敵)", Name = "弾の奥に描画", Description = "1 で弾幕の背後に配置、0 で弾幕の手前に配置します。")]
+    [AnimationSlider("F0", "", 0, 1)]
+    public Animation EnemyBehindBullets => MainEmitter.EnemyBehindBullets;
 
-    [Display(GroupName = "エネミー (敵)", Name = "魔法陣を有効化", Description = "ボスの背後に東方風の魔法陣を展開します。")]
-    [ToggleSlider]
-    public bool MagicCircleEnabled
-    {
-        get => MainEmitter.MagicCircleEnabled;
-        set => MainEmitter.MagicCircleEnabled = value;
-    }
+    [Display(GroupName = "エネミー (敵)", Name = "魔法陣を有効化", Description = "ボスの背後に東方風の魔法陣を展開します。1 で表示、0 で非表示。")]
+    [AnimationSlider("F0", "", 0, 1)]
+    public Animation MagicCircleEnabled => MainEmitter.MagicCircleEnabled;
 
     [Display(GroupName = "エネミー (敵)", Name = "魔法陣画像", Description = "カスタム魔法陣画像。未指定時は組み込みの東方風幾何学魔法陣が描かれます。")]
     [FileSelector(FileGroupType.ImageItem)]
@@ -140,20 +132,12 @@ public class DanmakuShapeParameter : ShapeParameterBase
     public Animation MagicCircleOpacity => MainEmitter.MagicCircleOpacity;
 
     [Display(GroupName = "エネミー (敵)", Name = "魔法陣を加算合成")]
-    [ToggleSlider]
-    public bool MagicCircleAdditive
-    {
-        get => MainEmitter.MagicCircleAdditive;
-        set => MainEmitter.MagicCircleAdditive = value;
-    }
+    [AnimationSlider("F0", "", 0, 1)]
+    public Animation MagicCircleAdditive => MainEmitter.MagicCircleAdditive;
 
-    [Display(GroupName = "エネミー (敵)", Name = "オーラを有効化", Description = "ボスの周囲に発光オーラを纏わせます。")]
-    [ToggleSlider]
-    public bool AuraEnabled
-    {
-        get => MainEmitter.AuraEnabled;
-        set => MainEmitter.AuraEnabled = value;
-    }
+    [Display(GroupName = "エネミー (敵)", Name = "オーラを有効化", Description = "ボスの周囲に発光オーラを纏わせます。1 で表示、0 で非表示。")]
+    [AnimationSlider("F0", "", 0, 1)]
+    public Animation AuraEnabled => MainEmitter.AuraEnabled;
 
     [Display(GroupName = "エネミー (敵)", Name = "オーラ強度")]
     [AnimationSlider("F2", "倍", -5, 5)]
@@ -295,13 +279,9 @@ public class DanmakuShapeParameter : ShapeParameterBase
     [AnimationSlider("F2", "倍/秒", -2, 2)]
     public Animation ScaleVelocity => MainEmitter.ScaleVelocity;
 
-    [Display(GroupName = "弾の見た目", Name = "弾向き追従", Description = "弾が飛んでいく向きに合わせて弾の向き・画像を回転させます。")]
-    [ToggleSlider]
-    public bool AlignToDirection
-    {
-        get => MainEmitter.AlignToDirection;
-        set => MainEmitter.AlignToDirection = value;
-    }
+    [Display(GroupName = "弾の見た目", Name = "弾向き追従", Description = "弾が飛んでいく向きに合わせて弾の向き・画像を回転させます。1 で追従、0 で固定。")]
+    [AnimationSlider("F0", "", 0, 1)]
+    public Animation AlignToDirection => MainEmitter.AlignToDirection;
 
     [Display(GroupName = "弾の見た目", Name = "着色モード", Description = "単色・グラデーション・虹色・パレット・ランダムから選択します。")]
     [EnumComboBox]
@@ -335,13 +315,9 @@ public class DanmakuShapeParameter : ShapeParameterBase
     [AnimationSlider("F1", "度", -180, 180)]
     public Animation HueStep => MainEmitter.HueStep;
 
-    [Display(GroupName = "弾の見た目", Name = "加算発光", Description = "東方風の光る弾 (加算合成グロー) にします。")]
-    [ToggleSlider]
-    public bool Additive
-    {
-        get => MainEmitter.Additive;
-        set => MainEmitter.Additive = value;
-    }
+    [Display(GroupName = "弾の見た目", Name = "加算発光", Description = "東方風の光る弾 (加算合成グロー) にします。1 で加算、0 で通常。")]
+    [AnimationSlider("F0", "", 0, 1)]
+    public Animation Additive => MainEmitter.Additive;
 
     [Display(GroupName = "弾の見た目", Name = "発光強度", Description = "加算グローの輝度倍率。")]
     [AnimationSlider("F2", "倍", 0, 3)]
@@ -439,13 +415,9 @@ public class DanmakuShapeParameter : ShapeParameterBase
     // ホーミング (誘導弾)
     // =====================================================================
 
-    [Display(GroupName = "ホーミング", Name = "ホーミング", Description = "ターゲット (自機) を追いかける誘導弾にします。")]
-    [ToggleSlider]
-    public bool HomingEnabled
-    {
-        get => MainEmitter.HomingEnabled;
-        set => MainEmitter.HomingEnabled = value;
-    }
+    [Display(GroupName = "ホーミング", Name = "ホーミング", Description = "ターゲット (自機) を追いかける誘導弾にします。1 で有効、0 で無効。")]
+    [AnimationSlider("F0", "", 0, 1)]
+    public Animation HomingEnabled => MainEmitter.HomingEnabled;
 
     [Display(GroupName = "ホーミング", Name = "追尾力", Description = "正で自機を追尾、負で自機から逃げるように反発旋回します。")]
     [AnimationSlider("F0", "度/秒", -720, 720)]
@@ -463,20 +435,16 @@ public class DanmakuShapeParameter : ShapeParameterBase
     // 弾の分裂
     // =====================================================================
 
-    [Display(GroupName = "弾の分裂", Name = "分裂", Description = "一定時間後に弾を多方向へ分裂させます。")]
-    [ToggleSlider]
-    public bool SplitEnabled
-    {
-        get => MainEmitter.SplitEnabled;
-        set => MainEmitter.SplitEnabled = value;
-    }
+    [Display(GroupName = "弾の分裂", Name = "分裂", Description = "一定時間後に弾を多方向へ分裂させます。1 で有効、0 で無効。")]
+    [AnimationSlider("F0", "", 0, 1)]
+    public Animation SplitEnabled => MainEmitter.SplitEnabled;
 
     [Display(GroupName = "弾の分裂", Name = "分裂時間", Description = "発射から分裂するまでの遅延秒数。")]
     [AnimationSlider("F2", "秒", 0, 5)]
     public Animation SplitDelay => MainEmitter.SplitDelay;
 
     [Display(GroupName = "弾の分裂", Name = "分裂数", Description = "1 発の弾から発生する子弾の個数。")]
-    [AnimationSlider("F0", "個", 0, 32)]
+    [AnimationSlider("F0", "個", 0, 1024)]
     public Animation SplitCount => MainEmitter.SplitCount;
 
     [Display(GroupName = "弾の分裂", Name = "分裂拡散角", Description = "子弾を広げる扇の角度。360 で全方位。")]
@@ -491,13 +459,9 @@ public class DanmakuShapeParameter : ShapeParameterBase
     [AnimationSlider("F2", "倍", -2, 2)]
     public Animation SplitScaleFactor => MainEmitter.SplitScaleFactor;
 
-    [Display(GroupName = "弾の分裂", Name = "親弾消滅", Description = "分裂時に元の親弾を消去します。")]
-    [ToggleSlider]
-    public bool SplitDestroyParent
-    {
-        get => MainEmitter.SplitDestroyParent;
-        set => MainEmitter.SplitDestroyParent = value;
-    }
+    [Display(GroupName = "弾の分裂", Name = "親弾消滅", Description = "分裂時に元の親弾を消去します。1 で消滅、0 で存続。")]
+    [AnimationSlider("F0", "", 0, 1)]
+    public Animation SplitDestroyParent => MainEmitter.SplitDestroyParent;
 
     [Display(GroupName = "弾の分裂", Name = "多段世代数", Description = "2 以上でさらに分裂を繰り返します。")]
     [AnimationSlider("F0", "世代", 0, 5)]
@@ -539,22 +503,17 @@ public class DanmakuShapeParameter : ShapeParameterBase
     [AnimationSlider("F2", "", -1, 1)]
     public Animation ScriptRank => MainEmitter.ScriptRank;
 
-    [Display(GroupName = "外部スクリプト", Name = "ループ再生", Description = "スクリプト終了時に先頭から繰り返し実行します。")]
-    [ToggleSlider]
-    public bool ScriptLoop
-    {
-        get => MainEmitter.ScriptLoop;
-        set => MainEmitter.ScriptLoop = value;
-    }
+    [Display(GroupName = "外部スクリプト", Name = "ループ再生", Description = "スクリプト終了時に先頭から繰り返し実行します。1 でループ、0 で1回のみ。")]
+    [AnimationSlider("F0", "", 0, 1)]
+    public Animation ScriptLoop => MainEmitter.ScriptLoop;
 
     // =====================================================================
     // 当たり判定 (被弾シミュレーション & 自機設定)
     // =====================================================================
 
-    [Display(GroupName = "当たり判定", Name = "当たり判定", Description = "自機と敵弾との被弾判定を行います。")]
-    [ToggleSlider]
-    public bool CollisionEnabled { get => collisionEnabled; set => Set(ref collisionEnabled, value); }
-    private bool collisionEnabled;
+    [Display(GroupName = "当たり判定", Name = "当たり判定", Description = "自機と敵弾との被弾判定を行います。1 で有効、0 で無敵。")]
+    [AnimationSlider("F0", "", 0, 1)]
+    public Animation CollisionEnabled { get; } = new Animation(0, 0, 1);
 
     [Display(GroupName = "当たり判定", Name = "自機 X", Description = "自機の X 座標。プレビュー画面でのドラッグやキーフレーム移動が可能です。")]
     [AnimationSlider("F1", "px", -1920, 1920)]
@@ -591,10 +550,9 @@ public class DanmakuShapeParameter : ShapeParameterBase
     [AnimationSlider("F1", "px", -200, 200)]
     public Animation TargetRadius { get; } = new Animation(30, -10000, 10000);
 
-    [Display(GroupName = "当たり判定", Name = "ボス判定有効", Description = "エネミー (ボス) への自機ショット被弾判定を行います。")]
-    [ToggleSlider]
-    public bool EnemyHitEnabled { get => enemyHitEnabled; set => Set(ref enemyHitEnabled, value); }
-    private bool enemyHitEnabled = true;
+    [Display(GroupName = "当たり判定", Name = "ボス判定有効", Description = "エネミー (ボス) への自機ショット被弾判定を行います。1 で有効、0 でボス無敵。")]
+    [AnimationSlider("F0", "", 0, 1)]
+    public Animation EnemyHitEnabled { get; } = new Animation(1, 0, 1);
 
     [Display(GroupName = "当たり判定", Name = "ボス判定半径", Description = "エネミーの被弾判定半径 (px)。")]
     [AnimationSlider("F1", "px", -500, 500)]
@@ -604,18 +562,13 @@ public class DanmakuShapeParameter : ShapeParameterBase
     [AnimationSlider("F1", "px", -40, 40)]
     public Animation HitRadius => MainEmitter.HitRadius;
 
-    [Display(GroupName = "当たり判定", Name = "当たると消滅", Description = "被弾時に敵弾を消去します。")]
-    [ToggleSlider]
-    public bool DestroyOnHit
-    {
-        get => MainEmitter.DestroyOnHit;
-        set => MainEmitter.DestroyOnHit = value;
-    }
+    [Display(GroupName = "当たり判定", Name = "当たると消滅", Description = "被弾時に敵弾を消去します。1 で消滅、0 で貫通。")]
+    [AnimationSlider("F0", "", 0, 1)]
+    public Animation DestroyOnHit => MainEmitter.DestroyOnHit;
 
-    [Display(GroupName = "当たり判定", Name = "被弾スパーク", Description = "被弾時に飛沫エフェクトを発生させます。")]
-    [ToggleSlider]
-    public bool SpawnHitEffect { get => spawnHitEffect; set => Set(ref spawnHitEffect, value); }
-    private bool spawnHitEffect = true;
+    [Display(GroupName = "当たり判定", Name = "被弾スパーク", Description = "被弾時に飛沫エフェクトを発生させます。1 で発生、0 でなし。")]
+    [AnimationSlider("F0", "", 0, 1)]
+    public Animation SpawnHitEffect { get; } = new Animation(1, 0, 1);
 
     [Display(GroupName = "当たり判定", Name = "スパーク数", Description = "被弾時に飛び散る破片の個数。")]
     [AnimationSlider("F0", "個", 0, 64)]
@@ -629,19 +582,17 @@ public class DanmakuShapeParameter : ShapeParameterBase
     [AnimationSlider("F2", "秒", 0, 2)]
     public Animation HitEffectLifetime { get; } = new Animation(0.35, 0, 1000);
 
-    [Display(GroupName = "当たり判定", Name = "自機マーカー", Description = "自機画像や当たり判定枠 (喰らい判定) を描画します。")]
-    [ToggleSlider]
-    public bool ShowTargetMarker { get => showTargetMarker; set => Set(ref showTargetMarker, value); }
-    private bool showTargetMarker = true;
+    [Display(GroupName = "当たり判定", Name = "自機マーカー", Description = "自機画像や当たり判定枠 (喰らい判定) を描画します。1 で表示、0 で非表示。")]
+    [AnimationSlider("F0", "", 0, 1)]
+    public Animation ShowTargetMarker { get; } = new Animation(1, 0, 1);
 
     // =====================================================================
     // 自機ショット
     // =====================================================================
 
-    [Display(GroupName = "自機ショット", Name = "自機射撃", Description = "自機 (ターゲット) からショットを発射します。")]
-    [ToggleSlider]
-    public bool PlayerShotEnabled { get => playerShotEnabled; set => Set(ref playerShotEnabled, value); }
-    private bool playerShotEnabled;
+    [Display(GroupName = "自機ショット", Name = "自機射撃", Description = "自機 (ターゲット) からショットを発射します。1 で発射、0 で射撃休止。")]
+    [AnimationSlider("F0", "", 0, 1)]
+    public Animation PlayerShotEnabled { get; } = new Animation(0, 0, 1);
 
     [Display(GroupName = "自機ショット", Name = "ショット種別", Description = "正面集中・ワイド・多重・ホーミング・全方位から選択。")]
     [EnumComboBox]
@@ -679,39 +630,34 @@ public class DanmakuShapeParameter : ShapeParameterBase
     [AnimationSlider("F2", "倍", -10, 10)]
     public Animation PlayerShotScale { get; } = new Animation(1.0, -1000, 1000);
 
-    [Display(GroupName = "自機ショット", Name = "弾向き追従", Description = "自機弾の進行方向に向きを合わせます。")]
-    [ToggleSlider]
-    public bool PlayerShotAlignToDirection { get => playerShotAlignToDirection; set => Set(ref playerShotAlignToDirection, value); }
-    private bool playerShotAlignToDirection = true;
+    [Display(GroupName = "自機ショット", Name = "弾向き追従", Description = "自機弾の進行方向に向きを合わせます。1 で追従、0 で固定。")]
+    [AnimationSlider("F0", "", 0, 1)]
+    public Animation PlayerShotAlignToDirection { get; } = new Animation(1, 0, 1);
 
     [Display(GroupName = "自機ショット", Name = "ショット色", Description = "自機弾の色。")]
     [ColorPicker]
     public Color PlayerShotColor { get => playerShotColor; set => Set(ref playerShotColor, value); }
     private Color playerShotColor = Color.FromArgb(255, 255, 255, 255);
 
-    [Display(GroupName = "自機ショット", Name = "ショット発光", Description = "自機弾を加算合成で発光させます。")]
-    [ToggleSlider]
-    public bool PlayerShotAdditive { get => playerShotAdditive; set => Set(ref playerShotAdditive, value); }
-    private bool playerShotAdditive = true;
+    [Display(GroupName = "自機ショット", Name = "ショット発光", Description = "自機弾を加算合成で発光させます。1 で加算、0 で通常。")]
+    [AnimationSlider("F0", "", 0, 1)]
+    public Animation PlayerShotAdditive { get; } = new Animation(1, 0, 1);
 
-    [Display(GroupName = "自機ショット", Name = "自動照準", Description = "ボスの方向へ自動で狙いを定めて発射します。")]
-    [ToggleSlider]
-    public bool PlayerShotAutoAim { get => playerShotAutoAim; set => Set(ref playerShotAutoAim, value); }
-    private bool playerShotAutoAim;
+    [Display(GroupName = "自機ショット", Name = "自動照準", Description = "ボスの方向へ自動で狙いを定めて発射します。1 で自動照準、0 で正面。")]
+    [AnimationSlider("F0", "", 0, 1)]
+    public Animation PlayerShotAutoAim { get; } = new Animation(0, 0, 1);
 
     [Display(GroupName = "自機ショット", Name = "ショット判定", Description = "自機弾の被弾判定半径 (px)。")]
     [AnimationSlider("F1", "px", -100, 500)]
     public Animation PlayerShotHitRadius { get; } = new Animation(12, -1000, 1000);
 
-    [Display(GroupName = "自機ショット", Name = "命中時消滅", Description = "敵に命中した自機弾を消滅させます。")]
-    [ToggleSlider]
-    public bool PlayerShotDestroyOnHit { get => playerShotDestroyOnHit; set => Set(ref playerShotDestroyOnHit, value); }
-    private bool playerShotDestroyOnHit = true;
+    [Display(GroupName = "自機ショット", Name = "命中時消滅", Description = "敵に命中した自機弾を消滅させます。1 で消滅、0 で貫通。")]
+    [AnimationSlider("F0", "", 0, 1)]
+    public Animation PlayerShotDestroyOnHit { get; } = new Animation(1, 0, 1);
 
-    [Display(GroupName = "自機ショット", Name = "敵弾相殺", Description = "自機ショットが敵弾と接触した際に敵弾を消滅させます。")]
-    [ToggleSlider]
-    public bool PlayerShotCancelEnemyBullets { get => playerShotCancelEnemyBullets; set => Set(ref playerShotCancelEnemyBullets, value); }
-    private bool playerShotCancelEnemyBullets;
+    [Display(GroupName = "自機ショット", Name = "敵弾相殺", Description = "自機ショットが敵弾と接触した際に敵弾を消滅させます。1 で相殺、0 で無効。")]
+    [AnimationSlider("F0", "", 0, 1)]
+    public Animation PlayerShotCancelEnemyBullets { get; } = new Animation(0, 0, 1);
 
     [Display(GroupName = "自機ショット", Name = "対象ch", Description = "当たり判定・自動照準の相手となる弾幕アイテムのチャンネル番号 (-1 で全チャンネル対象)。")]
     [TextBoxSlider("F0", "ch", -1, 255)]
@@ -722,10 +668,9 @@ public class DanmakuShapeParameter : ShapeParameterBase
     // ボス体力バー (HP ゲージ)
     // =====================================================================
 
-    [Display(GroupName = "体力バー", Name = "体力バー", Description = "ボス体力バーを表示します。")]
-    [ToggleSlider]
-    public bool HpBarEnabled { get => hpBarEnabled; set => Set(ref hpBarEnabled, value); }
-    private bool hpBarEnabled;
+    [Display(GroupName = "体力バー", Name = "体力バー", Description = "ボス体力バーを表示します。1 で表示、0 で非表示。")]
+    [AnimationSlider("F0", "", 0, 1)]
+    public Animation HpBarEnabled { get; } = new Animation(0, 0, 1);
 
     [Display(GroupName = "体力バー", Name = "ゲージ形状", Description = "円形リング・画面上部バーから選択。")]
     [EnumComboBox]
@@ -796,10 +741,9 @@ public class DanmakuShapeParameter : ShapeParameterBase
     public int HpBarPhaseCount { get => hpBarPhaseCount; set => Set(ref hpBarPhaseCount, value); }
     private int hpBarPhaseCount = 3;
 
-    [Display(GroupName = "体力バー", Name = "発光グロー", Description = "ゲージの発光グロー効果。")]
-    [ToggleSlider]
-    public bool HpBarGlow { get => hpBarGlow; set => Set(ref hpBarGlow, value); }
-    private bool hpBarGlow = true;
+    [Display(GroupName = "体力バー", Name = "発光グロー", Description = "ゲージの発光グロー効果。1 で加算発光、0 で通常。")]
+    [AnimationSlider("F0", "", 0, 1)]
+    public Animation HpBarGlow { get; } = new Animation(1, 0, 1);
 
     [Display(GroupName = "体力バー", Name = "ゲージ濃度", Description = "ゲージ全体の不透明度 (0〜100%)。")]
     [AnimationSlider("F1", "%", 0, 100)]
@@ -884,27 +828,50 @@ public class DanmakuShapeParameter : ShapeParameterBase
 
     public DanmakuShapeParameter(SharedDataStore? sharedData) : base(sharedData)
     {
+        SubscribeAnimatable(CollisionEnabled, nameof(CollisionEnabled));
         SubscribeAnimatable(TargetX, nameof(TargetX));
         SubscribeAnimatable(TargetY, nameof(TargetY));
         SubscribeAnimatable(TargetScale, nameof(TargetScale));
         SubscribeAnimatable(TargetRotation, nameof(TargetRotation));
         SubscribeAnimatable(TargetOpacity, nameof(TargetOpacity));
         SubscribeAnimatable(TargetRadius, nameof(TargetRadius));
+        SubscribeAnimatable(EnemyHitEnabled, nameof(EnemyHitEnabled));
+        SubscribeAnimatable(EnemyRadius, nameof(EnemyRadius));
+        SubscribeAnimatable(SpawnHitEffect, nameof(SpawnHitEffect));
         SubscribeAnimatable(HitEffectCount, nameof(HitEffectCount));
         SubscribeAnimatable(HitEffectSpeed, nameof(HitEffectSpeed));
         SubscribeAnimatable(HitEffectLifetime, nameof(HitEffectLifetime));
-        SubscribeAnimatable(Seed, nameof(Seed));
-        SubscribeAnimatable(MaxBullets, nameof(MaxBullets));
-        SubscribeAnimatable(TimeScale, nameof(TimeScale));
-        SubscribeAnimatable(GlobalOpacity, nameof(GlobalOpacity));
-        SubscribeAnimatable(Channel, nameof(Channel));
+        SubscribeAnimatable(ShowTargetMarker, nameof(ShowTargetMarker));
+
+        SubscribeAnimatable(PlayerShotEnabled, nameof(PlayerShotEnabled));
+        SubscribeAnimatable(PlayerShotWay, nameof(PlayerShotWay));
+        SubscribeAnimatable(PlayerShotInterval, nameof(PlayerShotInterval));
+        SubscribeAnimatable(PlayerShotSpeed, nameof(PlayerShotSpeed));
+        SubscribeAnimatable(PlayerShotSpread, nameof(PlayerShotSpread));
+        SubscribeAnimatable(PlayerShotScale, nameof(PlayerShotScale));
+        SubscribeAnimatable(PlayerShotAlignToDirection, nameof(PlayerShotAlignToDirection));
+        SubscribeAnimatable(PlayerShotAdditive, nameof(PlayerShotAdditive));
+        SubscribeAnimatable(PlayerShotAutoAim, nameof(PlayerShotAutoAim));
+        SubscribeAnimatable(PlayerShotHitRadius, nameof(PlayerShotHitRadius));
+        SubscribeAnimatable(PlayerShotDestroyOnHit, nameof(PlayerShotDestroyOnHit));
+        SubscribeAnimatable(PlayerShotCancelEnemyBullets, nameof(PlayerShotCancelEnemyBullets));
+
+        SubscribeAnimatable(HpBarEnabled, nameof(HpBarEnabled));
         SubscribeAnimatable(BossHp, nameof(BossHp));
         SubscribeAnimatable(HpBarRadius, nameof(HpBarRadius));
         SubscribeAnimatable(HpBarWidth, nameof(HpBarWidth));
         SubscribeAnimatable(HpBarHeight, nameof(HpBarHeight));
         SubscribeAnimatable(HpBarX, nameof(HpBarX));
         SubscribeAnimatable(HpBarY, nameof(HpBarY));
+        SubscribeAnimatable(HpBarGlow, nameof(HpBarGlow));
         SubscribeAnimatable(HpBarOpacity, nameof(HpBarOpacity));
+
+        SubscribeAnimatable(Seed, nameof(Seed));
+        SubscribeAnimatable(MaxBullets, nameof(MaxBullets));
+        SubscribeAnimatable(TimeScale, nameof(TimeScale));
+        SubscribeAnimatable(BoundsMargin, nameof(BoundsMargin));
+        SubscribeAnimatable(GlobalOpacity, nameof(GlobalOpacity));
+        SubscribeAnimatable(Channel, nameof(Channel));
 
         SubscribeEmitters(emitters);
     }
@@ -999,15 +966,15 @@ public class DanmakuShapeParameter : ShapeParameterBase
 
             Collision = new CollisionSettings
             {
-                IsEnabled = CollisionEnabled,
+                IsEnabled = CollisionEnabled.GetFirstValue() >= 0.5,
                 TargetX = TargetX.GetFirstValue(),
                 TargetY = TargetY.GetFirstValue(),
                 TargetRadius = TargetRadius.GetFirstValue(),
                 EnemyX = MainEmitter.X.GetFirstValue(),
                 EnemyY = MainEmitter.Y.GetFirstValue(),
-                EnemyHitEnabled = EnemyHitEnabled,
+                EnemyHitEnabled = EnemyHitEnabled.GetFirstValue() >= 0.5,
                 EnemyRadius = EnemyRadius.GetFirstValue(),
-                SpawnHitEffect = SpawnHitEffect,
+                SpawnHitEffect = SpawnHitEffect.GetFirstValue() >= 0.5,
                 HitEffectCount = Math.Max(0, (int)Math.Round(HitEffectCount.GetFirstValue())),
                 HitEffectSpeed = HitEffectSpeed.GetFirstValue(),
                 HitEffectLifetime = Math.Max(0.01, HitEffectLifetime.GetFirstValue()),
@@ -1015,7 +982,7 @@ public class DanmakuShapeParameter : ShapeParameterBase
 
             PlayerShot = new PlayerShotSettings
             {
-                IsEnabled = PlayerShotEnabled,
+                IsEnabled = PlayerShotEnabled.GetFirstValue() >= 0.5,
                 ShotType = PlayerShotType,
                 ImagePath = PlayerShotImagePath,
                 Way = (int)Math.Round(PlayerShotWay.GetFirstValue()),
@@ -1023,19 +990,19 @@ public class DanmakuShapeParameter : ShapeParameterBase
                 Speed = PlayerShotSpeed.GetFirstValue(),
                 SpreadAngle = PlayerShotSpread.GetFirstValue(),
                 Scale = PlayerShotScale.GetFirstValue(),
-                AlignToDirection = PlayerShotAlignToDirection,
+                AlignToDirection = PlayerShotAlignToDirection.GetFirstValue() >= 0.5,
                 Color = ColorExtensions.ToBulletColor(PlayerShotColor),
-                Additive = PlayerShotAdditive,
-                AutoAim = PlayerShotAutoAim,
+                Additive = PlayerShotAdditive.GetFirstValue() >= 0.5,
+                AutoAim = PlayerShotAutoAim.GetFirstValue() >= 0.5,
                 HitRadius = PlayerShotHitRadius.GetFirstValue(),
-                DestroyOnHit = PlayerShotDestroyOnHit,
-                CancelEnemyBullets = PlayerShotCancelEnemyBullets,
+                DestroyOnHit = PlayerShotDestroyOnHit.GetFirstValue() >= 0.5,
+                CancelEnemyBullets = PlayerShotCancelEnemyBullets.GetFirstValue() >= 0.5,
                 TargetChannel = PlayerShotTargetChannel,
             },
 
             HpBar = new BossHpBarSettings
             {
-                Enabled = HpBarEnabled,
+                Enabled = HpBarEnabled.GetFirstValue() >= 0.5,
                 Style = HpBarStyle,
                 MaxHp = BossMaxHp,
                 InitialHpPercentage = BossHp.GetFirstValue(),
@@ -1051,7 +1018,7 @@ public class DanmakuShapeParameter : ShapeParameterBase
                 DamageLagColor = ColorExtensions.ToBulletColor(HpBarDamageLagColor),
                 BackgroundColor = ColorExtensions.ToBulletColor(HpBarBackgroundColor),
                 PhaseCount = HpBarPhaseCount,
-                Glow = HpBarGlow,
+                Glow = HpBarGlow.GetFirstValue() >= 0.5,
                 Opacity = HpBarOpacity.GetFirstValue(),
             },
 
@@ -1092,22 +1059,44 @@ public class DanmakuShapeParameter : ShapeParameterBase
 
     protected override IEnumerable<IAnimatable> GetAnimatables()
     {
+        yield return CollisionEnabled;
         yield return TargetX;
         yield return TargetY;
         yield return TargetScale;
         yield return TargetRotation;
         yield return TargetOpacity;
         yield return TargetRadius;
+        yield return EnemyHitEnabled;
         yield return EnemyRadius;
+        yield return SpawnHitEffect;
         yield return HitEffectCount;
         yield return HitEffectSpeed;
         yield return HitEffectLifetime;
+        yield return ShowTargetMarker;
+
+        yield return PlayerShotEnabled;
         yield return PlayerShotWay;
         yield return PlayerShotInterval;
         yield return PlayerShotSpeed;
         yield return PlayerShotSpread;
         yield return PlayerShotScale;
+        yield return PlayerShotAlignToDirection;
+        yield return PlayerShotAdditive;
+        yield return PlayerShotAutoAim;
         yield return PlayerShotHitRadius;
+        yield return PlayerShotDestroyOnHit;
+        yield return PlayerShotCancelEnemyBullets;
+
+        yield return HpBarEnabled;
+        yield return BossHp;
+        yield return HpBarRadius;
+        yield return HpBarWidth;
+        yield return HpBarHeight;
+        yield return HpBarX;
+        yield return HpBarY;
+        yield return HpBarGlow;
+        yield return HpBarOpacity;
+
         yield return Seed;
         yield return MaxBullets;
         yield return TimeScale;
@@ -1140,7 +1129,7 @@ public class DanmakuShapeParameter : ShapeParameterBase
         private readonly Animation globalOpacity = new(100, -100, 100);
         private readonly Animation channel = new(0, -1, 255);
 
-        private readonly bool collisionEnabled;
+        private readonly Animation collisionEnabled = new(0, 0, 1);
         private readonly Animation targetX = new(0, -100000, 100000);
         private readonly Animation targetY = new(250, -100000, 100000);
         private readonly string targetImagePath = string.Empty;
@@ -1148,33 +1137,33 @@ public class DanmakuShapeParameter : ShapeParameterBase
         private readonly Animation targetRotation = new(0, -100000, 100000);
         private readonly Animation targetOpacity = new(1.0, -1, 1);
         private readonly Animation targetRadius = new(30, -10000, 10000);
-        private readonly bool enemyHitEnabled = true;
+        private readonly Animation enemyHitEnabled = new(1, 0, 1);
         private readonly Animation enemyRadius = new(40, -10000, 10000);
-        private readonly bool spawnHitEffect;
+        private readonly Animation spawnHitEffect = new(1, 0, 1);
         private readonly Animation hitEffectCount = new(8, 0, 500);
         private readonly Animation hitEffectSpeed = new(160, -100000, 100000);
         private readonly Animation hitEffectLifetime = new(0.35, 0, 1000);
-        private readonly bool showTargetMarker;
+        private readonly Animation showTargetMarker = new(1, 0, 1);
         private readonly bool showControllers = true;
 
-        private readonly bool playerShotEnabled;
+        private readonly Animation playerShotEnabled = new(0, 0, 1);
         private readonly PlayerShotType playerShotType;
         private readonly string playerShotImagePath = string.Empty;
-        private readonly Animation playerShotWay = new(2, -128, 128);
+        private readonly Animation playerShotWay = new(2, -10000, 10000);
         private readonly Animation playerShotInterval = new(0.08, -100.0, 100.0);
         private readonly Animation playerShotSpeed = new(1200, -10000, 10000);
         private readonly Animation playerShotSpread = new(15, -360, 360);
         private readonly Animation playerShotScale = new(1.0, -1000, 1000);
-        private readonly bool playerShotAlignToDirection = true;
+        private readonly Animation playerShotAlignToDirection = new(1, 0, 1);
         private readonly Color playerShotColor = Color.FromArgb(255, 255, 255, 255);
-        private readonly bool playerShotAdditive = true;
-        private readonly bool playerShotAutoAim;
+        private readonly Animation playerShotAdditive = new(1, 0, 1);
+        private readonly Animation playerShotAutoAim = new(0, 0, 1);
         private readonly Animation playerShotHitRadius = new(12, -1000, 1000);
-        private readonly bool playerShotDestroyOnHit = true;
-        private readonly bool playerShotCancelEnemyBullets;
+        private readonly Animation playerShotDestroyOnHit = new(1, 0, 1);
+        private readonly Animation playerShotCancelEnemyBullets = new(0, 0, 1);
         private readonly int playerShotTargetChannel = -1;
 
-        private readonly bool hpBarEnabled;
+        private readonly Animation hpBarEnabled = new(0, 0, 1);
         private readonly HpBarStyle hpBarStyle;
         private readonly Animation bossHp = new(100.0, 0, 100);
         private readonly double bossMaxHp = 1000.0;
@@ -1190,7 +1179,7 @@ public class DanmakuShapeParameter : ShapeParameterBase
         private readonly Color hpBarDamageLagColor = Color.FromArgb(230, 255, 230, 80);
         private readonly Color hpBarBackgroundColor = Color.FromArgb(180, 25, 25, 40);
         private readonly int hpBarPhaseCount = 3;
-        private readonly bool hpBarGlow = true;
+        private readonly Animation hpBarGlow = new(1, 0, 1);
         private readonly Animation hpBarOpacity = new(100.0, 0, 100);
 
         private readonly ImmutableList<EmitterParameter> emitters;
@@ -1206,7 +1195,7 @@ public class DanmakuShapeParameter : ShapeParameterBase
             globalOpacity.CopyFrom(source.GlobalOpacity);
             channel.CopyFrom(source.Channel);
 
-            collisionEnabled = source.CollisionEnabled;
+            collisionEnabled.CopyFrom(source.CollisionEnabled);
             targetX.CopyFrom(source.TargetX);
             targetY.CopyFrom(source.TargetY);
             targetImagePath = source.TargetImagePath;
@@ -1214,16 +1203,16 @@ public class DanmakuShapeParameter : ShapeParameterBase
             targetRotation.CopyFrom(source.TargetRotation);
             targetOpacity.CopyFrom(source.TargetOpacity);
             targetRadius.CopyFrom(source.TargetRadius);
-            enemyHitEnabled = source.EnemyHitEnabled;
+            enemyHitEnabled.CopyFrom(source.EnemyHitEnabled);
             enemyRadius.CopyFrom(source.EnemyRadius);
-            spawnHitEffect = source.SpawnHitEffect;
+            spawnHitEffect.CopyFrom(source.SpawnHitEffect);
             hitEffectCount.CopyFrom(source.HitEffectCount);
             hitEffectSpeed.CopyFrom(source.HitEffectSpeed);
             hitEffectLifetime.CopyFrom(source.HitEffectLifetime);
-            showTargetMarker = source.ShowTargetMarker;
+            showTargetMarker.CopyFrom(source.ShowTargetMarker);
             showControllers = source.ShowControllers;
 
-            playerShotEnabled = source.PlayerShotEnabled;
+            playerShotEnabled.CopyFrom(source.PlayerShotEnabled);
             playerShotType = source.PlayerShotType;
             playerShotImagePath = source.PlayerShotImagePath;
             playerShotWay.CopyFrom(source.PlayerShotWay);
@@ -1231,16 +1220,16 @@ public class DanmakuShapeParameter : ShapeParameterBase
             playerShotSpeed.CopyFrom(source.PlayerShotSpeed);
             playerShotSpread.CopyFrom(source.PlayerShotSpread);
             playerShotScale.CopyFrom(source.PlayerShotScale);
-            playerShotAlignToDirection = source.PlayerShotAlignToDirection;
+            playerShotAlignToDirection.CopyFrom(source.PlayerShotAlignToDirection);
             playerShotColor = source.PlayerShotColor;
-            playerShotAdditive = source.PlayerShotAdditive;
-            playerShotAutoAim = source.PlayerShotAutoAim;
+            playerShotAdditive.CopyFrom(source.PlayerShotAdditive);
+            playerShotAutoAim.CopyFrom(source.PlayerShotAutoAim);
             playerShotHitRadius.CopyFrom(source.PlayerShotHitRadius);
-            playerShotDestroyOnHit = source.PlayerShotDestroyOnHit;
-            playerShotCancelEnemyBullets = source.PlayerShotCancelEnemyBullets;
+            playerShotDestroyOnHit.CopyFrom(source.PlayerShotDestroyOnHit);
+            playerShotCancelEnemyBullets.CopyFrom(source.PlayerShotCancelEnemyBullets);
             playerShotTargetChannel = source.PlayerShotTargetChannel;
 
-            hpBarEnabled = source.HpBarEnabled;
+            hpBarEnabled.CopyFrom(source.HpBarEnabled);
             hpBarStyle = source.HpBarStyle;
             bossHp.CopyFrom(source.BossHp);
             bossMaxHp = source.BossMaxHp;
@@ -1256,7 +1245,7 @@ public class DanmakuShapeParameter : ShapeParameterBase
             hpBarDamageLagColor = source.HpBarDamageLagColor;
             hpBarBackgroundColor = source.HpBarBackgroundColor;
             hpBarPhaseCount = source.HpBarPhaseCount;
-            hpBarGlow = source.HpBarGlow;
+            hpBarGlow.CopyFrom(source.HpBarGlow);
             hpBarOpacity.CopyFrom(source.HpBarOpacity);
 
             var builder = ImmutableList.CreateBuilder<EmitterParameter>();
@@ -1280,7 +1269,7 @@ public class DanmakuShapeParameter : ShapeParameterBase
             target.GlobalOpacity.CopyFrom(globalOpacity);
             target.Channel.CopyFrom(channel);
 
-            target.CollisionEnabled = collisionEnabled;
+            target.CollisionEnabled.CopyFrom(collisionEnabled);
             target.TargetX.CopyFrom(targetX);
             target.TargetY.CopyFrom(targetY);
             target.TargetImagePath = targetImagePath;
@@ -1288,16 +1277,16 @@ public class DanmakuShapeParameter : ShapeParameterBase
             target.TargetRotation.CopyFrom(targetRotation);
             target.TargetOpacity.CopyFrom(targetOpacity);
             target.TargetRadius.CopyFrom(targetRadius);
-            target.EnemyHitEnabled = enemyHitEnabled;
+            target.EnemyHitEnabled.CopyFrom(enemyHitEnabled);
             target.EnemyRadius.CopyFrom(enemyRadius);
-            target.SpawnHitEffect = spawnHitEffect;
+            target.SpawnHitEffect.CopyFrom(spawnHitEffect);
             target.HitEffectCount.CopyFrom(hitEffectCount);
             target.HitEffectSpeed.CopyFrom(hitEffectSpeed);
             target.HitEffectLifetime.CopyFrom(hitEffectLifetime);
-            target.ShowTargetMarker = showTargetMarker;
+            target.ShowTargetMarker.CopyFrom(showTargetMarker);
             target.ShowControllers = showControllers;
 
-            target.PlayerShotEnabled = playerShotEnabled;
+            target.PlayerShotEnabled.CopyFrom(playerShotEnabled);
             target.PlayerShotType = playerShotType;
             target.PlayerShotImagePath = playerShotImagePath;
             target.PlayerShotWay.CopyFrom(playerShotWay);
@@ -1305,16 +1294,16 @@ public class DanmakuShapeParameter : ShapeParameterBase
             target.PlayerShotSpeed.CopyFrom(playerShotSpeed);
             target.PlayerShotSpread.CopyFrom(playerShotSpread);
             target.PlayerShotScale.CopyFrom(playerShotScale);
-            target.PlayerShotAlignToDirection = playerShotAlignToDirection;
+            target.PlayerShotAlignToDirection.CopyFrom(playerShotAlignToDirection);
             target.PlayerShotColor = playerShotColor;
-            target.PlayerShotAdditive = playerShotAdditive;
-            target.PlayerShotAutoAim = playerShotAutoAim;
+            target.PlayerShotAdditive.CopyFrom(playerShotAdditive);
+            target.PlayerShotAutoAim.CopyFrom(playerShotAutoAim);
             target.PlayerShotHitRadius.CopyFrom(playerShotHitRadius);
-            target.PlayerShotDestroyOnHit = playerShotDestroyOnHit;
-            target.PlayerShotCancelEnemyBullets = playerShotCancelEnemyBullets;
+            target.PlayerShotDestroyOnHit.CopyFrom(playerShotDestroyOnHit);
+            target.PlayerShotCancelEnemyBullets.CopyFrom(playerShotCancelEnemyBullets);
             target.PlayerShotTargetChannel = playerShotTargetChannel;
 
-            target.HpBarEnabled = hpBarEnabled;
+            target.HpBarEnabled.CopyFrom(hpBarEnabled);
             target.HpBarStyle = hpBarStyle;
             target.BossHp.CopyFrom(bossHp);
             target.BossMaxHp = bossMaxHp;
@@ -1330,7 +1319,7 @@ public class DanmakuShapeParameter : ShapeParameterBase
             target.HpBarDamageLagColor = hpBarDamageLagColor;
             target.HpBarBackgroundColor = hpBarBackgroundColor;
             target.HpBarPhaseCount = hpBarPhaseCount;
-            target.HpBarGlow = hpBarGlow;
+            target.HpBarGlow.CopyFrom(hpBarGlow);
             target.HpBarOpacity.CopyFrom(hpBarOpacity);
 
             var builder = ImmutableList.CreateBuilder<EmitterParameter>();

@@ -2457,4 +2457,99 @@ public class KeyframeLiveValueTests
     }
 }
 
+public class DynamicToggleKeyframeTests
+{
+    [Fact]
+    public void 当たり判定をキーフレームで無敵から有効に切り替えられる()
+    {
+        var settings = new DanmakuSettings
+        {
+            Collision = new CollisionSettings
+            {
+                IsEnabled = false, // 初期は無効 (無敵)
+                TargetRadius = 20,
+            },
+            Emitters = [
+                new EmitterSettings
+                {
+                    IsEnabled = true,
+                    Pattern = new PatternSettings { FireInterval = 0.05, Way = 1, BaseAngle = 90 },
+                    Physics = new BulletPhysics { Speed = 100.0, MinSpeed = 100.0, MaxSpeed = 100.0, HitRadius = 20 }
+                }
+            ]
+        };
+
+        var engine = new DanmakuEngine(settings);
+        // エミッター (0, 0)、自機 (0, 50)
+        engine.Live.EmitterPosition = (_, _) => new Vec2(0, 0);
+        engine.Live.TargetPosition = _ => new Vec2(0, 50);
+
+        // 0.5秒までは無効 (無敵)、0.5秒以降は有効
+        engine.Live.CollisionEnabled = t => t >= 0.5;
+
+        engine.Advance(0.4);
+        Assert.DoesNotContain(engine.SoundLog.Events, e => e.Kind == DanmakuSoundKind.PlayerHit);
+
+        engine.Advance(0.3); // t=0.7
+        Assert.Contains(engine.SoundLog.Events, e => e.Kind == DanmakuSoundKind.PlayerHit);
+    }
+
+    [Fact]
+    public void 自機射撃をキーフレームで0から1へ動的オンオフできる()
+    {
+        var settings = new DanmakuSettings
+        {
+            PlayerShot = new PlayerShotSettings
+            {
+                IsEnabled = false, // 初期は停止
+                Way = 1,
+                FireInterval = 0.05,
+                Speed = 500,
+            },
+            Emitters = [
+                new EmitterSettings
+                {
+                    IsEnabled = true,
+                    Pattern = new PatternSettings { FireInterval = 10.0, Way = 1 }
+                }
+            ]
+        };
+
+        var engine = new DanmakuEngine(settings);
+        engine.Live.PlayerShotEnabled = t => t >= 0.3;
+
+        engine.Advance(0.25);
+        Assert.Equal(0, engine.AliveBullets().Count(b => b.IsPlayerShot));
+
+        engine.Advance(0.2); // t=0.45
+        Assert.Contains(engine.AliveBullets(), b => b.IsPlayerShot);
+    }
+
+    [Fact]
+    public void エミッター有効無効をキーフレームで切り替えられる()
+    {
+        var settings = new DanmakuSettings
+        {
+            Emitters = [
+                new EmitterSettings
+                {
+                    IsEnabled = false, // 初期は無効
+                    Pattern = new PatternSettings { FireInterval = 0.05, Way = 2 },
+                    Physics = new BulletPhysics { Speed = 200 }
+                }
+            ]
+        };
+
+        var engine = new DanmakuEngine(settings);
+        engine.Live.EmitterIsEnabled = (i, t) => t >= 0.2;
+
+        engine.Advance(0.15);
+        Assert.Equal(0, engine.TotalSpawned);
+
+        engine.Advance(0.2); // t=0.35
+        Assert.True(engine.TotalSpawned > 0);
+    }
+}
+
+
 

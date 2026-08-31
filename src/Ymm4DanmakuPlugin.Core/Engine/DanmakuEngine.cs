@@ -253,10 +253,12 @@ public sealed class DanmakuEngine
         }
 
         UpdateEmitters(deltaTime);
-        if (Settings.PlayerShot.IsEnabled) UpdatePlayerShots(deltaTime);
+        var playerShotEnabled = Live.PlayerShotEnabled?.Invoke(CurrentTime) ?? Settings.PlayerShot.IsEnabled;
+        if (playerShotEnabled) UpdatePlayerShots(deltaTime);
         UpdateBullets(deltaTime);
         ProcessSplits();
-        if (Settings.Collision.IsEnabled || Settings.PlayerShot.IsEnabled) ProcessCollisions();
+        var collisionEnabled = Live.CollisionEnabled?.Invoke(CurrentTime) ?? Settings.Collision.IsEnabled;
+        if (collisionEnabled || playerShotEnabled) ProcessCollisions();
         Pool.Compact();
 
         gridSteps++;
@@ -296,7 +298,8 @@ public sealed class DanmakuEngine
         {
             var context = contexts[i];
             var settings = Settings.Emitters[context.EmitterIndex];
-            if (!settings.IsEnabled) continue;
+            var isEnabled = Live.EmitterIsEnabled?.Invoke(context.EmitterIndex, CurrentTime) ?? settings.IsEnabled;
+            if (!isEnabled) continue;
 
             // キーフレームで動かす場合は供給関数の値を基準位置とする
             var position = Live.EmitterPosition?.Invoke(context.EmitterIndex, CurrentTime)
@@ -327,7 +330,8 @@ public sealed class DanmakuEngine
     private void UpdatePlayerShots(double deltaTime)
     {
         var shot = Settings.PlayerShot;
-        if (!shot.IsEnabled) return;
+        var isEnabled = Live.PlayerShotEnabled?.Invoke(CurrentTime) ?? shot.IsEnabled;
+        if (!isEnabled) return;
 
         var interval = Live.PlayerShotInterval?.Invoke(CurrentTime) ?? shot.FireInterval;
         if (interval <= 0) return;
@@ -350,9 +354,10 @@ public sealed class DanmakuEngine
         var spread = Live.PlayerShotSpread?.Invoke(CurrentTime) ?? shot.SpreadAngle;
         var scale = Live.PlayerShotScale?.Invoke(CurrentTime) ?? shot.Scale;
         var hitRadius = Live.PlayerShotHitRadius?.Invoke(CurrentTime) ?? shot.HitRadius;
+        var autoAim = Live.PlayerShotAutoAim?.Invoke(CurrentTime) ?? shot.AutoAim;
 
         var baseAngle = -90.0; // 上向き (STG標準)
-        if (shot.AutoAim && (EnemyPosition - TargetPosition).LengthSquared > 1.0)
+        if (autoAim && (EnemyPosition - TargetPosition).LengthSquared > 1.0)
         {
             baseAngle = (EnemyPosition - TargetPosition).Degrees;
         }
@@ -361,6 +366,9 @@ public sealed class DanmakuEngine
         var step = way > 1 ? spread / (way - 1) : 0;
         var spriteIndex = GetPlayerShotSpriteIndex(shot.ShotType);
         var soundEmitted = false;
+        var cancelEnemy = Live.PlayerShotCancelEnemyBullets?.Invoke(CurrentTime) ?? shot.CancelEnemyBullets;
+        var additive = Live.PlayerShotAdditive?.Invoke(CurrentTime) ?? shot.Additive;
+        var alignToDir = Live.PlayerShotAlignToDirection?.Invoke(CurrentTime) ?? shot.AlignToDirection;
 
         for (var i = 0; i < way; i++)
         {
@@ -383,7 +391,7 @@ public sealed class DanmakuEngine
             bullet.EmitterIndex = 0;
             bullet.Generation = 0;
             bullet.IsPlayerShot = true;
-            bullet.CancelEnemyBullets = shot.CancelEnemyBullets;
+            bullet.CancelEnemyBullets = cancelEnemy;
             bullet.Position = TargetPosition + offset;
             bullet.PreviousPosition = bullet.Position;
             bullet.Direction = angle;
@@ -392,8 +400,8 @@ public sealed class DanmakuEngine
             bullet.DestroyOnHit = shot.DestroyOnHit;
             bullet.Scale = scale;
             bullet.Color = shot.Color;
-            bullet.Additive = shot.Additive;
-            bullet.AlignToDirection = shot.AlignToDirection;
+            bullet.Additive = additive;
+            bullet.AlignToDirection = alignToDir;
             bullet.SpriteIndex = spriteIndex;
             bullet.Lifetime = 3.0;
 
@@ -676,6 +684,10 @@ public sealed class DanmakuEngine
         var collision = Settings.Collision;
         var bullets = Pool.ActiveBullets;
 
+        var collisionEnabled = Live.CollisionEnabled?.Invoke(CurrentTime) ?? collision.IsEnabled;
+        var enemyHitEnabled = Live.EnemyHitEnabled?.Invoke(CurrentTime) ?? collision.EnemyHitEnabled;
+        var spawnHitEffect = Live.SpawnHitEffect?.Invoke(CurrentTime) ?? collision.SpawnHitEffect;
+
         for (var i = 0; i < bullets.Count; i++)
         {
             var bullet = bullets[i];
@@ -698,7 +710,7 @@ public sealed class DanmakuEngine
                             Kill(enemyBullet, BulletDeathReason.Hit, playSound: false);
                             EmitSound(DanmakuSoundKind.Vanish, enemyBullet.EmitterIndex);
 
-                            if (collision.SpawnHitEffect)
+                            if (spawnHitEffect)
                                 SpawnHitEffectAt(enemyBullet.Position, enemyBullet, collision);
 
                             if (bullet.DestroyOnHit)
@@ -712,7 +724,7 @@ public sealed class DanmakuEngine
                 }
 
                 // --- 自機弾 vs エネミー (ボス) ---
-                if (bullet.IsAlive && collision.EnemyHitEnabled && EnemyRadius > 0)
+                if (bullet.IsAlive && enemyHitEnabled && EnemyRadius > 0)
                 {
                     var radius = bullet.HitRadius * Math.Abs(bullet.Scale) + EnemyRadius;
                     if (bullet.Position.DistanceSquaredTo(EnemyPosition) <= radius * radius)
@@ -731,7 +743,7 @@ public sealed class DanmakuEngine
                         EmitSound(DanmakuSoundKind.EnemyHit, bullet.EmitterIndex);
                         EmitSound(DanmakuSoundKind.Hit, bullet.EmitterIndex);
 
-                        if (collision.SpawnHitEffect)
+                        if (spawnHitEffect)
                             SpawnHitEffectAt(bullet.Position, bullet, collision);
 
                         if (bullet.DestroyOnHit)
@@ -742,7 +754,7 @@ public sealed class DanmakuEngine
             else
             {
                 // --- 敵弾 vs 自機 (ターゲット) ---
-                if (collision.IsEnabled && collision.TargetRadius > 0)
+                if (collisionEnabled && collision.TargetRadius > 0)
                 {
                     var radius = bullet.HitRadius * Math.Abs(bullet.Scale) + collision.TargetRadius;
                     if (bullet.Position.DistanceSquaredTo(TargetPosition) <= radius * radius)
@@ -752,7 +764,7 @@ public sealed class DanmakuEngine
                         EmitSound(DanmakuSoundKind.PlayerHit, bullet.EmitterIndex);
                         EmitSound(DanmakuSoundKind.Hit, bullet.EmitterIndex);
 
-                        if (collision.SpawnHitEffect)
+                        if (spawnHitEffect)
                             SpawnHitEffectAt(bullet.Position, bullet, collision);
 
                         if (bullet.DestroyOnHit)

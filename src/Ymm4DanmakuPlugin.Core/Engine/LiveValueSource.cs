@@ -119,6 +119,31 @@ public sealed class LiveValueSource
     public Func<double, double?>? HpBarY { get; set; }
     public Func<double, double?>? HpBarOpacity { get; set; }
 
+    // ---- トグル・スイッチ系 (キーフレーム 0/1 切替) ----
+    public Func<int, double, bool?>? EmitterIsEnabled { get; set; }
+    public Func<int, double, bool?>? EmitterAimAtTarget { get; set; }
+    public Func<int, double, bool?>? EmitterHomingEnabled { get; set; }
+    public Func<int, double, bool?>? EmitterAdditive { get; set; }
+    public Func<int, double, bool?>? EmitterAlignToDirection { get; set; }
+    public Func<int, double, bool?>? EmitterSplitEnabled { get; set; }
+    public Func<int, double, bool?>? EmitterSplitSpeedIsRelative { get; set; }
+    public Func<int, double, bool?>? EmitterAuraEnabled { get; set; }
+    public Func<int, double, bool?>? EmitterMagicCircleEnabled { get; set; }
+    public Func<int, double, bool?>? EmitterEnemyEnabled { get; set; }
+    public Func<int, double, bool?>? EmitterEnemyBehindBullets { get; set; }
+    public Func<int, double, bool?>? EmitterScriptLoop { get; set; }
+
+    public Func<double, bool?>? CollisionEnabled { get; set; }
+    public Func<double, bool?>? EnemyHitEnabled { get; set; }
+    public Func<double, bool?>? SpawnHitEffect { get; set; }
+    public Func<double, bool?>? ShowTargetMarker { get; set; }
+    public Func<double, bool?>? PlayerShotEnabled { get; set; }
+    public Func<double, bool?>? PlayerShotAlignToDirection { get; set; }
+    public Func<double, bool?>? PlayerShotAdditive { get; set; }
+    public Func<double, bool?>? PlayerShotAutoAim { get; set; }
+    public Func<double, bool?>? PlayerShotCancelEnemyBullets { get; set; }
+    public Func<double, bool?>? HpBarEnabled { get; set; }
+
     public Func<double, int?>? Seed { get; set; }
     public Func<double, int?>? MaxBullets { get; set; }
     public Func<double, int?>? Channel { get; set; }

@@ -131,4 +131,18 @@ public sealed class EmitterContext(DanmakuEngine engine, int emitterIndex)
     public double? EmitterSplitScaleFactor(double time) => Engine.Live.EmitterSplitScaleFactor?.Invoke(EmitterIndex, time);
     public double? EmitterSplitDelay(double time) => Engine.Live.EmitterSplitDelay?.Invoke(EmitterIndex, time);
     public int? EmitterSplitMaxGeneration(double time) => Engine.Live.EmitterSplitMaxGeneration?.Invoke(EmitterIndex, time);
+
+    // ---- トグル・スイッチ系 (キーフレーム 0/1 切替) ----
+    public bool? EmitterIsEnabled(double time) => Engine.Live.EmitterIsEnabled?.Invoke(EmitterIndex, time);
+    public bool? EmitterAimAtTarget(double time) => Engine.Live.EmitterAimAtTarget?.Invoke(EmitterIndex, time);
+    public bool? EmitterHomingEnabled(double time) => Engine.Live.EmitterHomingEnabled?.Invoke(EmitterIndex, time);
+    public bool? EmitterAdditive(double time) => Engine.Live.EmitterAdditive?.Invoke(EmitterIndex, time);
+    public bool? EmitterAlignToDirection(double time) => Engine.Live.EmitterAlignToDirection?.Invoke(EmitterIndex, time);
+    public bool? EmitterSplitEnabled(double time) => Engine.Live.EmitterSplitEnabled?.Invoke(EmitterIndex, time);
+    public bool? EmitterSplitSpeedIsRelative(double time) => Engine.Live.EmitterSplitSpeedIsRelative?.Invoke(EmitterIndex, time);
+    public bool? EmitterAuraEnabled(double time) => Engine.Live.EmitterAuraEnabled?.Invoke(EmitterIndex, time);
+    public bool? EmitterMagicCircleEnabled(double time) => Engine.Live.EmitterMagicCircleEnabled?.Invoke(EmitterIndex, time);
+    public bool? EmitterEnemyEnabled(double time) => Engine.Live.EmitterEnemyEnabled?.Invoke(EmitterIndex, time);
+    public bool? EmitterEnemyBehindBullets(double time) => Engine.Live.EmitterEnemyBehindBullets?.Invoke(EmitterIndex, time);
+    public bool? EmitterScriptLoop(double time) => Engine.Live.EmitterScriptLoop?.Invoke(EmitterIndex, time);
 }

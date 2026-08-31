@@ -137,15 +137,17 @@ public sealed class DanmakuShapeSource : IShapeSource2
             TargetRadius: targetRadius
         ));
 
+        var collisionEnabled = parameter.CollisionEnabled.GetValue(frame, totalFrame, fps) >= 0.5;
+        var showTargetMarker = parameter.ShowTargetMarker.GetValue(frame, totalFrame, fps) >= 0.5;
         var targetInfo = new TargetRenderInfo(
-            Enabled: parameter.CollisionEnabled && (parameter.HasCustomTargetImage || parameter.ShowTargetMarker),
+            Enabled: collisionEnabled && (parameter.HasCustomTargetImage || showTargetMarker),
             X: targetX,
             Y: targetY,
             Scale: targetScale,
             Rotation: targetRotation,
             Opacity: targetOpacity,
             Radius: targetRadius,
-            ShowMarker: parameter.ShowTargetMarker,
+            ShowMarker: showTargetMarker,
             HasCustomImage: parameter.HasCustomTargetImage
         );
 
@@ -153,7 +155,8 @@ public sealed class DanmakuShapeSource : IShapeSource2
         for (var i = 0; i < parameter.Emitters.Count && i < DanmakuShapeParameter.MaxEmitters; i++)
         {
             var emitter = parameter.Emitters[i];
-            if (!emitter.IsEnabled) continue;
+            var emitterEnabled = emitter.IsEnabled.GetValue(frame, totalFrame, fps) >= 0.5;
+            if (!emitterEnabled) continue;
 
             // エミッター位置 (X, Y および公転) と魔法陣回転角 (シミュレータの積分値を正確に反映)
             var ctx = simulator?.Engine.Contexts is { Count: > 0 } ctxs && i < ctxs.Count ? ctxs[i] : null;
@@ -172,6 +175,11 @@ public sealed class DanmakuShapeSource : IShapeSource2
             var auraIntensity = (float)emitter.AuraIntensity.GetValue(frame, totalFrame, fps);
             var auraColor4 = ColorExtensions.ToColor4(emitter.AuraColor);
 
+            var enemyBehindBullets = emitter.EnemyBehindBullets.GetValue(frame, totalFrame, fps) >= 0.5;
+            var magicCircleEnabled = emitter.MagicCircleEnabled.GetValue(frame, totalFrame, fps) >= 0.5;
+            var magicCircleAdditive = emitter.MagicCircleAdditive.GetValue(frame, totalFrame, fps) >= 0.5;
+            var auraEnabled = emitter.AuraEnabled.GetValue(frame, totalFrame, fps) >= 0.5;
+
             enemies.Add(new EnemyRenderInfo(
                 X: posX,
                 Y: posY,
@@ -180,16 +188,16 @@ public sealed class DanmakuShapeSource : IShapeSource2
                 EnemyScale: enemyScale,
                 EnemyRotation: enemyRotation,
                 EnemyOpacity: enemyOpacity,
-                EnemyBehindBullets: emitter.EnemyBehindBullets,
-                MagicCircleEnabled: emitter.MagicCircleEnabled,
+                EnemyBehindBullets: enemyBehindBullets,
+                MagicCircleEnabled: magicCircleEnabled,
                 MagicCircleSlot: SpriteSlots.MagicCircleCustomSlotOf(i),
                 MagicCircleScale: mcScale,
                 MagicCircleAngle: mcAngle,
                 MagicCircleColor: mcColor4,
                 MagicCircleOpacity: mcOpacity,
-                MagicCircleAdditive: emitter.MagicCircleAdditive,
+                MagicCircleAdditive: magicCircleAdditive,
                 IsBuiltInMagicCircle: !emitter.HasCustomMagicCircleImage,
-                AuraEnabled: emitter.AuraEnabled,
+                AuraEnabled: auraEnabled,
                 AuraIntensity: auraIntensity,
                 AuraColor: auraColor4
             ));
@@ -198,7 +206,8 @@ public sealed class DanmakuShapeSource : IShapeSource2
         var globalOpacity = Math.Clamp(parameter.GlobalOpacity.GetValue(frame, totalFrame, fps) / 100.0, 0.0, 1.0);
         batchBuilder.Build(simulator?.Bullets ?? [], GetAppearance, globalOpacity);
 
-        var hpBarEnabled = parameter.HpBarEnabled;
+        var hpBarEnabled = parameter.HpBarEnabled.GetValue(frame, totalFrame, fps) >= 0.5;
+        var hpBarGlow = parameter.HpBarGlow.GetValue(frame, totalFrame, fps) >= 0.5;
         var hpRatio = (float)(simulator?.Engine.BossHpRatio ?? 1.0);
         var lagRatio = (float)(simulator?.Engine.BossDamageLagRatio ?? 1.0);
         var hpBarRadius = (float)parameter.HpBarRadius.GetValue(frame, totalFrame, fps);
@@ -234,7 +243,7 @@ public sealed class DanmakuShapeSource : IShapeSource2
             DamageLagColor: ColorExtensions.ToColor4(parameter.HpBarDamageLagColor),
             BackgroundColor: ColorExtensions.ToColor4(parameter.HpBarBackgroundColor),
             PhaseCount: parameter.HpBarPhaseCount,
-            Glow: parameter.HpBarGlow,
+            Glow: hpBarGlow,
             Opacity: hpBarOpacity
         );
 
@@ -396,7 +405,7 @@ public sealed class DanmakuShapeSource : IShapeSource2
             };
         }
 
-        if (!parameter.CollisionEnabled) yield break;
+        if (parameter.CollisionEnabled.GetValue(frame, totalFrame, fps) < 0.5) yield break;
 
         var targetPosition = new Vector3(
             (float)parameter.TargetX.GetValue(frame, totalFrame, fps),

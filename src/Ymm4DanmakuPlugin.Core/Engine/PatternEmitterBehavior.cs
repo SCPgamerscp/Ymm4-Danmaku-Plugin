@@ -39,6 +39,13 @@ public sealed class PatternEmitterBehavior(EmitterSettings settings) : IEmitterB
         var stepStart = context.Time;
         var stepEnd = stepStart + deltaTime;
 
+        var isEnabled = context.EmitterIsEnabled(stepStart) ?? settings.IsEnabled;
+        if (!isEnabled)
+        {
+            nextShotTime = stepEnd;
+            return;
+        }
+
         var whipAmp = context.EmitterWhipAmplitude(stepStart) ?? pattern.WhipAmplitude;
         if (whipAmp != 0)
         {
@@ -88,7 +95,8 @@ public sealed class PatternEmitterBehavior(EmitterSettings settings) : IEmitterB
         if (way <= 0 || stack <= 0) return;
 
         var baseAngle = context.EmitterAngle(fireTime) ?? pattern.BaseAngle;
-        var defaultAimRate = pattern.Kind == PatternKind.Aimed ? 100.0 : (pattern.AimRate != 0 ? pattern.AimRate : (pattern.AimAtTarget ? 100.0 : 0.0));
+        var aimAtTarget = context.EmitterAimAtTarget(fireTime) ?? pattern.AimAtTarget;
+        var defaultAimRate = pattern.Kind == PatternKind.Aimed ? 100.0 : (pattern.AimRate != 0 ? pattern.AimRate : (aimAtTarget ? 100.0 : 0.0));
         var rawAimRate = context.EmitterAimRate(fireTime) ?? defaultAimRate;
         var aimRate = DanmakuMath.Clamp(rawAimRate / 100.0, -1.0, 1.0);
         if (aimRate > 0)
@@ -157,14 +165,17 @@ public sealed class PatternEmitterBehavior(EmitterSettings settings) : IEmitterB
 
         // 分裂の動的評価
         SplitSpec? split = settings.Split;
+        var splitEnabled = context.EmitterSplitEnabled(fireTime) ?? (split is not null);
         var splitDelay = context.EmitterSplitDelay(fireTime) ?? settings.SplitDelay;
-        if (split is not null)
+        if (splitEnabled)
         {
+            split ??= new SplitSpec();
             var splitCount = Math.Max(0, context.EmitterSplitCount(fireTime) ?? split.Count);
             var splitSpread = context.EmitterSplitSpread(fireTime) ?? split.SpreadDegrees;
             var splitSpeed = context.EmitterSplitSpeed(fireTime) ?? split.Speed;
             var splitScaleFactor = context.EmitterSplitScaleFactor(fireTime) ?? split.ScaleFactor;
             var splitMaxGen = Math.Max(0, context.EmitterSplitMaxGeneration(fireTime) ?? split.MaxGeneration);
+            var splitSpeedRel = context.EmitterSplitSpeedIsRelative(fireTime) ?? split.SpeedIsRelative;
             split = split with
             {
                 Count = splitCount,
@@ -172,7 +183,12 @@ public sealed class PatternEmitterBehavior(EmitterSettings settings) : IEmitterB
                 Speed = splitSpeed,
                 ScaleFactor = splitScaleFactor,
                 MaxGeneration = splitMaxGen,
+                SpeedIsRelative = splitSpeedRel,
             };
+        }
+        else
+        {
+            split = null;
         }
 
         var indexInBurst = 0;
@@ -190,14 +206,20 @@ public sealed class PatternEmitterBehavior(EmitterSettings settings) : IEmitterB
 
             for (var i = 0; i < way; i++)
             {
+                var homingEnabled = context.EmitterHomingEnabled(fireTime) ?? physics.HomingEnabled;
                 var curPhysics = physics with
                 {
+                    HomingEnabled = homingEnabled,
                     SpeedJitter = speedJitter,
                     AngularVelocityJitter = angVelJitter,
                     LifetimeJitter = lifetimeJitter,
                 };
+                var additive = context.EmitterAdditive(fireTime) ?? appearance.Additive;
+                var alignToDir = context.EmitterAlignToDirection(fireTime) ?? appearance.AlignToDirection;
                 var curAppearance = appearance with
                 {
+                    Additive = additive,
+                    AlignToDirection = alignToDir,
                     ScaleJitter = scaleJitter,
                     HueVelocity = hueVelocity,
                     HueStep = hueStep,

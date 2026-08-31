@@ -100,6 +100,19 @@ public class EmitterParameter : Animatable
         SubscribeAnimatable(AuraIntensity, nameof(AuraIntensity));
 
         SubscribeAnimatable(HitRadius, nameof(HitRadius));
+
+        SubscribeAnimatable(IsEnabled, nameof(IsEnabled));
+        SubscribeAnimatable(ScriptLoop, nameof(ScriptLoop));
+        SubscribeAnimatable(HomingEnabled, nameof(HomingEnabled));
+        SubscribeAnimatable(AlignToDirection, nameof(AlignToDirection));
+        SubscribeAnimatable(Additive, nameof(Additive));
+        SubscribeAnimatable(SplitEnabled, nameof(SplitEnabled));
+        SubscribeAnimatable(SplitDestroyParent, nameof(SplitDestroyParent));
+        SubscribeAnimatable(EnemyBehindBullets, nameof(EnemyBehindBullets));
+        SubscribeAnimatable(MagicCircleEnabled, nameof(MagicCircleEnabled));
+        SubscribeAnimatable(MagicCircleAdditive, nameof(MagicCircleAdditive));
+        SubscribeAnimatable(AuraEnabled, nameof(AuraEnabled));
+        SubscribeAnimatable(DestroyOnHit, nameof(DestroyOnHit));
     }
 
     private void SubscribeAnimatable(Animation anim, string propertyName)
@@ -121,10 +134,9 @@ public class EmitterParameter : Animatable
     }
     private string name = "エミッター";
 
-    [Display(GroupName = "エミッター", Name = "有効", Description = "このエミッターから弾を発射します。")]
-    [ToggleSlider]
-    public bool IsEnabled { get => isEnabled; set => Set(ref isEnabled, value); }
-    private bool isEnabled = true;
+    [Display(GroupName = "エミッター", Name = "有効", Description = "このエミッターから弾を発射します。0 で停止、1 で発射。")]
+    [AnimationSlider("F0", "", 0, 1)]
+    public Animation IsEnabled { get; } = new Animation(1, 0, 1);
 
     [Display(GroupName = "エミッター", Name = "X", Description = "発射位置 X。キーフレームで動かせます。プレビュー上のドラッグでも変更できます。")]
     [AnimationSlider("F1", "px", -1920, 1920)]
@@ -190,10 +202,9 @@ public class EmitterParameter : Animatable
     [AnimationSlider("F2", "", -1, 1)]
     public Animation ScriptRank { get; } = new Animation(0.5, -100, 100);
 
-    [Display(GroupName = "弾幕データ", Name = "ループ再生", Description = "スクリプトが終端に達したら最初から再生します。")]
-    [ToggleSlider]
-    public bool ScriptLoop { get => scriptLoop; set => Set(ref scriptLoop, value); }
-    private bool scriptLoop = true;
+    [Display(GroupName = "外部スクリプト", Name = "ループ再生", Description = "スクリプト終端到達時に最初から繰り返します。1 でループ、0 で1回のみ。")]
+    [AnimationSlider("F0", "", 0, 1)]
+    public Animation ScriptLoop { get; } = new Animation(1, 0, 1);
 
     // =====================================================================
     // 第 1 階層: パターン形状
@@ -363,10 +374,9 @@ public class EmitterParameter : Animatable
 
     // ---- ホーミング ----
 
-    [Display(GroupName = "ホーミング", Name = "ホーミング", Description = "ターゲット (自機) を追いかけます。")]
-    [ToggleSlider]
-    public bool HomingEnabled { get => homingEnabled; set => Set(ref homingEnabled, value); }
-    private bool homingEnabled;
+    [Display(GroupName = "ホーミング", Name = "ホーミング", Description = "ターゲット (自機) を追いかけます。1 で有効、0 で無効。")]
+    [AnimationSlider("F0", "", 0, 1)]
+    public Animation HomingEnabled { get; } = new Animation(0, 0, 1);
 
     [Display(GroupName = "ホーミング", Name = "追尾力", Description = "正で自機を追尾、負で自機から逃げるように反発旋回します。")]
     [AnimationSlider("F0", "度/秒", -720, 720)]
@@ -410,10 +420,9 @@ public class EmitterParameter : Animatable
     [AnimationSlider("F0", "度/秒", -720, 720)]
     public Animation RotationVelocity { get; } = new Animation(0, -100000, 100000);
 
-    [Display(GroupName = "見た目", Name = "弾向き追従", Description = "弾が飛んでいく向きに合わせて弾の向き・画像を回転させます。")]
-    [ToggleSlider]
-    public bool AlignToDirection { get => alignToDirection; set => Set(ref alignToDirection, value); }
-    private bool alignToDirection = true;
+    [Display(GroupName = "見た目", Name = "弾向き追従", Description = "弾が飛んでいく向きに合わせて弾の向き・画像を回転させます。1 で追従、0 で固定。")]
+    [AnimationSlider("F0", "", 0, 1)]
+    public Animation AlignToDirection { get; } = new Animation(1, 0, 1);
 
     [Display(GroupName = "見た目", Name = "着色モード", Description = "単色・グラデーション・虹色・パレット・ランダムから選択します。")]
     [EnumComboBox]
@@ -438,10 +447,9 @@ public class EmitterParameter : Animatable
     [AnimationSlider("F1", "度", -180, 180)]
     public Animation HueStep { get; } = new Animation(15, -100000, 100000);
 
-    [Display(GroupName = "見た目", Name = "加算発光", Description = "東方風の光る弾 (加算合成グロー) にします。")]
-    [ToggleSlider]
-    public bool Additive { get => additive; set => Set(ref additive, value); }
-    private bool additive = true;
+    [Display(GroupName = "見た目", Name = "加算発光", Description = "東方風の光る弾 (加算合成グロー) にします。1 で加算、0 で通常。")]
+    [AnimationSlider("F0", "", 0, 1)]
+    public Animation Additive { get; } = new Animation(1, 0, 1);
 
     [Display(GroupName = "見た目", Name = "発光強度", Description = "加算グローの輝度倍率。")]
     [AnimationSlider("F2", "倍", 0, 3)]
@@ -481,10 +489,9 @@ public class EmitterParameter : Animatable
     // 分裂 (多段弾幕)
     // =====================================================================
 
-    [Display(GroupName = "分裂", Name = "分裂", Description = "一定時間後に弾を多方向へ分裂させます。")]
-    [ToggleSlider]
-    public bool SplitEnabled { get => splitEnabled; set => Set(ref splitEnabled, value); }
-    private bool splitEnabled;
+    [Display(GroupName = "分裂", Name = "分裂", Description = "一定時間後に弾を多方向へ分裂させます。1 で有効、0 で無効。")]
+    [AnimationSlider("F0", "", 0, 1)]
+    public Animation SplitEnabled { get; } = new Animation(0, 0, 1);
 
     [Display(GroupName = "分裂", Name = "分裂時間", Description = "発射から分裂するまでの遅延秒数。")]
     [AnimationSlider("F2", "秒", 0, 5)]
@@ -506,10 +513,9 @@ public class EmitterParameter : Animatable
     [AnimationSlider("F2", "倍", -2, 2)]
     public Animation SplitScaleFactor { get; } = new Animation(0.8, -100, 100);
 
-    [Display(GroupName = "分裂", Name = "親弾消滅", Description = "分裂時に元の親弾を消去します。")]
-    [ToggleSlider]
-    public bool SplitDestroyParent { get => splitDestroyParent; set => Set(ref splitDestroyParent, value); }
-    private bool splitDestroyParent = true;
+    [Display(GroupName = "分裂", Name = "親弾消滅", Description = "分裂時に元の親弾を消去します。1 で消滅、0 で存続。")]
+    [AnimationSlider("F0", "", 0, 1)]
+    public Animation SplitDestroyParent { get; } = new Animation(1, 0, 1);
 
     [Display(GroupName = "分裂", Name = "多段世代数", Description = "2 以上でさらに分裂を繰り返します。")]
     [AnimationSlider("F0", "世代", 0, 5)]
@@ -538,15 +544,13 @@ public class EmitterParameter : Animatable
     [AnimationSlider("F2", "", -1, 1)]
     public Animation EnemyOpacity { get; } = new Animation(1.0, -1, 1);
 
-    [Display(GroupName = "エネミー (敵)", Name = "奥に描画", Description = "オンで弾幕の背後に配置、オフで弾幕の手前に配置します。")]
-    [ToggleSlider]
-    public bool EnemyBehindBullets { get => enemyBehindBullets; set => Set(ref enemyBehindBullets, value); }
-    private bool enemyBehindBullets = true;
+    [Display(GroupName = "エネミー (敵)", Name = "奥に描画", Description = "1 で弾幕の背後に配置、0 で弾幕の手前に配置します。")]
+    [AnimationSlider("F0", "", 0, 1)]
+    public Animation EnemyBehindBullets { get; } = new Animation(1, 0, 1);
 
-    [Display(GroupName = "エネミー (敵)", Name = "魔法陣", Description = "ボスの背後に東方風の魔法陣を展開します。")]
-    [ToggleSlider]
-    public bool MagicCircleEnabled { get => magicCircleEnabled; set => Set(ref magicCircleEnabled, value); }
-    private bool magicCircleEnabled;
+    [Display(GroupName = "エネミー (敵)", Name = "魔法陣", Description = "ボスの背後に東方風の魔法陣を展開します。1 で表示、0 で非表示。")]
+    [AnimationSlider("F0", "", 0, 1)]
+    public Animation MagicCircleEnabled { get; } = new Animation(0, 0, 1);
 
     [Display(GroupName = "エネミー (敵)", Name = "魔法陣画像", Description = "カスタム魔法陣画像。未指定時は組み込みの東方風幾何学魔法陣が描かれます。")]
     [FileSelector(FileGroupType.ImageItem)]
@@ -572,15 +576,13 @@ public class EmitterParameter : Animatable
     [AnimationSlider("F2", "", -1, 1)]
     public Animation MagicCircleOpacity { get; } = new Animation(0.8, -1, 1);
 
-    [Display(GroupName = "エネミー (敵)", Name = "魔法陣発光", Description = "魔法陣を加算合成で発光させます。")]
-    [ToggleSlider]
-    public bool MagicCircleAdditive { get => magicCircleAdditive; set => Set(ref magicCircleAdditive, value); }
-    private bool magicCircleAdditive = true;
+    [Display(GroupName = "エネミー (敵)", Name = "魔法陣発光", Description = "魔法陣を加算合成で発光させます。1 で加算、0 で通常。")]
+    [AnimationSlider("F0", "", 0, 1)]
+    public Animation MagicCircleAdditive { get; } = new Animation(1, 0, 1);
 
-    [Display(GroupName = "エネミー (敵)", Name = "オーラ", Description = "ボスの周囲に発光オーラを纏わせます。")]
-    [ToggleSlider]
-    public bool AuraEnabled { get => auraEnabled; set => Set(ref auraEnabled, value); }
-    private bool auraEnabled;
+    [Display(GroupName = "エネミー (敵)", Name = "オーラ", Description = "ボスの周囲に発光オーラを纏わせます。1 で表示、0 で非表示。")]
+    [AnimationSlider("F0", "", 0, 1)]
+    public Animation AuraEnabled { get; } = new Animation(0, 0, 1);
 
     [Display(GroupName = "エネミー (敵)", Name = "オーラ強度", Description = "オーラの発光強度倍率。")]
     [AnimationSlider("F2", "倍", -5, 5)]
@@ -599,10 +601,9 @@ public class EmitterParameter : Animatable
     [AnimationSlider("F1", "px", -40, 40)]
     public Animation HitRadius { get; } = new Animation(0, -100000, 100000);
 
-    [Display(GroupName = "当たり判定", Name = "当たると消滅", Description = "被弾時に敵弾を消去します。")]
-    [ToggleSlider]
-    public bool DestroyOnHit { get => destroyOnHit; set => Set(ref destroyOnHit, value); }
-    private bool destroyOnHit = true;
+    [Display(GroupName = "当たり判定", Name = "当たると消滅", Description = "被弾時に敵弾を消去します。1 で消滅、0 で貫通。")]
+    [AnimationSlider("F0", "", 0, 1)]
+    public Animation DestroyOnHit { get; } = new Animation(1, 0, 1);
 
     // =====================================================================
     // 変換
@@ -614,7 +615,7 @@ public class EmitterParameter : Animatable
     public EmitterSettings ToSettings(int emitterIndex) => new()
     {
         Name = string.IsNullOrWhiteSpace(Name) ? $"エミッター{emitterIndex + 1}" : Name,
-        IsEnabled = IsEnabled,
+        IsEnabled = IsEnabled.GetFirstValue() >= 0.5,
         X = 0,
         Y = 0,
         OrbitRadius = OrbitRadius.GetFirstValue(),
@@ -627,7 +628,7 @@ public class EmitterParameter : Animatable
         SourceText = string.IsNullOrWhiteSpace(SourceText) ? null : SourceText,
         ScriptSpeedScale = ScriptSpeedScale.GetFirstValue(),
         ScriptRank = ScriptRank.GetFirstValue(),
-        ScriptLoop = ScriptLoop,
+        ScriptLoop = ScriptLoop.GetFirstValue() >= 0.5,
         ImagePath = string.IsNullOrWhiteSpace(ImagePath) ? null : ImagePath,
 
         Pattern = new PatternSettings
@@ -671,12 +672,12 @@ public class EmitterParameter : Animatable
             Wind = Wind.GetFirstValue(),
             Lifetime = Lifetime.GetFirstValue(),
             LifetimeJitter = LifetimeJitter.GetFirstValue(),
-            HomingEnabled = HomingEnabled,
+            HomingEnabled = HomingEnabled.GetFirstValue() >= 0.5,
             HomingTurnRate = HomingTurnRate.GetFirstValue(),
             HomingDuration = HomingDuration.GetFirstValue(),
             HomingDelay = HomingDelay.GetFirstValue(),
             HitRadius = HitRadius.GetFirstValue(),
-            DestroyOnHit = DestroyOnHit,
+            DestroyOnHit = DestroyOnHit.GetFirstValue() >= 0.5,
         },
 
         Appearance = new BulletAppearance
@@ -688,13 +689,13 @@ public class EmitterParameter : Animatable
             ScaleJitter = ScaleJitter.GetFirstValue(),
             ScaleVelocity = ScaleVelocity.GetFirstValue(),
             RotationVelocity = RotationVelocity.GetFirstValue(),
-            AlignToDirection = AlignToDirection,
+            AlignToDirection = AlignToDirection.GetFirstValue() >= 0.5,
             ColorMode = ColorMode,
             PrimaryColor = PrimaryColor.ToBulletColor(),
             SecondaryColor = SecondaryColor.ToBulletColor(),
             HueVelocity = HueVelocity.GetFirstValue(),
             HueStep = HueStep.GetFirstValue(),
-            Additive = Additive,
+            Additive = Additive.GetFirstValue() >= 0.5,
             GlowIntensity = GlowIntensity.GetFirstValue(),
             Opacity = Opacity.GetFirstValue(),
             FadeInDuration = FadeInDuration.GetFirstValue(),
@@ -705,7 +706,7 @@ public class EmitterParameter : Animatable
             TrailScale = TrailScale.GetFirstValue(),
         },
 
-        Split = SplitEnabled ? BuildSplit(Math.Max(0, (int)Math.Round(SplitMaxGeneration.GetFirstValue()))) : null,
+        Split = SplitEnabled.GetFirstValue() >= 0.5 ? BuildSplit(Math.Max(0, (int)Math.Round(SplitMaxGeneration.GetFirstValue()))) : null,
         SplitDelay = SplitDelay.GetFirstValue(),
     };
 
@@ -722,7 +723,7 @@ public class EmitterParameter : Animatable
             SpreadDegrees = SplitSpread.GetFirstValue(),
             Speed = SplitSpeed.GetFirstValue(),
             ScaleFactor = SplitScaleFactor.GetFirstValue(),
-            DestroyParent = SplitDestroyParent,
+            DestroyParent = SplitDestroyParent.GetFirstValue() >= 0.5,
             MaxGeneration = generations,
             NextDelay = SplitDelay.GetFirstValue(),
             Next = remainingGenerations > 1 ? BuildSplit(remainingGenerations - 1) : null,
@@ -734,7 +735,7 @@ public class EmitterParameter : Animatable
     {
         other.Name = Name;
         other.PresetName = PresetName;
-        other.IsEnabled = IsEnabled;
+        other.IsEnabled.CopyFrom(IsEnabled);
         other.X.CopyFrom(X);
         other.Y.CopyFrom(Y);
         other.OrbitRadius.CopyFrom(OrbitRadius);
@@ -747,7 +748,7 @@ public class EmitterParameter : Animatable
         other.SourceText = SourceText;
         other.ScriptSpeedScale.CopyFrom(ScriptSpeedScale);
         other.ScriptRank.CopyFrom(ScriptRank);
-        other.ScriptLoop = ScriptLoop;
+        other.ScriptLoop.CopyFrom(ScriptLoop);
 
         other.PatternKind = PatternKind;
         other.Way.CopyFrom(Way);
@@ -786,7 +787,7 @@ public class EmitterParameter : Animatable
         other.Lifetime.CopyFrom(Lifetime);
         other.LifetimeJitter.CopyFrom(LifetimeJitter);
 
-        other.HomingEnabled = HomingEnabled;
+        other.HomingEnabled.CopyFrom(HomingEnabled);
         other.HomingTurnRate.CopyFrom(HomingTurnRate);
         other.HomingDuration.CopyFrom(HomingDuration);
         other.HomingDelay.CopyFrom(HomingDelay);
@@ -797,13 +798,13 @@ public class EmitterParameter : Animatable
         other.ScaleJitter.CopyFrom(ScaleJitter);
         other.ScaleVelocity.CopyFrom(ScaleVelocity);
         other.RotationVelocity.CopyFrom(RotationVelocity);
-        other.AlignToDirection = AlignToDirection;
+        other.AlignToDirection.CopyFrom(AlignToDirection);
         other.ColorMode = ColorMode;
         other.PrimaryColor = PrimaryColor;
         other.SecondaryColor = SecondaryColor;
         other.HueVelocity.CopyFrom(HueVelocity);
         other.HueStep.CopyFrom(HueStep);
-        other.Additive = Additive;
+        other.Additive.CopyFrom(Additive);
         other.GlowIntensity.CopyFrom(GlowIntensity);
         other.Opacity.CopyFrom(Opacity);
         other.FadeInDuration.CopyFrom(FadeInDuration);
@@ -814,33 +815,33 @@ public class EmitterParameter : Animatable
         other.TrailFade.CopyFrom(TrailFade);
         other.TrailScale.CopyFrom(TrailScale);
 
-        other.SplitEnabled = SplitEnabled;
+        other.SplitEnabled.CopyFrom(SplitEnabled);
         other.SplitDelay.CopyFrom(SplitDelay);
         other.SplitCount.CopyFrom(SplitCount);
         other.SplitSpread.CopyFrom(SplitSpread);
         other.SplitSpeed.CopyFrom(SplitSpeed);
         other.SplitScaleFactor.CopyFrom(SplitScaleFactor);
-        other.SplitDestroyParent = SplitDestroyParent;
+        other.SplitDestroyParent.CopyFrom(SplitDestroyParent);
         other.SplitMaxGeneration.CopyFrom(SplitMaxGeneration);
 
         other.EnemyImagePath = EnemyImagePath;
         other.EnemyScale.CopyFrom(EnemyScale);
         other.EnemyRotation.CopyFrom(EnemyRotation);
         other.EnemyOpacity.CopyFrom(EnemyOpacity);
-        other.EnemyBehindBullets = EnemyBehindBullets;
-        other.MagicCircleEnabled = MagicCircleEnabled;
+        other.EnemyBehindBullets.CopyFrom(EnemyBehindBullets);
+        other.MagicCircleEnabled.CopyFrom(MagicCircleEnabled);
         other.MagicCircleImagePath = MagicCircleImagePath;
         other.MagicCircleScale.CopyFrom(MagicCircleScale);
         other.MagicCircleRotationSpeed.CopyFrom(MagicCircleRotationSpeed);
         other.MagicCircleColor = MagicCircleColor;
         other.MagicCircleOpacity.CopyFrom(MagicCircleOpacity);
-        other.MagicCircleAdditive = MagicCircleAdditive;
-        other.AuraEnabled = AuraEnabled;
+        other.MagicCircleAdditive.CopyFrom(MagicCircleAdditive);
+        other.AuraEnabled.CopyFrom(AuraEnabled);
         other.AuraIntensity.CopyFrom(AuraIntensity);
         other.AuraColor = AuraColor;
 
         other.HitRadius.CopyFrom(HitRadius);
-        other.DestroyOnHit = DestroyOnHit;
+        other.DestroyOnHit.CopyFrom(DestroyOnHit);
     }
 
     /// <summary>
@@ -889,7 +890,7 @@ public class EmitterParameter : Animatable
         Wind.SetFirstValue(physics.Wind);
         Lifetime.SetFirstValue(physics.Lifetime);
         LifetimeJitter.SetFirstValue(physics.LifetimeJitter);
-        HomingEnabled = physics.HomingEnabled;
+        HomingEnabled.SetFirstValue(physics.HomingEnabled ? 1 : 0);
         HomingTurnRate.SetFirstValue(physics.HomingTurnRate);
         HomingDuration.SetFirstValue(physics.HomingDuration);
         HomingDelay.SetFirstValue(physics.HomingDelay);
@@ -902,13 +903,13 @@ public class EmitterParameter : Animatable
         ScaleJitter.SetFirstValue(appearance.ScaleJitter);
         ScaleVelocity.SetFirstValue(appearance.ScaleVelocity);
         RotationVelocity.SetFirstValue(appearance.RotationVelocity);
-        AlignToDirection = appearance.AlignToDirection;
+        AlignToDirection.SetFirstValue(appearance.AlignToDirection ? 1 : 0);
         ColorMode = appearance.ColorMode;
         PrimaryColor = appearance.PrimaryColor.ToMediaColor();
         SecondaryColor = appearance.SecondaryColor.ToMediaColor();
         HueVelocity.SetFirstValue(appearance.HueVelocity);
         HueStep.SetFirstValue(appearance.HueStep);
-        Additive = appearance.Additive;
+        Additive.SetFirstValue(appearance.Additive ? 1 : 0);
         GlowIntensity.SetFirstValue(appearance.GlowIntensity);
         Opacity.SetFirstValue(appearance.Opacity);
         FadeInDuration.SetFirstValue(appearance.FadeInDuration);
@@ -918,7 +919,7 @@ public class EmitterParameter : Animatable
         TrailFade.SetFirstValue(appearance.TrailFade);
         TrailScale.SetFirstValue(appearance.TrailScale);
 
-        SplitEnabled = preset.Split is not null;
+        SplitEnabled.SetFirstValue(preset.Split is not null ? 1 : 0);
         SplitDelay.SetFirstValue(preset.SplitDelay);
         if (preset.Split is { } split)
         {
@@ -926,7 +927,7 @@ public class EmitterParameter : Animatable
             SplitSpread.SetFirstValue(split.SpreadDegrees);
             SplitSpeed.SetFirstValue(split.Speed);
             SplitScaleFactor.SetFirstValue(split.ScaleFactor);
-            SplitDestroyParent = split.DestroyParent;
+            SplitDestroyParent.SetFirstValue(split.DestroyParent ? 1 : 0);
             SplitMaxGeneration.SetFirstValue(split.MaxGeneration);
         }
     }
@@ -1044,18 +1045,21 @@ public class EmitterParameter : Animatable
         => Core.Presets.DanmakuPreset.FromEmitter(ToSettings(0), name, description);
 
     protected override IEnumerable<IAnimatable> GetAnimatables() => [
+        IsEnabled,
         X, Y, OrbitRadius, OrbitSpeed, OrbitPhase, SeedOffset,
-        ScriptSpeedScale, ScriptRank,
+        ScriptSpeedScale, ScriptRank, ScriptLoop,
         Way, Stack, StackSpeedStep, StackAngleStep, BaseAngle, SpreadAngle, AngleStepPerShot, AngleJitter,
         FireInterval, BurstCount, BurstInterval, BurstCooldown, StartTime, EndTime, SpawnRadius, SpawnJitter,
         AimRate, WallWidth, LaserSpacing, WhipAmplitude, WhipPeriod,
         Speed, SpeedJitter, SpeedStep, Acceleration, AngularVelocity, AngularVelocityJitter, Damping,
         MinSpeed, MaxSpeed, Gravity, Wind, Lifetime, LifetimeJitter,
-        HomingTurnRate, HomingDuration, HomingDelay,
-        Scale, ScaleJitter, ScaleVelocity, RotationVelocity, HueVelocity, HueStep, GlowIntensity, Opacity,
+        HomingEnabled, HomingTurnRate, HomingDuration, HomingDelay,
+        Scale, ScaleJitter, ScaleVelocity, RotationVelocity, AlignToDirection, HueVelocity, HueStep, Additive, GlowIntensity, Opacity,
         FadeInDuration, FadeOutDuration, TrailLength, TrailInterval, TrailFade, TrailScale,
-        SplitDelay, SplitCount, SplitSpread, SplitSpeed, SplitScaleFactor, SplitMaxGeneration,
-        EnemyScale, EnemyRotation, EnemyOpacity, MagicCircleScale, MagicCircleRotationSpeed, MagicCircleOpacity, AuraIntensity,
-        HitRadius
+        SplitEnabled, SplitDelay, SplitCount, SplitSpread, SplitSpeed, SplitScaleFactor, SplitDestroyParent, SplitMaxGeneration,
+        EnemyScale, EnemyRotation, EnemyOpacity, EnemyBehindBullets,
+        MagicCircleEnabled, MagicCircleScale, MagicCircleRotationSpeed, MagicCircleOpacity, MagicCircleAdditive,
+        AuraEnabled, AuraIntensity,
+        HitRadius, DestroyOnHit
     ];
 }

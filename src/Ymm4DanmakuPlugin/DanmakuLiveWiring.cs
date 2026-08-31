@@ -733,5 +733,129 @@ public static class DanmakuLiveWiring
             var frame = TimeToFrame(timeSeconds, fps, totalFrame);
             return parameter.HpBarOpacity.GetValue(frame, totalFrame, fps);
         };
+
+        // ---- トグル・スイッチ系 (キーフレーム 0/1 切替) ----
+        sim.Live.EmitterIsEnabled = (index, timeSeconds) =>
+        {
+            if (index < 0 || index >= emitters.Count) return null;
+            var frame = TimeToFrame(timeSeconds, fps, totalFrame);
+            return emitters[index].IsEnabled.GetValue(frame, totalFrame, fps) >= 0.5;
+        };
+
+        sim.Live.EmitterHomingEnabled = (index, timeSeconds) =>
+        {
+            if (index < 0 || index >= emitters.Count) return null;
+            var frame = TimeToFrame(timeSeconds, fps, totalFrame);
+            return emitters[index].HomingEnabled.GetValue(frame, totalFrame, fps) >= 0.5;
+        };
+
+        sim.Live.EmitterAdditive = (index, timeSeconds) =>
+        {
+            if (index < 0 || index >= emitters.Count) return null;
+            var frame = TimeToFrame(timeSeconds, fps, totalFrame);
+            return emitters[index].Additive.GetValue(frame, totalFrame, fps) >= 0.5;
+        };
+
+        sim.Live.EmitterAlignToDirection = (index, timeSeconds) =>
+        {
+            if (index < 0 || index >= emitters.Count) return null;
+            var frame = TimeToFrame(timeSeconds, fps, totalFrame);
+            return emitters[index].AlignToDirection.GetValue(frame, totalFrame, fps) >= 0.5;
+        };
+
+        sim.Live.EmitterSplitEnabled = (index, timeSeconds) =>
+        {
+            if (index < 0 || index >= emitters.Count) return null;
+            var frame = TimeToFrame(timeSeconds, fps, totalFrame);
+            return emitters[index].SplitEnabled.GetValue(frame, totalFrame, fps) >= 0.5;
+        };
+
+        sim.Live.EmitterAuraEnabled = (index, timeSeconds) =>
+        {
+            if (index < 0 || index >= emitters.Count) return null;
+            var frame = TimeToFrame(timeSeconds, fps, totalFrame);
+            return emitters[index].AuraEnabled.GetValue(frame, totalFrame, fps) >= 0.5;
+        };
+
+        sim.Live.EmitterMagicCircleEnabled = (index, timeSeconds) =>
+        {
+            if (index < 0 || index >= emitters.Count) return null;
+            var frame = TimeToFrame(timeSeconds, fps, totalFrame);
+            return emitters[index].MagicCircleEnabled.GetValue(frame, totalFrame, fps) >= 0.5;
+        };
+
+        sim.Live.EmitterEnemyBehindBullets = (index, timeSeconds) =>
+        {
+            if (index < 0 || index >= emitters.Count) return null;
+            var frame = TimeToFrame(timeSeconds, fps, totalFrame);
+            return emitters[index].EnemyBehindBullets.GetValue(frame, totalFrame, fps) >= 0.5;
+        };
+
+        sim.Live.EmitterScriptLoop = (index, timeSeconds) =>
+        {
+            if (index < 0 || index >= emitters.Count) return null;
+            var frame = TimeToFrame(timeSeconds, fps, totalFrame);
+            return emitters[index].ScriptLoop.GetValue(frame, totalFrame, fps) >= 0.5;
+        };
+
+        sim.Live.CollisionEnabled = timeSeconds =>
+        {
+            var frame = TimeToFrame(timeSeconds, fps, totalFrame);
+            return parameter.CollisionEnabled.GetValue(frame, totalFrame, fps) >= 0.5;
+        };
+
+        sim.Live.EnemyHitEnabled = timeSeconds =>
+        {
+            var frame = TimeToFrame(timeSeconds, fps, totalFrame);
+            return parameter.EnemyHitEnabled.GetValue(frame, totalFrame, fps) >= 0.5;
+        };
+
+        sim.Live.SpawnHitEffect = timeSeconds =>
+        {
+            var frame = TimeToFrame(timeSeconds, fps, totalFrame);
+            return parameter.SpawnHitEffect.GetValue(frame, totalFrame, fps) >= 0.5;
+        };
+
+        sim.Live.ShowTargetMarker = timeSeconds =>
+        {
+            var frame = TimeToFrame(timeSeconds, fps, totalFrame);
+            return parameter.ShowTargetMarker.GetValue(frame, totalFrame, fps) >= 0.5;
+        };
+
+        sim.Live.PlayerShotEnabled = timeSeconds =>
+        {
+            var frame = TimeToFrame(timeSeconds, fps, totalFrame);
+            return parameter.PlayerShotEnabled.GetValue(frame, totalFrame, fps) >= 0.5;
+        };
+
+        sim.Live.PlayerShotAlignToDirection = timeSeconds =>
+        {
+            var frame = TimeToFrame(timeSeconds, fps, totalFrame);
+            return parameter.PlayerShotAlignToDirection.GetValue(frame, totalFrame, fps) >= 0.5;
+        };
+
+        sim.Live.PlayerShotAdditive = timeSeconds =>
+        {
+            var frame = TimeToFrame(timeSeconds, fps, totalFrame);
+            return parameter.PlayerShotAdditive.GetValue(frame, totalFrame, fps) >= 0.5;
+        };
+
+        sim.Live.PlayerShotAutoAim = timeSeconds =>
+        {
+            var frame = TimeToFrame(timeSeconds, fps, totalFrame);
+            return parameter.PlayerShotAutoAim.GetValue(frame, totalFrame, fps) >= 0.5;
+        };
+
+        sim.Live.PlayerShotCancelEnemyBullets = timeSeconds =>
+        {
+            var frame = TimeToFrame(timeSeconds, fps, totalFrame);
+            return parameter.PlayerShotCancelEnemyBullets.GetValue(frame, totalFrame, fps) >= 0.5;
+        };
+
+        sim.Live.HpBarEnabled = timeSeconds =>
+        {
+            var frame = TimeToFrame(timeSeconds, fps, totalFrame);
+            return parameter.HpBarEnabled.GetValue(frame, totalFrame, fps) >= 0.5;
+        };
     }
 }
