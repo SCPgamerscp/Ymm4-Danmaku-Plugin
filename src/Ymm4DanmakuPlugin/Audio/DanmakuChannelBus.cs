@@ -53,7 +53,7 @@ public static class DanmakuChannelBus
     private static readonly Dictionary<object, Entry> Registrations = new();
     private static long nextTouchTick;
 
-    /// <summary>登録状態の変更バージョン番号。登録・削除、および担当アイテムの切替時にインクリメントされる。</summary>
+    /// <summary>登録状態の変更バージョン番号。登録・更新・削除のたびにインクリメントされる。</summary>
     public static int Version { get; private set; }
 
     /// <summary>弾幕アイテムを登録・更新する。存在の連絡であり、再生位置の担当切替は <see cref="Touch"/> が行う。</summary>
@@ -110,13 +110,12 @@ public static class DanmakuChannelBus
             if (!Registrations.TryGetValue(sourceKey, out var entry)) return;
             if (!entry.ParameterRef.TryGetTarget(out var parameter)) return;
 
+            // Touch は再生位置の担当を示すだけで、音声プロセッサの構造変更ではない。
+            // ここで Version を増やすと、連続再生中に既に準備済みの音声が再構築され、
+            // 次の弾幕の先頭へ切り替わる前後で音が欠落・途中再生になる。
             var channel = ReadChannel(parameter);
-            var previous = FindLatest(channel);
+            _ = FindLatest(channel);
             entry.TouchTick = ++nextTouchTick;
-            if (!ReferenceEquals(previous, entry))
-            {
-                Version++;
-            }
         }
     }
 
