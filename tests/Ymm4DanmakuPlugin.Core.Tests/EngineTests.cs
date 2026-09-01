@@ -1,3 +1,4 @@
+using Ymm4DanmakuPlugin.Core.Audio;
 using Ymm4DanmakuPlugin.Core.Configuration;
 using Ymm4DanmakuPlugin.Core.Engine;
 using Ymm4DanmakuPlugin.Core.Mathematics;
@@ -3315,9 +3316,90 @@ public class CollisionHitboxFollowUpTests
     }
 }
 
+/// <summary>連続する弾幕と個別音声アイテムの割り当てテスト。</summary>
+public class DanmakuAudioAssignmentTests
+{
+    [Fact]
+    public void 個別音声はタイムライン順に別々の弾幕へ割り当てられる()
+    {
+        var first = new object();
+        var second = new object();
+        var candidates = new[]
+        {
+            new DanmakuAudioCandidate(first, 0, 5, 1),
+            new DanmakuAudioCandidate(second, 5, 5, 0),
+        };
 
+        var firstSelection = DanmakuAudioAssignment.Select(candidates, null, new HashSet<object>(), 5);
+        var secondSelection = DanmakuAudioAssignment.Select(candidates, null, new HashSet<object> { first }, 5);
 
+        Assert.Same(first, firstSelection);
+        Assert.Same(second, secondSelection);
+    }
 
+    [Fact]
+    public void 再生位置でTouchされた未使用の弾幕をすぐ選ぶ()
+    {
+        var first = new object();
+        var second = new object();
+        var candidates = new[]
+        {
+            new DanmakuAudioCandidate(first, 0, 5, 1),
+            new DanmakuAudioCandidate(second, 5, 5, 10),
+        };
 
+        var selection = DanmakuAudioAssignment.Select(candidates, null, new HashSet<object> { first }, 5);
 
+        Assert.Same(second, selection);
+    }
 
+    [Fact]
+    public void 未確定登録は音声が先頭へ重ならないよう選ばない()
+    {
+        var candidate = new DanmakuAudioCandidate(new object(), 0, 0, 10);
+
+        var selection = DanmakuAudioAssignment.Select([candidate], null, new HashSet<object>(), 5);
+
+        Assert.Null(selection);
+    }
+
+    [Fact]
+    public void 再準備しても同じ割り当てを維持する()
+    {
+        var first = new object();
+        var second = new object();
+        var candidates = new[]
+        {
+            new DanmakuAudioCandidate(first, 0, 5, 1),
+            new DanmakuAudioCandidate(second, 5, 5, 20),
+        };
+
+        var selection = DanmakuAudioAssignment.Select(
+            candidates,
+            first,
+            new HashSet<object> { second },
+            5);
+
+        Assert.Same(first, selection);
+    }
+
+    [Fact]
+    public void 全候補が使用中なら同じ弾幕を二重再生しない()
+    {
+        var first = new object();
+        var second = new object();
+        var candidates = new[]
+        {
+            new DanmakuAudioCandidate(first, 0, 5, 1),
+            new DanmakuAudioCandidate(second, 5, 5, 2),
+        };
+
+        var selection = DanmakuAudioAssignment.Select(
+            candidates,
+            null,
+            new HashSet<object> { first, second },
+            5);
+
+        Assert.Null(selection);
+    }
+}

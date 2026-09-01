@@ -51,6 +51,7 @@ public static class DanmakuChannelBus
 {
     private static readonly object Gate = new();
     private static readonly Dictionary<object, Entry> Registrations = new();
+    private static readonly List<AudioClaim> AudioClaims = [];
     private static long nextTouchTick;
 
     /// <summary>登録状態の変更バージョン番号。登録・更新・削除のたびにインクリメントされる。</summary>
@@ -128,6 +129,73 @@ public static class DanmakuChannelBus
             {
                 Version++;
             }
+        }
+    }
+
+    /// <summary>
+    /// 個別の音声プロセッサへ、同じチャンネルの弾幕を重複しないよう割り当てる。
+    /// 映像側の Touch が音声先読みより後になっても、タイムライン順の未使用候補を即時に選べる。
+    /// </summary>
+    public static DanmakuChannelRegistration? ClaimRegistration(
+        int channel,
+        DanmakuSoundKind soundKind,
+        object owner,
+        double audioDurationSeconds,
+        object? currentSourceKey = null)
+    {
+        lock (Gate)
+        {
+            Prune();
+            PruneAudioClaims();
+
+            var entries = Registrations.Values
+                .Where(entry => entry.ParameterRef.TryGetTarget(out var parameter) && MatchesChannel(channel, parameter))
+                .ToArray();
+            var candidates = entries
+                .Select(entry => new DanmakuAudioCandidate(
+                    entry.SourceKey,
+                    entry.TimelineStartSeconds,
+                    entry.TimelineDurationSeconds,
+                    entry.TouchTick))
+                .ToArray();
+            var claimed = AudioClaims
+                .Where(claim =>
+                    claim.Channel == channel &&
+                    claim.SoundKind == soundKind &&
+                    (!claim.OwnerRef.TryGetTarget(out var claimOwner) || !ReferenceEquals(claimOwner, owner)))
+                .Select(claim => claim.SourceKey)
+                .ToHashSet();
+
+            var selectedKey = DanmakuAudioAssignment.Select(
+                candidates,
+                currentSourceKey,
+                claimed,
+                audioDurationSeconds);
+            if (selectedKey is null) return null;
+
+            var existingClaim = AudioClaims.FirstOrDefault(
+                claim => claim.OwnerRef.TryGetTarget(out var claimOwner) && ReferenceEquals(claimOwner, owner));
+            if (existingClaim is null)
+            {
+                AudioClaims.Add(new AudioClaim(owner, selectedKey, channel, soundKind));
+            }
+            else
+            {
+                existingClaim.SourceKey = selectedKey;
+            }
+
+            var selectedEntry = entries.FirstOrDefault(entry => ReferenceEquals(entry.SourceKey, selectedKey));
+            return selectedEntry?.ToPublic();
+        }
+    }
+
+    /// <summary>音声プロセッサが保持している弾幕の割り当てを解放する。</summary>
+    public static void ReleaseRegistration(object owner)
+    {
+        lock (Gate)
+        {
+            AudioClaims.RemoveAll(
+                claim => !claim.OwnerRef.TryGetTarget(out var claimOwner) || ReferenceEquals(claimOwner, owner));
         }
     }
 
@@ -238,6 +306,22 @@ public static class DanmakuChannelBus
 
         if (deadKeys is null) return;
         foreach (var k in deadKeys) Registrations.Remove(k);
+        PruneAudioClaims();
+    }
+
+    /// <summary>破棄済みプロセッサまたは削除済み弾幕の割り当てを除く。呼び出し側でロック済みであること。</summary>
+    private static void PruneAudioClaims()
+    {
+        AudioClaims.RemoveAll(claim =>
+            !claim.OwnerRef.TryGetTarget(out _) || !Registrations.ContainsKey(claim.SourceKey));
+    }
+
+    private sealed class AudioClaim(object owner, object sourceKey, int channel, DanmakuSoundKind soundKind)
+    {
+        public WeakReference<object> OwnerRef { get; } = new(owner);
+        public object SourceKey { get; set; } = sourceKey;
+        public int Channel { get; } = channel;
+        public DanmakuSoundKind SoundKind { get; } = soundKind;
     }
 
     /// <summary>連絡簿の内部エントリ。公開 API には出さない。</summary>
