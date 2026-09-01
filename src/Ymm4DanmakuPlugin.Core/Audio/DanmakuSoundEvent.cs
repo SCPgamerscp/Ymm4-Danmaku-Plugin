@@ -19,7 +19,8 @@ public readonly record struct DanmakuAudioCandidate(
     object SourceKey,
     double TimelineStartSeconds,
     double TimelineDurationSeconds,
-    long TouchTick);
+    long TouchTick,
+    long RegistrationOrder = 0);
 
 /// <summary>
 /// 複数の個別音声アイテムを、同じチャンネルの連続した弾幕へ重複なく割り当てる。
@@ -28,8 +29,8 @@ public readonly record struct DanmakuAudioCandidate(
 public static class DanmakuAudioAssignment
 {
     /// <summary>
-    /// 既存の割り当てを優先し、未割り当て候補の中から現在表示中、次いで時間長とタイムライン順が合う候補を返す。
-    /// タイムライン情報がまだ確定していない候補（長さ 0）は、先頭で複数音が混ざる原因になるため除外する。
+    /// 既存の割り当てを優先し、未割り当て候補の中から時間長、タイムライン順、登録順が合う候補を返す。
+    /// タイムライン情報が未確定でも登録順で先行予約し、次の弾幕の開始フレームで準備処理が走るのを防ぐ。
     /// </summary>
     public static object? Select(
         IReadOnlyList<DanmakuAudioCandidate> candidates,
@@ -38,18 +39,15 @@ public static class DanmakuAudioAssignment
         double audioDurationSeconds,
         double durationToleranceSeconds = 0.05)
     {
-        var ready = candidates
-            .Where(candidate => candidate.TimelineDurationSeconds > 0)
-            .ToArray();
-        if (ready.Length == 0) return null;
+        if (candidates.Count == 0) return null;
 
         if (currentSourceKey is not null &&
-            ready.Any(candidate => ReferenceEquals(candidate.SourceKey, currentSourceKey)))
+            candidates.Any(candidate => ReferenceEquals(candidate.SourceKey, currentSourceKey)))
         {
             return currentSourceKey;
         }
 
-        var unclaimed = ready
+        var unclaimed = candidates
             .Where(candidate => !claimedSourceKeys.Contains(candidate.SourceKey))
             .ToArray();
         if (unclaimed.Length == 0)
@@ -58,19 +56,20 @@ public static class DanmakuAudioAssignment
             return null;
         }
 
-        var active = unclaimed.MaxBy(candidate => candidate.TouchTick);
-        if (active.TouchTick > 0)
-        {
-            return active.SourceKey;
-        }
-
-        var durationMatches = unclaimed
+        var ready = unclaimed
+            .Where(candidate => candidate.TimelineDurationSeconds > 0)
+            .ToArray();
+        var durationMatches = ready
             .Where(candidate => Math.Abs(candidate.TimelineDurationSeconds - audioDurationSeconds) <= durationToleranceSeconds)
             .ToArray();
-        var eligible = durationMatches.Length > 0 ? durationMatches : unclaimed;
+        var eligible = durationMatches.Length > 0
+            ? durationMatches
+            : ready.Length > 0 ? ready : unclaimed;
 
         return eligible
-            .OrderBy(candidate => candidate.TimelineStartSeconds)
+            .OrderBy(candidate => candidate.TimelineDurationSeconds > 0 ? 0 : 1)
+            .ThenBy(candidate => candidate.TimelineStartSeconds)
+            .ThenBy(candidate => candidate.RegistrationOrder)
             .First()
             .SourceKey;
     }
