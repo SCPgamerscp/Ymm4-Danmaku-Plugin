@@ -3338,6 +3338,22 @@ public class DanmakuAudioAssignmentTests
     }
 
     [Fact]
+    public void 後続がTouch済みでも最初の個別音声はタイムライン先頭へ割り当てられる()
+    {
+        var first = new object();
+        var second = new object();
+        var candidates = new[]
+        {
+            new DanmakuAudioCandidate(first, 0, 5, 1),
+            new DanmakuAudioCandidate(second, 5, 5, 10),
+        };
+
+        var selection = DanmakuAudioAssignment.Select(candidates, null, new HashSet<object>(), 5);
+
+        Assert.Same(first, selection);
+    }
+
+    [Fact]
     public void 再生位置でTouchされた未使用の弾幕をすぐ選ぶ()
     {
         var first = new object();
@@ -3354,13 +3370,32 @@ public class DanmakuAudioAssignmentTests
     }
 
     [Fact]
-    public void 未確定登録は音声が先頭へ重ならないよう選ばない()
+    public void 未確定登録も再生開始前に予約できる()
     {
-        var candidate = new DanmakuAudioCandidate(new object(), 0, 0, 10);
+        var source = new object();
+        var candidate = new DanmakuAudioCandidate(source, 0, 0, 0, 1);
 
         var selection = DanmakuAudioAssignment.Select([candidate], null, new HashSet<object>(), 5);
 
-        Assert.Null(selection);
+        Assert.Same(source, selection);
+    }
+
+    [Fact]
+    public void 未確定登録はTouchではなく登録順で個別音声へ割り当てられる()
+    {
+        var first = new object();
+        var second = new object();
+        var candidates = new[]
+        {
+            new DanmakuAudioCandidate(second, 0, 0, 50, 2),
+            new DanmakuAudioCandidate(first, 0, 0, 1, 1),
+        };
+
+        var firstSelection = DanmakuAudioAssignment.Select(candidates, null, new HashSet<object>(), 5);
+        var secondSelection = DanmakuAudioAssignment.Select(candidates, null, new HashSet<object> { first }, 5);
+
+        Assert.Same(first, firstSelection);
+        Assert.Same(second, secondSelection);
     }
 
     [Fact]
