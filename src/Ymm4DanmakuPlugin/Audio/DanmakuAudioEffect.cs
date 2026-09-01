@@ -104,13 +104,8 @@ public abstract class DanmakuSingleSoundAudioEffectBase : AudioEffectBase
     public double FadeOut { get => fadeOut; set => Set(ref fadeOut, value); }
     private double fadeOut = 0.02;
 
-    private int processorCreationCount;
-
-    public override IAudioEffectProcessor CreateAudioEffect(TimeSpan duration)
-    {
-        var index = Interlocked.Increment(ref processorCreationCount) - 1;
-        return new DanmakuSingleSoundProcessor(this, SoundKind, duration, index);
-    }
+    public override IAudioEffectProcessor CreateAudioEffect(TimeSpan duration) =>
+        new DanmakuSingleSoundProcessor(this, SoundKind, duration);
 
     public override IEnumerable<string> CreateExoAudioFilters(
         int keyFrameIndex,
@@ -194,22 +189,20 @@ public sealed class DanmakuSingleSoundProcessor : AudioEffectProcessorBase
     private readonly DanmakuSingleSoundAudioEffectBase effect;
     private readonly DanmakuSoundKind soundKind;
     private readonly TimeSpan duration;
-    private readonly int processorIndex;
     private readonly List<Voice> voices = [];
 
     private DanmakuSoundBuffer? soundBuffer;
+    private object? assignedSourceKey;
     private int preparedVersion = -1;
 
     public DanmakuSingleSoundProcessor(
         DanmakuSingleSoundAudioEffectBase effect,
         DanmakuSoundKind soundKind,
-        TimeSpan duration,
-        int processorIndex = 0)
+        TimeSpan duration)
     {
         this.effect = effect;
         this.soundKind = soundKind;
         this.duration = duration;
-        this.processorIndex = processorIndex;
     }
 
     public override int Hz => Input?.Hz ?? 48000;
@@ -337,14 +330,26 @@ public sealed class DanmakuSingleSoundProcessor : AudioEffectProcessorBase
 
         if (registrations.Count > 0)
         {
-            var minTimelineStart = registrations.Min(r => r.TimelineStartSeconds);
-            var maxTimelineEnd = registrations.Max(r => r.TimelineStartSeconds + r.TimelineDurationSeconds);
+            // コンストラクタ時点だけの仮登録（長さ 0）は、まだタイムライン位置が確定していない。
+            // これを混ぜると弾幕2の音が弾幕1の先頭へ重なるため、Update 済みだけを使う。
+            var readyRegistrations = registrations
+                .Where(registration => registration.TimelineDurationSeconds > 0)
+                .ToArray();
+            var minTimelineStart = readyRegistrations.Length > 0
+                ? readyRegistrations.Min(registration => registration.TimelineStartSeconds)
+                : 0;
+            var maxTimelineEnd = readyRegistrations.Length > 0
+                ? readyRegistrations.Max(registration => registration.TimelineStartSeconds + registration.TimelineDurationSeconds)
+                : 0;
             var totalTimelineSpan = maxTimelineEnd - minTimelineStart;
 
-            // 1本の長い音声アイテムで複数の弾幕アイテムを跨いでいる場合 (duration が全体の広がりをカバー)
-            if (registrations.Count > 1 && duration.TotalSeconds >= totalTimelineSpan * 0.8)
+            // 1本の長い音声アイテムで複数の弾幕アイテムを跨いでいる場合。
+            if (readyRegistrations.Length > 1 && duration.TotalSeconds >= totalTimelineSpan * 0.8)
             {
-                foreach (var reg in registrations)
+                DanmakuChannelBus.ReleaseRegistration(this);
+                assignedSourceKey = null;
+
+                foreach (var reg in readyRegistrations)
                 {
                     if (!reg.ParameterRef.TryGetTarget(out var parameter)) continue;
 
@@ -358,22 +363,20 @@ public sealed class DanmakuSingleSoundProcessor : AudioEffectProcessorBase
             }
             else
             {
-                // 個別アイテムの場合: processorIndex に対応する弾幕アイテム、またはアクティブなアイテムを使用
-                var targetIndex = Math.Clamp(processorIndex, 0, registrations.Count - 1);
-                var reg = registrations[targetIndex];
-                if (reg.ParameterRef.TryGetTarget(out var parameter))
+                // 個別音声は同じチャンネルの弾幕を排他的に確保する。
+                // エフェクトごとの processorIndex は必ず 0 になり弾幕1へ偏るため使用しない。
+                var reg = DanmakuChannelBus.ClaimRegistration(
+                    effect.Channel,
+                    soundKind,
+                    this,
+                    duration.TotalSeconds,
+                    assignedSourceKey);
+                assignedSourceKey = reg?.SourceKey;
+
+                if (reg is not null && reg.ParameterRef.TryGetTarget(out var parameter))
                 {
                     var settings = parameter.ToSettings(parameter.LastCanvasWidth, parameter.LastCanvasHeight);
                     ProcessSettings(settings, parameter, buffer, hz, 0.0, startFrame, maxFrames, fadeOutFrames);
-                }
-                else
-                {
-                    var activeParam = DanmakuChannelBus.TryGetParameter(effect.Channel);
-                    if (activeParam is not null)
-                    {
-                        var settings = activeParam.ToSettings(activeParam.LastCanvasWidth, activeParam.LastCanvasHeight);
-                        ProcessSettings(settings, activeParam, buffer, hz, 0.0, startFrame, maxFrames, fadeOutFrames);
-                    }
                 }
             }
         }
@@ -464,5 +467,15 @@ public sealed class DanmakuSingleSoundProcessor : AudioEffectProcessorBase
                 preparedVersion = busVersion;
             }
         }
+    }
+
+    protected override void Dispose(bool disposing)
+    {
+        if (disposing)
+        {
+            DanmakuChannelBus.ReleaseRegistration(this);
+        }
+
+        base.Dispose(disposing);
     }
 }
