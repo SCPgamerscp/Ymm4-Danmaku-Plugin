@@ -1,3 +1,4 @@
+using Ymm4DanmakuPlugin.Core.Audio;
 using Ymm4DanmakuPlugin.Core.Configuration;
 using Ymm4DanmakuPlugin.Parameters;
 
