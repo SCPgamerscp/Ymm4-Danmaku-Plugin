@@ -54,6 +54,7 @@ public static class DanmakuChannelBus
     private static readonly Dictionary<object, Entry> Registrations = new();
     private static readonly List<AudioClaim> AudioClaims = [];
     private static long nextTouchTick;
+    private static long nextRegistrationOrder;
 
     /// <summary>登録状態の変更バージョン番号。登録・更新・削除のたびにインクリメントされる。</summary>
     public static int Version { get; private set; }
@@ -93,7 +94,15 @@ public static class DanmakuChannelBus
             }
             else
             {
-                Registrations[key] = new Entry(key, parameter, fps, totalFrame, timelineStartSeconds, timelineDurationSeconds, layer);
+                Registrations[key] = new Entry(
+                    key,
+                    parameter,
+                    fps,
+                    totalFrame,
+                    timelineStartSeconds,
+                    timelineDurationSeconds,
+                    layer,
+                    ++nextRegistrationOrder);
                 Version++;
             }
         }
@@ -157,7 +166,8 @@ public static class DanmakuChannelBus
                     entry.SourceKey,
                     entry.TimelineStartSeconds,
                     entry.TimelineDurationSeconds,
-                    entry.TouchTick))
+                    entry.TouchTick,
+                    entry.RegistrationOrder))
                 .ToArray();
             var claimed = AudioClaims
                 .Where(claim =>
@@ -336,6 +346,7 @@ public static class DanmakuChannelBus
         public double TimelineDurationSeconds { get; set; }
         public int Layer { get; set; }
         public long TouchTick { get; set; }
+        public long RegistrationOrder { get; }
 
         public Entry(
             object sourceKey,
@@ -344,7 +355,8 @@ public static class DanmakuChannelBus
             int totalFrame,
             double timelineStartSeconds,
             double timelineDurationSeconds,
-            int layer)
+            int layer,
+            long registrationOrder)
         {
             SourceKey = sourceKey;
             ParameterRef = new WeakReference<DanmakuShapeParameter>(parameter);
@@ -353,6 +365,7 @@ public static class DanmakuChannelBus
             TimelineStartSeconds = timelineStartSeconds;
             TimelineDurationSeconds = timelineDurationSeconds;
             Layer = layer;
+            RegistrationOrder = registrationOrder;
         }
 
         public DanmakuChannelRegistration ToPublic() => new(
