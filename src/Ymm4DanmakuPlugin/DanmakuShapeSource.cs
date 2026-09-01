@@ -107,6 +107,7 @@ public sealed class DanmakuShapeSource : IShapeSource2
         var itemStartSeconds = description.TimelinePosition.Time.TotalSeconds - description.ItemPosition.Time.TotalSeconds;
         var itemDurationSeconds = description.ItemDuration.Time.TotalSeconds;
         Audio.DanmakuChannelBus.Register(parameter, this, fps, totalFrame, itemStartSeconds, itemDurationSeconds, description.Layer);
+        Audio.DanmakuChannelBus.Touch(this);
 
         // キーフレームやスライダーの編集が一時停止中に行われても確実に最新の弾幕状態を反映するため、
         // 常に先頭から現在フレームまで確定的にシミュレーションを再現して描画する

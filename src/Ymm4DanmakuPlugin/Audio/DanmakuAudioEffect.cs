@@ -104,13 +104,8 @@ public abstract class DanmakuSingleSoundAudioEffectBase : AudioEffectBase
     public double FadeOut { get => fadeOut; set => Set(ref fadeOut, value); }
     private double fadeOut = 0.02;
 
-    private int processorCreationCount;
-
-    public override IAudioEffectProcessor CreateAudioEffect(TimeSpan duration)
-    {
-        var index = Interlocked.Increment(ref processorCreationCount) - 1;
-        return new DanmakuSingleSoundProcessor(this, SoundKind, duration, index);
-    }
+    public override IAudioEffectProcessor CreateAudioEffect(TimeSpan duration) =>
+        new DanmakuSingleSoundProcessor(this, SoundKind, duration);
 
     public override IEnumerable<string> CreateExoAudioFilters(
         int keyFrameIndex,
@@ -194,22 +189,16 @@ public sealed class DanmakuSingleSoundProcessor : AudioEffectProcessorBase
     private readonly DanmakuSingleSoundAudioEffectBase effect;
     private readonly DanmakuSoundKind soundKind;
     private readonly TimeSpan duration;
-    private readonly int processorIndex;
     private readonly List<Voice> voices = [];
 
     private DanmakuSoundBuffer? soundBuffer;
     private int preparedVersion = -1;
 
-    public DanmakuSingleSoundProcessor(
-        DanmakuSingleSoundAudioEffectBase effect,
-        DanmakuSoundKind soundKind,
-        TimeSpan duration,
-        int processorIndex = 0)
+    public DanmakuSingleSoundProcessor(DanmakuSingleSoundAudioEffectBase effect, DanmakuSoundKind soundKind, TimeSpan duration)
     {
         this.effect = effect;
         this.soundKind = soundKind;
         this.duration = duration;
-        this.processorIndex = processorIndex;
     }
 
     public override int Hz => Input?.Hz ?? 48000;
@@ -358,22 +347,12 @@ public sealed class DanmakuSingleSoundProcessor : AudioEffectProcessorBase
             }
             else
             {
-                // 個別アイテムの場合: processorIndex に対応する弾幕アイテム、またはアクティブなアイテムを使用
-                var targetIndex = Math.Clamp(processorIndex, 0, registrations.Count - 1);
-                var reg = registrations[targetIndex];
-                if (reg.ParameterRef.TryGetTarget(out var parameter))
+                // 個別アイテム: 直近に Touch された弾幕（現在の再生位置で描画中のもの）を使う
+                var activeParam = DanmakuChannelBus.TryGetParameter(effect.Channel);
+                if (activeParam is not null)
                 {
-                    var settings = parameter.ToSettings(parameter.LastCanvasWidth, parameter.LastCanvasHeight);
-                    ProcessSettings(settings, parameter, buffer, hz, 0.0, startFrame, maxFrames, fadeOutFrames);
-                }
-                else
-                {
-                    var activeParam = DanmakuChannelBus.TryGetParameter(effect.Channel);
-                    if (activeParam is not null)
-                    {
-                        var settings = activeParam.ToSettings(activeParam.LastCanvasWidth, activeParam.LastCanvasHeight);
-                        ProcessSettings(settings, activeParam, buffer, hz, 0.0, startFrame, maxFrames, fadeOutFrames);
-                    }
+                    var settings = activeParam.ToSettings(activeParam.LastCanvasWidth, activeParam.LastCanvasHeight);
+                    ProcessSettings(settings, activeParam, buffer, hz, 0.0, startFrame, maxFrames, fadeOutFrames);
                 }
             }
         }
