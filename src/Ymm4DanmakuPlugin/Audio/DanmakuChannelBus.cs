@@ -17,6 +17,7 @@ public sealed class DanmakuChannelRegistration
     public double TimelineDurationSeconds { get; }
     public int Layer { get; }
     public long TouchTick { get; }
+    public int LastItemFrame { get; }
 
     internal DanmakuChannelRegistration(
         object sourceKey,
@@ -26,7 +27,8 @@ public sealed class DanmakuChannelRegistration
         double timelineStartSeconds,
         double timelineDurationSeconds,
         int layer,
-        long touchTick)
+        long touchTick,
+        int lastItemFrame)
     {
         SourceKey = sourceKey;
         ParameterRef = parameterRef;
@@ -36,28 +38,49 @@ public sealed class DanmakuChannelRegistration
         TimelineDurationSeconds = timelineDurationSeconds;
         Layer = layer;
         TouchTick = touchTick;
+        LastItemFrame = lastItemFrame;
     }
 }
 
 /// <summary>
 /// 映像側の弾幕アイテムと音声側の効果音エフェクトを結び付けるための連絡簿。
-/// タイムライン上の各弾幕アイテムの開始位置（秒）を保持し、
-/// 単一の長い音声アイテムや連続配置された音声アイテムに対して正確に音響を配置する。
-/// <para>
-/// 同じチャンネルに複数の弾幕が登録されたままになることがあるため、
-/// 映像側は描画のたびに <see cref="Touch"/> し、音声側は直近に Touch された項目を優先する。
-/// </para>
+/// パラメータは図形ソースの生成より先に存在するので、プレビュー先読みでも次の弾幕を予約できる。
+/// キーは <see cref="DanmakuShapeParameter"/>（タイムラインアイテムと寿命が同じ）であり、
+/// 描画ソースの破棄では消さない。
 /// </summary>
 public static class DanmakuChannelBus
 {
     private static readonly object Gate = new();
-    private static readonly Dictionary<object, Entry> Registrations = new();
+    private static readonly List<Entry> Entries = [];
     private static readonly List<AudioClaim> AudioClaims = [];
     private static long nextTouchTick;
     private static long nextRegistrationOrder;
 
     /// <summary>登録状態の変更バージョン番号。登録・更新・削除のたびにインクリメントされる。</summary>
     public static int Version { get; private set; }
+
+    /// <summary>
+    /// タイムライン上の弾幕パラメータを、映像ソース生成前に覚えておく。
+    /// プレビューが次の音声を先に作り始めても、弾幕2を弾幕1と取り違えないようにする。
+    /// </summary>
+    public static void Remember(DanmakuShapeParameter parameter)
+    {
+        if (parameter is null) return;
+
+        lock (Gate)
+        {
+            if (FindByParameter(parameter) is not null) return;
+            Entries.Add(new Entry(
+                parameter,
+                fps: 60,
+                totalFrame: 1,
+                timelineStartSeconds: 0,
+                timelineDurationSeconds: 0,
+                layer: 0,
+                registrationOrder: ++nextRegistrationOrder));
+            Version++;
+        }
+    }
 
     /// <summary>弾幕アイテムを登録・更新する。存在の連絡であり、再生位置の担当切替は <see cref="Touch"/> が行う。</summary>
     public static void Register(
@@ -67,19 +90,23 @@ public static class DanmakuChannelBus
         int totalFrame = 1,
         double timelineStartSeconds = 0,
         double timelineDurationSeconds = 0,
-        int layer = 0)
+        int layer = 0,
+        int itemFrame = 0)
     {
         lock (Gate)
         {
-            var key = sourceKey ?? parameter;
+            _ = sourceKey;
             fps = fps > 0 ? fps : 60;
             totalFrame = Math.Max(1, totalFrame);
+            itemFrame = Math.Clamp(itemFrame, 0, Math.Max(0, totalFrame - 1));
 
-            if (Registrations.TryGetValue(key, out var entry))
+            var entry = FindByParameter(parameter);
+            if (entry is not null)
             {
                 var changed = entry.Fps != fps || entry.TotalFrame != totalFrame;
                 entry.Fps = fps;
                 entry.TotalFrame = totalFrame;
+                entry.LastItemFrame = itemFrame;
                 if (timelineDurationSeconds > 0)
                 {
                     changed |= Math.Abs(entry.TimelineStartSeconds - timelineStartSeconds) > 1e-9
@@ -94,15 +121,15 @@ public static class DanmakuChannelBus
             }
             else
             {
-                Registrations[key] = new Entry(
-                    key,
+                Entries.Add(new Entry(
                     parameter,
                     fps,
                     totalFrame,
                     timelineStartSeconds,
                     timelineDurationSeconds,
                     layer,
-                    ++nextRegistrationOrder);
+                    ++nextRegistrationOrder,
+                    itemFrame));
                 Version++;
             }
         }
@@ -110,41 +137,45 @@ public static class DanmakuChannelBus
 
     /// <summary>
     /// 映像側が「今この瞬間、自分が再生位置にある」と連絡簿へ伝える。
-    /// 同じチャンネルの候補が複数あるとき、音声側は直近に Touch された項目を使う。
+    /// Version は増やさない（連続再生中の音声再構築を避ける）。
     /// </summary>
-    public static void Touch(object sourceKey)
+    public static void Touch(object sourceKey, int itemFrame = 0, int totalFrame = 0)
     {
         if (sourceKey is null) return;
 
         lock (Gate)
         {
-            if (!Registrations.TryGetValue(sourceKey, out var entry)) return;
-            if (!entry.ParameterRef.TryGetTarget(out var parameter)) return;
+            var entry = FindByKey(sourceKey);
+            if (entry is null) return;
+            if (!entry.ParameterRef.TryGetTarget(out _)) return;
 
-            // Touch は再生位置の担当を示すだけで、音声プロセッサの構造変更ではない。
-            // ここで Version を増やすと、連続再生中に既に準備済みの音声が再構築され、
-            // 次の弾幕の先頭へ切り替わる前後で音が欠落・途中再生になる。
-            var channel = ReadChannel(parameter);
-            _ = FindLatest(channel);
+            if (totalFrame > 0) entry.TotalFrame = totalFrame;
+            if (itemFrame >= 0) entry.LastItemFrame = itemFrame;
             entry.TouchTick = ++nextTouchTick;
         }
     }
 
-    /// <summary>登録を解除する。</summary>
+    /// <summary>
+    /// 登録を解除する。描画ソースの破棄では呼ばないこと（パラメータはアイテムが生きている間残す）。
+    /// </summary>
     public static void Unregister(object sourceKey)
     {
+        if (sourceKey is null) return;
+
         lock (Gate)
         {
-            if (Registrations.Remove(sourceKey))
+            var removed = Entries.RemoveAll(entry =>
             {
-                Version++;
-            }
+                if (!entry.ParameterRef.TryGetTarget(out var parameter)) return true;
+                return ReferenceEquals(parameter, sourceKey);
+            });
+            if (removed > 0) Version++;
         }
     }
 
     /// <summary>
     /// 個別の音声プロセッサへ、同じチャンネルの弾幕を重複しないよう割り当てる。
-    /// 映像側の Touch が音声先読みより後になっても、タイムライン順の未使用候補を即時に選べる。
+    /// 映像側の Touch が音声先読みより後になっても、終盤の弾幕を避けて次の弾幕を選べる。
     /// </summary>
     public static DanmakuChannelRegistration? ClaimRegistration(
         int channel,
@@ -158,16 +189,16 @@ public static class DanmakuChannelBus
             Prune();
             PruneAudioClaims();
 
-            var entries = Registrations.Values
-                .Where(entry => entry.ParameterRef.TryGetTarget(out var parameter) && MatchesChannel(channel, parameter))
-                .ToArray();
-            var candidates = entries
-                .Select(entry => new DanmakuAudioCandidate(
-                    entry.SourceKey,
-                    entry.TimelineStartSeconds,
-                    entry.TimelineDurationSeconds,
-                    entry.TouchTick,
-                    entry.RegistrationOrder))
+            var live = new List<(Entry Entry, DanmakuShapeParameter Parameter)>();
+            foreach (var entry in Entries)
+            {
+                if (!entry.ParameterRef.TryGetTarget(out var parameter)) continue;
+                if (!MatchesChannel(channel, parameter)) continue;
+                live.Add((entry, parameter));
+            }
+
+            var candidates = live
+                .Select(item => item.Entry.ToCandidate(item.Parameter))
                 .ToArray();
             var claimed = AudioClaims
                 .Where(claim =>
@@ -195,8 +226,8 @@ public static class DanmakuChannelBus
                 existingClaim.SourceKey = selectedKey;
             }
 
-            var selectedEntry = entries.FirstOrDefault(entry => ReferenceEquals(entry.SourceKey, selectedKey));
-            return selectedEntry?.ToPublic();
+            var selected = live.FirstOrDefault(item => ReferenceEquals(item.Parameter, selectedKey));
+            return selected.Entry?.ToPublic(selected.Parameter);
         }
     }
 
@@ -219,13 +250,17 @@ public static class DanmakuChannelBus
         {
             Prune();
             var list = new List<DanmakuChannelRegistration>();
-            foreach (var entry in Registrations.Values)
+            foreach (var entry in Entries)
             {
                 if (!entry.ParameterRef.TryGetTarget(out var parameter)) continue;
                 if (!MatchesChannel(channel, parameter)) continue;
-                list.Add(entry.ToPublic());
+                list.Add(entry.ToPublic(parameter));
             }
-            list.Sort(static (a, b) => a.TimelineStartSeconds.CompareTo(b.TimelineStartSeconds));
+            list.Sort(static (a, b) =>
+            {
+                var start = a.TimelineStartSeconds.CompareTo(b.TimelineStartSeconds);
+                return start != 0 ? start : a.TouchTick.CompareTo(b.TouchTick);
+            });
             return list;
         }
     }
@@ -265,7 +300,7 @@ public static class DanmakuChannelBus
         {
             Prune();
             var list = new List<int>();
-            foreach (var entry in Registrations.Values)
+            foreach (var entry in Entries)
             {
                 if (!entry.ParameterRef.TryGetTarget(out var p)) continue;
                 var ch = ReadChannel(p);
@@ -281,7 +316,7 @@ public static class DanmakuChannelBus
     {
         Entry? best = null;
         var bestTick = long.MinValue;
-        foreach (var entry in Registrations.Values)
+        foreach (var entry in Entries)
         {
             if (!entry.ParameterRef.TryGetTarget(out var parameter)) continue;
             if (!MatchesChannel(channel, parameter)) continue;
@@ -293,6 +328,30 @@ public static class DanmakuChannelBus
         }
 
         return best;
+    }
+
+    private static Entry? FindByParameter(DanmakuShapeParameter parameter)
+    {
+        foreach (var entry in Entries)
+        {
+            if (entry.ParameterRef.TryGetTarget(out var existing) && ReferenceEquals(existing, parameter))
+            {
+                return entry;
+            }
+        }
+
+        return null;
+    }
+
+    private static Entry? FindByKey(object sourceKey)
+    {
+        foreach (var entry in Entries)
+        {
+            if (!entry.ParameterRef.TryGetTarget(out var parameter)) continue;
+            if (ReferenceEquals(parameter, sourceKey)) return entry;
+        }
+
+        return null;
     }
 
     private static bool MatchesChannel(int channel, DanmakuShapeParameter parameter)
@@ -307,24 +366,15 @@ public static class DanmakuChannelBus
     /// <summary>回収済みの参照を取り除く。呼び出し側で <see cref="Gate"/> をロックしていること。</summary>
     private static void Prune()
     {
-        List<object>? deadKeys = null;
-        foreach (var (key, entry) in Registrations)
-        {
-            if (entry.ParameterRef.TryGetTarget(out _)) continue;
-            deadKeys ??= [];
-            deadKeys.Add(key);
-        }
-
-        if (deadKeys is null) return;
-        foreach (var k in deadKeys) Registrations.Remove(k);
-        PruneAudioClaims();
+        var removed = Entries.RemoveAll(entry => !entry.ParameterRef.TryGetTarget(out _));
+        if (removed > 0) PruneAudioClaims();
     }
 
     /// <summary>破棄済みプロセッサまたは削除済み弾幕の割り当てを除く。呼び出し側でロック済みであること。</summary>
     private static void PruneAudioClaims()
     {
         AudioClaims.RemoveAll(claim =>
-            !claim.OwnerRef.TryGetTarget(out _) || !Registrations.ContainsKey(claim.SourceKey));
+            !claim.OwnerRef.TryGetTarget(out _) || FindByKey(claim.SourceKey) is null);
     }
 
     private sealed class AudioClaim(object owner, object sourceKey, int channel, DanmakuSoundKind soundKind)
@@ -335,10 +385,9 @@ public static class DanmakuChannelBus
         public DanmakuSoundKind SoundKind { get; } = soundKind;
     }
 
-    /// <summary>連絡簿の内部エントリ。公開 API には出さない。</summary>
+    /// <summary>連絡簿の内部エントリ。公開 API には出さない。パラメータは弱参照のみ保持する。</summary>
     private sealed class Entry
     {
-        public object SourceKey { get; }
         public WeakReference<DanmakuShapeParameter> ParameterRef { get; }
         public int Fps { get; set; }
         public int TotalFrame { get; set; }
@@ -347,18 +396,18 @@ public static class DanmakuChannelBus
         public int Layer { get; set; }
         public long TouchTick { get; set; }
         public long RegistrationOrder { get; }
+        public int LastItemFrame { get; set; }
 
         public Entry(
-            object sourceKey,
             DanmakuShapeParameter parameter,
             int fps,
             int totalFrame,
             double timelineStartSeconds,
             double timelineDurationSeconds,
             int layer,
-            long registrationOrder)
+            long registrationOrder,
+            int lastItemFrame = 0)
         {
-            SourceKey = sourceKey;
             ParameterRef = new WeakReference<DanmakuShapeParameter>(parameter);
             Fps = fps;
             TotalFrame = totalFrame;
@@ -366,16 +415,27 @@ public static class DanmakuChannelBus
             TimelineDurationSeconds = timelineDurationSeconds;
             Layer = layer;
             RegistrationOrder = registrationOrder;
+            LastItemFrame = lastItemFrame;
         }
 
-        public DanmakuChannelRegistration ToPublic() => new(
-            SourceKey,
+        public DanmakuAudioCandidate ToCandidate(DanmakuShapeParameter parameter) => new(
+            parameter,
+            TimelineStartSeconds,
+            TimelineDurationSeconds,
+            TouchTick,
+            RegistrationOrder,
+            LastItemFrame,
+            TotalFrame);
+
+        public DanmakuChannelRegistration ToPublic(DanmakuShapeParameter parameter) => new(
+            parameter,
             ParameterRef,
             Fps,
             TotalFrame,
             TimelineStartSeconds,
             TimelineDurationSeconds,
             Layer,
-            TouchTick);
+            TouchTick,
+            LastItemFrame);
     }
 }

@@ -20,17 +20,29 @@ public readonly record struct DanmakuAudioCandidate(
     double TimelineStartSeconds,
     double TimelineDurationSeconds,
     long TouchTick,
-    long RegistrationOrder = 0);
+    long RegistrationOrder = 0,
+    int LastItemFrame = 0,
+    int TotalFrame = 1);
 
 /// <summary>
 /// 複数の個別音声アイテムを、同じチャンネルの連続した弾幕へ重複なく割り当てる。
-/// YMM4 のプレビューでは映像と音声の生成順が一定ではないため、再生中の Touch だけには依存しない。
+/// YMM4 のプレビューでは映像より先に次の音声が生成されるため、
+/// 「今映っている弾幕」や「長さが確定した先頭の弾幕」をそのまま掴むと音声が遅れる。
 /// </summary>
 public static class DanmakuAudioAssignment
 {
     /// <summary>
-    /// 既存の割り当てを優先し、未割り当て候補の中から時間長、タイムライン順、登録順が合う候補を返す。
-    /// タイムライン情報が未確定でも登録順で先行予約し、次の弾幕の開始フレームで準備処理が走るのを防ぐ。
+    /// 再生が終盤に入った弾幕。プレビュー先読みの次音声がこれを掴むと、切替後もしばらく前の音が続く。
+    /// </summary>
+    public static bool IsExpiring(in DanmakuAudioCandidate candidate)
+    {
+        if (candidate.TotalFrame <= 1 || candidate.TimelineDurationSeconds <= 0) return false;
+        return candidate.LastItemFrame >= (int)Math.Ceiling(candidate.TotalFrame * 0.85);
+    }
+
+    /// <summary>
+    /// 既存の割り当てを優先し、終盤の弾幕を避けて未使用候補へ割り当てる。
+    /// タイムライン未確定の候補も登録順で先行予約し、切替フレームでの再準備を避ける。
     /// </summary>
     public static object? Select(
         IReadOnlyList<DanmakuAudioCandidate> candidates,
@@ -56,7 +68,10 @@ public static class DanmakuAudioAssignment
             return null;
         }
 
-        var ready = unclaimed
+        var notExpiring = unclaimed.Where(candidate => !IsExpiring(candidate)).ToArray();
+        var pool = notExpiring.Length > 0 ? notExpiring : unclaimed;
+
+        var ready = pool
             .Where(candidate => candidate.TimelineDurationSeconds > 0)
             .ToArray();
         var durationMatches = ready
@@ -64,7 +79,7 @@ public static class DanmakuAudioAssignment
             .ToArray();
         var eligible = durationMatches.Length > 0
             ? durationMatches
-            : ready.Length > 0 ? ready : unclaimed;
+            : ready.Length > 0 ? ready : pool;
 
         return eligible
             .OrderBy(candidate => candidate.TimelineDurationSeconds > 0 ? 0 : 1)

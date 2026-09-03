@@ -9,6 +9,7 @@ using YukkuriMovieMaker.Player.Video;
 using YukkuriMovieMaker.Plugin.Shape;
 using YukkuriMovieMaker.Project;
 using YukkuriMovieMaker.Settings;
+using Ymm4DanmakuPlugin.Audio;
 using Ymm4DanmakuPlugin.Core.Configuration;
 using Ymm4DanmakuPlugin.Core.Scripting;
 using Ymm4DanmakuPlugin.Interop;
@@ -827,6 +828,7 @@ public class DanmakuShapeParameter : ShapeParameterBase
 
     public DanmakuShapeParameter(SharedDataStore? sharedData) : base(sharedData)
     {
+        DanmakuChannelBus.Remember(this);
         SubscribeAnimatable(CollisionEnabled, nameof(CollisionEnabled));
         SubscribeAnimatable(TargetX, nameof(TargetX));
         SubscribeAnimatable(TargetY, nameof(TargetY));
