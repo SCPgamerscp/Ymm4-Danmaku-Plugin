@@ -3381,6 +3381,24 @@ public class DanmakuAudioAssignmentTests
     }
 
     [Fact]
+    public void 先読みで後続だけ長さが確定していても先頭の弾幕を取る()
+    {
+        var first = new object();
+        var second = new object();
+        var candidates = new[]
+        {
+            new DanmakuAudioCandidate(first, 0, 0, 0, 1),
+            new DanmakuAudioCandidate(second, 5, 5, 10, 2),
+        };
+
+        var firstSelection = DanmakuAudioAssignment.Select(candidates, null, new HashSet<object>(), 5);
+        var secondSelection = DanmakuAudioAssignment.Select(candidates, null, new HashSet<object> { first }, 5);
+
+        Assert.Same(first, firstSelection);
+        Assert.Same(second, secondSelection);
+    }
+
+    [Fact]
     public void 未確定登録はTouchではなく登録順で個別音声へ割り当てられる()
     {
         var first = new object();
@@ -3436,5 +3454,114 @@ public class DanmakuAudioAssignmentTests
             5);
 
         Assert.Null(selection);
+    }
+}
+
+/// <summary>伸ばした1本の音声が複数弾幕をまたぐかの判定。</summary>
+public class DanmakuSpanningAudioTests
+{
+    [Fact]
+    public void 伸ばした1本の音声は複数弾幕を跨ぐと判定する()
+    {
+        Assert.True(DanmakuSpanningAudio.LooksSpanning(
+            audioDurationSeconds: 10,
+            registrationCount: 2,
+            longestReadyDurationSeconds: 5,
+            totalReadyTimelineSpanSeconds: 10,
+            readyCount: 2));
+    }
+
+    [Fact]
+    public void 個別の短い音声は跨ぎと判定しない()
+    {
+        Assert.False(DanmakuSpanningAudio.LooksSpanning(
+            audioDurationSeconds: 5,
+            registrationCount: 2,
+            longestReadyDurationSeconds: 5,
+            totalReadyTimelineSpanSeconds: 10,
+            readyCount: 2));
+    }
+
+    [Fact]
+    public void 登録が1件だけのときは跨ぎと判定しない()
+    {
+        Assert.False(DanmakuSpanningAudio.LooksSpanning(
+            audioDurationSeconds: 10,
+            registrationCount: 1,
+            longestReadyDurationSeconds: 5,
+            totalReadyTimelineSpanSeconds: 5,
+            readyCount: 1));
+    }
+
+    [Fact]
+    public void 先に1本だけ長さが確定していても伸ばした音声は跨ぎと判定する()
+    {
+        Assert.True(DanmakuSpanningAudio.LooksSpanning(
+            audioDurationSeconds: 10,
+            registrationCount: 2,
+            longestReadyDurationSeconds: 5,
+            totalReadyTimelineSpanSeconds: 5,
+            readyCount: 1));
+    }
+
+    [Fact]
+    public void 長さ未確定のまま組んだ弾幕は本物の長さが付いたら作り直す()
+    {
+        Assert.True(DanmakuSpanningAudio.ShouldResim(
+            preparedDurationSeconds: 0,
+            currentItemDurationSeconds: 5));
+    }
+
+    [Fact]
+    public void 同じ長さで組済みなら作り直さない()
+    {
+        Assert.False(DanmakuSpanningAudio.ShouldResim(
+            preparedDurationSeconds: 5,
+            currentItemDurationSeconds: 5));
+    }
+
+    [Fact]
+    public void 長さが変わったらそのキーだけ作り直す()
+    {
+        Assert.True(DanmakuSpanningAudio.ShouldResim(
+            preparedDurationSeconds: 10,
+            currentItemDurationSeconds: 5));
+    }
+
+    [Fact]
+    public void まだ長さが無い弾幕は作り直さない()
+    {
+        Assert.False(DanmakuSpanningAudio.ShouldResim(
+            preparedDurationSeconds: 0,
+            currentItemDurationSeconds: 0));
+    }
+
+    [Fact]
+    public void 跨ぎで長さ未確定のまま全長シミュレートした弾幕は捨てて待つ()
+    {
+        Assert.True(DanmakuSpanningAudio.ShouldDropUntimed(
+            preparedDurationSeconds: 0,
+            currentItemDurationSeconds: 0,
+            spanning: true));
+    }
+
+    [Fact]
+    public void 個別の短い音声は長さ未確定でも捨てない()
+    {
+        Assert.False(DanmakuSpanningAudio.ShouldDropUntimed(
+            preparedDurationSeconds: 0,
+            currentItemDurationSeconds: 0,
+            spanning: false));
+    }
+
+    [Fact]
+    public void 長さが1本も確定していなければ跨ぎと判定しない()
+    {
+        Assert.False(DanmakuSpanningAudio.LooksSpanning(
+            audioDurationSeconds: 10,
+            registrationCount: 2,
+            longestReadyDurationSeconds: 0,
+            totalReadyTimelineSpanSeconds: 0,
+            readyCount: 0));
     }
 }

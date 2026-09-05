@@ -184,7 +184,8 @@ public sealed class DanmakuSingleSoundProcessor : AudioEffectProcessorBase
         double Volume,
         double StartFrame,
         double MaxFrames,
-        double FadeOutFrames);
+        double FadeOutFrames,
+        object? SourceKey);
 
     private readonly DanmakuSingleSoundAudioEffectBase effect;
     private readonly DanmakuSoundKind soundKind;
@@ -193,7 +194,11 @@ public sealed class DanmakuSingleSoundProcessor : AudioEffectProcessorBase
 
     private DanmakuSoundBuffer? soundBuffer;
     private object? assignedSourceKey;
-    private int preparedVersion = -1;
+    private bool voicesPrepared;
+    private bool isSpanningPlayback;
+    private double spanningAnchorStart;
+    private readonly HashSet<object> preparedSourceKeys = [];
+    private readonly Dictionary<object, double> preparedDurations = [];
 
     public DanmakuSingleSoundProcessor(
         DanmakuSingleSoundAudioEffectBase effect,
@@ -215,11 +220,20 @@ public sealed class DanmakuSingleSoundProcessor : AudioEffectProcessorBase
     {
         Array.Clear(destBuffer, offset, count);
 
-        var busVersion = DanmakuChannelBus.Version;
-        if (voices.Count == 0 || busVersion != preparedVersion)
+        // プレビューは音声を映像より先にバッファする。再生中に Version 変化で voices を
+        // 作り直すと、弾幕1の音が続き、弾幕2の先頭が欠ける。準備は初回と巻き戻しだけ行う。
+        // 伸ばした1本の音声は、後から長さが確定した弾幕を足すだけにする。組み直さない。
+        if (!voicesPrepared)
         {
             PrepareVoices();
-            preparedVersion = busVersion;
+        }
+        else if (isSpanningPlayback)
+        {
+            AppendSpanningVoices();
+        }
+        else
+        {
+            PromoteToSpanningIfNeeded();
         }
 
         if (voices.Count == 0) return count;
@@ -318,8 +332,6 @@ public sealed class DanmakuSingleSoundProcessor : AudioEffectProcessorBase
             return;
         }
 
-        voices.Clear();
-
         var hz = Hz;
         var startFrame = Math.Max(0.0, effect.TrimStart * hz);
         var totalAvailableFrames = Math.Max(0.0, buffer.FrameCount - startFrame);
@@ -330,62 +342,221 @@ public sealed class DanmakuSingleSoundProcessor : AudioEffectProcessorBase
 
         if (registrations.Count > 0)
         {
-            // コンストラクタ時点だけの仮登録（長さ 0）は、まだタイムライン位置が確定していない。
-            // これを混ぜると弾幕2の音が弾幕1の先頭へ重なるため、Update 済みだけを使う。
-            var readyRegistrations = registrations
-                .Where(registration => registration.TimelineDurationSeconds > 0)
-                .ToArray();
-            var minTimelineStart = readyRegistrations.Length > 0
-                ? readyRegistrations.Min(registration => registration.TimelineStartSeconds)
-                : 0;
-            var maxTimelineEnd = readyRegistrations.Length > 0
-                ? readyRegistrations.Max(registration => registration.TimelineStartSeconds + registration.TimelineDurationSeconds)
-                : 0;
-            var totalTimelineSpan = maxTimelineEnd - minTimelineStart;
-
-            // 1本の長い音声アイテムで複数の弾幕アイテムを跨いでいる場合。
-            if (readyRegistrations.Length > 1 && duration.TotalSeconds >= totalTimelineSpan * 0.8)
+            if (LooksLikeSpanning(registrations))
             {
-                DanmakuChannelBus.ReleaseRegistration(this);
-                assignedSourceKey = null;
-
-                foreach (var reg in readyRegistrations)
-                {
-                    if (!reg.ParameterRef.TryGetTarget(out var parameter)) continue;
-
-                    var settings = parameter.ToSettings(parameter.LastCanvasWidth, parameter.LastCanvasHeight);
-                    var timelineOffset = Math.Max(0.0, reg.TimelineStartSeconds - minTimelineStart);
-
-                    if (timelineOffset >= duration.TotalSeconds) continue;
-
-                    ProcessSettings(settings, parameter, buffer, hz, timelineOffset, startFrame, maxFrames, fadeOutFrames);
-                }
+                MixSpanningRegistrations(registrations, buffer, hz, startFrame, maxFrames, fadeOutFrames, reset: true);
             }
             else
             {
                 // 個別音声は同じチャンネルの弾幕を排他的に確保する。
-                // エフェクトごとの processorIndex は必ず 0 になり弾幕1へ偏るため使用しない。
+                // パラメータ生成時の登録があるので、映像 Update を待たずに弾幕2へ割り当てられる。
                 var reg = DanmakuChannelBus.ClaimRegistration(
                     effect.Channel,
                     soundKind,
                     this,
                     duration.TotalSeconds,
                     assignedSourceKey);
-                assignedSourceKey = reg?.SourceKey;
+                if (reg is null)
+                {
+                    // 自分の弾幕がまだ連絡簿に無い。次の read で再試行する。
+                    return;
+                }
 
-                if (reg is not null && reg.ParameterRef.TryGetTarget(out var parameter))
+                // 確保したあとに長さが分かり、伸ばした1本だと分かったら跨ぎへ切り替える。
+                // まだ voices を組んでいないので、弾幕1を10秒ぶんシミュレートせずに済む。
+                assignedSourceKey = reg.SourceKey;
+                registrations = DanmakuChannelBus.GetRegistrations(effect.Channel);
+                if (LooksLikeSpanning(registrations))
+                {
+                    MixSpanningRegistrations(registrations, buffer, hz, startFrame, maxFrames, fadeOutFrames, reset: true);
+                    return;
+                }
+
+                isSpanningPlayback = false;
+                voices.Clear();
+                preparedSourceKeys.Clear();
+                preparedDurations.Clear();
+                preparedSourceKeys.Add(reg.SourceKey);
+                preparedDurations[reg.SourceKey] = reg.TimelineDurationSeconds;
+                voicesPrepared = true;
+
+                if (reg.ParameterRef.TryGetTarget(out var parameter))
                 {
                     var settings = parameter.ToSettings(parameter.LastCanvasWidth, parameter.LastCanvasHeight);
-                    ProcessSettings(settings, parameter, buffer, hz, 0.0, startFrame, maxFrames, fadeOutFrames);
+                    // 長さ未確定の個別音声は、この音声アイテム自身の長さで鳴らす。
+                    // 伸ばした1本だと後で分かったら、このキーの voices だけ作り直す。
+                    ProcessSettings(
+                        settings,
+                        parameter,
+                        buffer,
+                        hz,
+                        0.0,
+                        startFrame,
+                        maxFrames,
+                        fadeOutFrames,
+                        reg.TimelineDurationSeconds,
+                        reg.SourceKey);
                 }
             }
         }
         else if (fallbackSettings is not null)
         {
-            ProcessSettings(fallbackSettings, null, buffer, hz, 0.0, startFrame, maxFrames, fadeOutFrames);
+            isSpanningPlayback = false;
+            voices.Clear();
+            preparedSourceKeys.Clear();
+            preparedDurations.Clear();
+            voicesPrepared = true;
+            ProcessSettings(fallbackSettings, null, buffer, hz, 0.0, startFrame, maxFrames, fadeOutFrames, duration.TotalSeconds, null);
         }
 
         voices.Sort(static (a, b) => a.StartPosition.CompareTo(b.StartPosition));
+    }
+
+    private void AppendSpanningVoices()
+    {
+        var buffer = EnsureSoundBuffer();
+        if (buffer is null) return;
+
+        var registrations = DanmakuChannelBus.GetRegistrations(effect.Channel);
+        if (registrations.Count == 0) return;
+
+        var hz = Hz;
+        var startFrame = Math.Max(0.0, effect.TrimStart * hz);
+        var totalAvailableFrames = Math.Max(0.0, buffer.FrameCount - startFrame);
+        var maxFrames = effect.PlayDuration > 0
+            ? Math.Min(totalAvailableFrames, effect.PlayDuration * hz)
+            : totalAvailableFrames;
+        var fadeOutFrames = Math.Max(0.0, effect.FadeOut * hz);
+
+        MixSpanningRegistrations(registrations, buffer, hz, startFrame, maxFrames, fadeOutFrames, reset: false);
+    }
+
+    private void PromoteToSpanningIfNeeded()
+    {
+        var registrations = DanmakuChannelBus.GetRegistrations(effect.Channel);
+        if (!LooksLikeSpanning(registrations)) return;
+
+        var claimed = registrations.FirstOrDefault(
+            registration => preparedSourceKeys.Contains(registration.SourceKey));
+        if (claimed is not null)
+        {
+            spanningAnchorStart = claimed.TimelineStartSeconds;
+            var preparedDuration = preparedDurations.TryGetValue(claimed.SourceKey, out var durationSeconds)
+                ? durationSeconds
+                : 0;
+            // 未確定のまま音声全長で組んだ弾幕1は、長さが付いたときこのキーだけ作り直す。
+            // 他の弾幕の voices は残す。Version では組み直さない。
+            if (DanmakuSpanningAudio.ShouldResim(preparedDuration, claimed.TimelineDurationSeconds) ||
+                DanmakuSpanningAudio.ShouldDropUntimed(preparedDuration, claimed.TimelineDurationSeconds, spanning: true))
+            {
+                RemoveVoicesFor(claimed.SourceKey);
+                preparedSourceKeys.Remove(claimed.SourceKey);
+                preparedDurations.Remove(claimed.SourceKey);
+            }
+        }
+
+        AppendSpanningVoices();
+    }
+
+    private bool LooksLikeSpanning(IReadOnlyList<DanmakuChannelRegistration> registrations)
+    {
+        var ready = registrations
+            .Where(registration => registration.TimelineDurationSeconds > 0)
+            .ToArray();
+        var longestReady = ready.Length > 0
+            ? ready.Max(registration => registration.TimelineDurationSeconds)
+            : 0;
+        var minStart = ready.Length > 0
+            ? ready.Min(registration => registration.TimelineStartSeconds)
+            : 0;
+        var maxEnd = ready.Length > 0
+            ? ready.Max(registration => registration.TimelineStartSeconds + registration.TimelineDurationSeconds)
+            : 0;
+        return DanmakuSpanningAudio.LooksSpanning(
+            duration.TotalSeconds,
+            registrations.Count,
+            longestReady,
+            maxEnd - minStart,
+            ready.Length);
+    }
+
+    private void MixSpanningRegistrations(
+        IReadOnlyList<DanmakuChannelRegistration> registrations,
+        DanmakuSoundBuffer buffer,
+        int hz,
+        double startFrame,
+        double maxFrames,
+        double fadeOutFrames,
+        bool reset)
+    {
+        var readyRegistrations = registrations
+            .Where(registration => registration.TimelineDurationSeconds > 0)
+            .ToArray();
+        if (readyRegistrations.Length == 0)
+        {
+            return;
+        }
+
+        DanmakuChannelBus.ReleaseRegistration(this);
+        assignedSourceKey = null;
+        isSpanningPlayback = true;
+
+        if (reset)
+        {
+            voices.Clear();
+            preparedSourceKeys.Clear();
+            preparedDurations.Clear();
+            spanningAnchorStart = readyRegistrations.Min(registration => registration.TimelineStartSeconds);
+            voicesPrepared = true;
+        }
+        else if (preparedSourceKeys.Count == 0)
+        {
+            spanningAnchorStart = readyRegistrations.Min(registration => registration.TimelineStartSeconds);
+            voicesPrepared = true;
+        }
+
+        // 先に長さ0で組んだキーは、本物の長さが付いたときこのキーだけ作り直す。
+        foreach (var reg in readyRegistrations)
+        {
+            if (!preparedSourceKeys.Contains(reg.SourceKey)) continue;
+            var preparedDuration = preparedDurations.TryGetValue(reg.SourceKey, out var durationSeconds)
+                ? durationSeconds
+                : 0;
+            if (!DanmakuSpanningAudio.ShouldResim(preparedDuration, reg.TimelineDurationSeconds)) continue;
+            RemoveVoicesFor(reg.SourceKey);
+            preparedSourceKeys.Remove(reg.SourceKey);
+            preparedDurations.Remove(reg.SourceKey);
+        }
+
+        var added = false;
+        foreach (var reg in readyRegistrations)
+        {
+            if (!preparedSourceKeys.Add(reg.SourceKey)) continue;
+            if (!reg.ParameterRef.TryGetTarget(out var parameter)) continue;
+
+            var timelineOffset = Math.Max(0.0, reg.TimelineStartSeconds - spanningAnchorStart);
+            if (timelineOffset >= duration.TotalSeconds) continue;
+
+            var settings = parameter.ToSettings(parameter.LastCanvasWidth, parameter.LastCanvasHeight);
+            ProcessSettings(
+                settings,
+                parameter,
+                buffer,
+                hz,
+                timelineOffset,
+                startFrame,
+                maxFrames,
+                fadeOutFrames,
+                reg.TimelineDurationSeconds,
+                reg.SourceKey);
+            preparedDurations[reg.SourceKey] = reg.TimelineDurationSeconds;
+            added = true;
+        }
+
+        if (added)
+        {
+            voices.Sort(static (a, b) => a.StartPosition.CompareTo(b.StartPosition));
+        }
     }
 
     private void ProcessSettings(
@@ -396,7 +567,9 @@ public sealed class DanmakuSingleSoundProcessor : AudioEffectProcessorBase
         double timelineOffsetSeconds,
         double startFrame,
         double maxFrames,
-        double fadeOutFrames)
+        double fadeOutFrames,
+        double itemDurationSeconds,
+        object? sourceKey)
     {
         var customSound = baseSettings.GetSound(soundKind) with
         {
@@ -415,7 +588,14 @@ public sealed class DanmakuSingleSoundProcessor : AudioEffectProcessorBase
             _ => baseSettings with { VanishSound = customSound },
         };
 
-        var simDuration = duration.TotalSeconds;
+        // 跨ぎ再生で長さ未確定なら、音声全長で弾幕1を埋めない。個別の短い音声はその音声の長さで鳴らす。
+        if (itemDurationSeconds <= 0 &&
+            (isSpanningPlayback || LooksLikeSpanning(DanmakuChannelBus.GetRegistrations(effect.Channel))))
+        {
+            return;
+        }
+
+        var simDuration = itemDurationSeconds > 0 ? itemDurationSeconds : duration.TotalSeconds;
         var simulator = new DanmakuSimulator(settings)
         {
             MaxSimulationSeconds = Math.Max(1.0, simDuration + 1.0),
@@ -451,22 +631,27 @@ public sealed class DanmakuSingleSoundProcessor : AudioEffectProcessorBase
             var semitones = effect.PitchJitter > 0 ? random.NextSymmetric(effect.PitchJitter) : 0;
             var pitchRatio = e.PitchRatio * DanmakuMath.SemitoneToRatio(semitones);
 
-            voices.Add(new Voice(buffer, startPosition, pitchRatio, e.Volume, startFrame, maxFrames, fadeOutFrames));
+            voices.Add(new Voice(buffer, startPosition, pitchRatio, e.Volume, startFrame, maxFrames, fadeOutFrames, sourceKey));
         }
     }
 
     protected override void seek(long position)
     {
-        // 巻き戻し時 (position == 0) かつ登録バージョンが変化していたら再準備
+        // 巻き戻し時だけ再準備する。途中シークで作り直すと連続再生の音が途切れる。
         if (position == 0)
         {
-            var busVersion = DanmakuChannelBus.Version;
-            if (busVersion != preparedVersion || voices.Count == 0)
-            {
-                PrepareVoices();
-                preparedVersion = busVersion;
-            }
+            voicesPrepared = false;
+            isSpanningPlayback = false;
+            voices.Clear();
+            preparedSourceKeys.Clear();
+            preparedDurations.Clear();
+            PrepareVoices();
         }
+    }
+
+    private void RemoveVoicesFor(object sourceKey)
+    {
+        voices.RemoveAll(voice => ReferenceEquals(voice.SourceKey, sourceKey));
     }
 
     protected override void Dispose(bool disposing)

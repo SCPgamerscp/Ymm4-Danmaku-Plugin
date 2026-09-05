@@ -58,8 +58,8 @@ public sealed class DanmakuShapeSource : IShapeSource2
         renderer = new DanmakuRenderer(devices);
         disposer.Collect(renderer);
 
-        // 音声エフェクト側から設定を引けるように登録する (弱参照なので解放を妨げない)
-        Audio.DanmakuChannelBus.Register(parameter, this);
+        // パラメータ生成時に既に登録済み。ここでは同じ安定キーでタイムライン情報を上書きする。
+        Audio.DanmakuChannelBus.Register(parameter, parameter.AudioBusKey);
     }
 
     /// <summary>YMM4 が合成に使う描画結果。</summary>
@@ -82,6 +82,10 @@ public sealed class DanmakuShapeSource : IShapeSource2
         // 音声側が同じ条件でシミュレーションを再現できるよう記録しておく
         parameter.LastCanvasWidth = canvasWidth;
         parameter.LastCanvasHeight = canvasHeight;
+        var itemStartSeconds = description.TimelinePosition.Time.TotalSeconds - description.ItemPosition.Time.TotalSeconds;
+        var itemDurationSeconds = description.ItemDuration.Time.TotalSeconds;
+        parameter.LastTimelineStartSeconds = itemStartSeconds;
+        parameter.LastTimelineDurationSeconds = itemDurationSeconds;
 
         var settings = parameter.ToSettings(canvasWidth, canvasHeight) with { TimeScale = 1.0 };
 
@@ -104,10 +108,8 @@ public sealed class DanmakuShapeSource : IShapeSource2
 
         // 外部レイヤー間の相互参照（自機・ボス・ダメージ）のためにシミュレーション前にレイヤーを登録
         Collision.DanmakuCollisionBus.RegisterLayer(this, parameter, fps, totalFrame);
-        var itemStartSeconds = description.TimelinePosition.Time.TotalSeconds - description.ItemPosition.Time.TotalSeconds;
-        var itemDurationSeconds = description.ItemDuration.Time.TotalSeconds;
-        Audio.DanmakuChannelBus.Register(parameter, this, fps, totalFrame, itemStartSeconds, itemDurationSeconds, description.Layer);
-        Audio.DanmakuChannelBus.Touch(this);
+        Audio.DanmakuChannelBus.Register(parameter, parameter.AudioBusKey, fps, totalFrame, itemStartSeconds, itemDurationSeconds, description.Layer);
+        Audio.DanmakuChannelBus.Touch(parameter.AudioBusKey);
 
         // キーフレームやスライダーの編集が一時停止中に行われても確実に最新の弾幕状態を反映するため、
         // 常に先頭から現在フレームまで確定的にシミュレーションを再現して描画する
@@ -505,7 +507,7 @@ public sealed class DanmakuShapeSource : IShapeSource2
 
     public void Dispose()
     {
-        Audio.DanmakuChannelBus.Unregister(this);
+        // パラメータ側の登録はプレビューの音声先読み用に残す。弱参照なので GC で消える。
         Collision.DanmakuCollisionBus.UnregisterLayer(this);
         simulator = null;
         output = null;

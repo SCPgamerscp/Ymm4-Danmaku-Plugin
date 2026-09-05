@@ -9,6 +9,7 @@ using YukkuriMovieMaker.Player.Video;
 using YukkuriMovieMaker.Plugin.Shape;
 using YukkuriMovieMaker.Project;
 using YukkuriMovieMaker.Settings;
+using Ymm4DanmakuPlugin.Audio;
 using Ymm4DanmakuPlugin.Core.Configuration;
 using Ymm4DanmakuPlugin.Core.Scripting;
 using Ymm4DanmakuPlugin.Interop;
@@ -793,6 +794,18 @@ public class DanmakuShapeParameter : ShapeParameterBase
     /// <inheritdoc cref="LastCanvasWidth"/>
     public int LastCanvasHeight { get; internal set; } = 1080;
 
+    /// <summary>直近の映像 Update で観測した、この弾幕アイテムのタイムライン開始秒。</summary>
+    internal double LastTimelineStartSeconds { get; set; }
+
+    /// <summary>直近の映像 Update で観測した、この弾幕アイテムの長さ（秒）。</summary>
+    internal double LastTimelineDurationSeconds { get; set; }
+
+    /// <summary>
+    /// 効果音連絡簿の安定キー。映像ソースより先に存在し、プレビューの音声先読みに間に合う。
+    /// パラメータ本体を辞書キーにすると強参照で GC されなくなるため、専用オブジェクトを使う。
+    /// </summary>
+    internal object AudioBusKey { get; } = new();
+
     // =====================================================================
     // エミッター (マルチエミッター)
     // =====================================================================
@@ -874,6 +887,10 @@ public class DanmakuShapeParameter : ShapeParameterBase
         SubscribeAnimatable(Channel, nameof(Channel));
 
         SubscribeEmitters(emitters);
+
+        // プレビューは音声が映像より先にバッファされる。図形ソースの Update を待たず、
+        // タイムラインへ置かれた時点で連絡簿へ載せ、連続する個別音声が弾幕2の準備待ちで遅れないようにする。
+        DanmakuChannelBus.Register(this, AudioBusKey);
     }
 
     private void SubscribeAnimatable(Animation anim, string propertyName)
