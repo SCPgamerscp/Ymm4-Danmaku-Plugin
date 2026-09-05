@@ -17,6 +17,7 @@ public sealed class DanmakuChannelRegistration
     public double TimelineDurationSeconds { get; }
     public int Layer { get; }
     public long TouchTick { get; }
+    public long RegistrationOrder { get; }
 
     internal DanmakuChannelRegistration(
         object sourceKey,
@@ -26,7 +27,8 @@ public sealed class DanmakuChannelRegistration
         double timelineStartSeconds,
         double timelineDurationSeconds,
         int layer,
-        long touchTick)
+        long touchTick,
+        long registrationOrder)
     {
         SourceKey = sourceKey;
         ParameterRef = parameterRef;
@@ -36,6 +38,7 @@ public sealed class DanmakuChannelRegistration
         TimelineDurationSeconds = timelineDurationSeconds;
         Layer = layer;
         TouchTick = touchTick;
+        RegistrationOrder = registrationOrder;
     }
 }
 
@@ -44,8 +47,9 @@ public sealed class DanmakuChannelRegistration
 /// タイムライン上の各弾幕アイテムの開始位置（秒）を保持し、
 /// 単一の長い音声アイテムや連続配置された音声アイテムに対して正確に音響を配置する。
 /// <para>
-/// 同じチャンネルに複数の弾幕が登録されたままになることがあるため、
-/// 映像側は描画のたびに <see cref="Touch"/> し、音声側は直近に Touch された項目を優先する。
+/// 登録キーはパラメータ生成時の安定キー。映像ソースの Update を待たないため、
+/// プレビューが映像より先に音声を先読みしても、連続する弾幕へ順番に割り当てられる。
+/// 映像側の <see cref="Touch"/> は再生位置の参考情報であり、割り当てそのものには使わない。
 /// </para>
 /// </summary>
 public static class DanmakuChannelBus
@@ -89,18 +93,33 @@ public static class DanmakuChannelBus
                     entry.TimelineDurationSeconds = timelineDurationSeconds;
                     entry.Layer = layer;
                 }
+                else if (parameter.LastTimelineDurationSeconds > 0)
+                {
+                    changed |= Math.Abs(entry.TimelineStartSeconds - parameter.LastTimelineStartSeconds) > 1e-9
+                        || Math.Abs(entry.TimelineDurationSeconds - parameter.LastTimelineDurationSeconds) > 1e-9;
+                    entry.TimelineStartSeconds = parameter.LastTimelineStartSeconds;
+                    entry.TimelineDurationSeconds = parameter.LastTimelineDurationSeconds;
+                }
 
                 if (changed) Version++;
             }
             else
             {
+                var start = timelineStartSeconds;
+                var duration = timelineDurationSeconds;
+                if (duration <= 0 && parameter.LastTimelineDurationSeconds > 0)
+                {
+                    start = parameter.LastTimelineStartSeconds;
+                    duration = parameter.LastTimelineDurationSeconds;
+                }
+
                 Registrations[key] = new Entry(
                     key,
                     parameter,
                     fps,
                     totalFrame,
-                    timelineStartSeconds,
-                    timelineDurationSeconds,
+                    start,
+                    duration,
                     layer,
                     ++nextRegistrationOrder);
                 Version++;
@@ -110,7 +129,7 @@ public static class DanmakuChannelBus
 
     /// <summary>
     /// 映像側が「今この瞬間、自分が再生位置にある」と連絡簿へ伝える。
-    /// 同じチャンネルの候補が複数あるとき、音声側は直近に Touch された項目を使う。
+    /// 割り当て自体は登録順と長さで決める。Touch は再生位置の参考情報に留める。
     /// </summary>
     public static void Touch(object sourceKey)
     {
@@ -162,12 +181,25 @@ public static class DanmakuChannelBus
                 .Where(entry => entry.ParameterRef.TryGetTarget(out var parameter) && MatchesChannel(channel, parameter))
                 .ToArray();
             var candidates = entries
-                .Select(entry => new DanmakuAudioCandidate(
-                    entry.SourceKey,
-                    entry.TimelineStartSeconds,
-                    entry.TimelineDurationSeconds,
-                    entry.TouchTick,
-                    entry.RegistrationOrder))
+                .Select(entry =>
+                {
+                    var start = entry.TimelineStartSeconds;
+                    var duration = entry.TimelineDurationSeconds;
+                    if (duration <= 0 &&
+                        entry.ParameterRef.TryGetTarget(out var parameter) &&
+                        parameter.LastTimelineDurationSeconds > 0)
+                    {
+                        start = parameter.LastTimelineStartSeconds;
+                        duration = parameter.LastTimelineDurationSeconds;
+                    }
+
+                    return new DanmakuAudioCandidate(
+                        entry.SourceKey,
+                        start,
+                        duration,
+                        entry.TouchTick,
+                        entry.RegistrationOrder);
+                })
                 .ToArray();
             var claimed = AudioClaims
                 .Where(claim =>
@@ -225,7 +257,11 @@ public static class DanmakuChannelBus
                 if (!MatchesChannel(channel, parameter)) continue;
                 list.Add(entry.ToPublic());
             }
-            list.Sort(static (a, b) => a.TimelineStartSeconds.CompareTo(b.TimelineStartSeconds));
+            list.Sort(static (a, b) =>
+            {
+                var start = a.TimelineStartSeconds.CompareTo(b.TimelineStartSeconds);
+                return start != 0 ? start : a.RegistrationOrder.CompareTo(b.RegistrationOrder);
+            });
             return list;
         }
     }
@@ -368,14 +404,28 @@ public static class DanmakuChannelBus
             RegistrationOrder = registrationOrder;
         }
 
-        public DanmakuChannelRegistration ToPublic() => new(
-            SourceKey,
-            ParameterRef,
-            Fps,
-            TotalFrame,
-            TimelineStartSeconds,
-            TimelineDurationSeconds,
-            Layer,
-            TouchTick);
+        public DanmakuChannelRegistration ToPublic()
+        {
+            var start = TimelineStartSeconds;
+            var duration = TimelineDurationSeconds;
+            if (duration <= 0 &&
+                ParameterRef.TryGetTarget(out var parameter) &&
+                parameter.LastTimelineDurationSeconds > 0)
+            {
+                start = parameter.LastTimelineStartSeconds;
+                duration = parameter.LastTimelineDurationSeconds;
+            }
+
+            return new(
+                SourceKey,
+                ParameterRef,
+                Fps,
+                TotalFrame,
+                start,
+                duration,
+                Layer,
+                TouchTick,
+                RegistrationOrder);
+        }
     }
 }

@@ -56,23 +56,101 @@ public static class DanmakuAudioAssignment
             return null;
         }
 
-        var ready = unclaimed
-            .Where(candidate => candidate.TimelineDurationSeconds > 0)
-            .ToArray();
-        var durationMatches = ready
+        // プレビュー先読みでは後続だけ duration が埋まっていることがある。
+        // その場合は長さ一致より登録順を優先し、音声1が弾幕2を奪わないようにする。
+        if (unclaimed.Any(candidate => candidate.TimelineDurationSeconds <= 0))
+        {
+            return unclaimed
+                .OrderBy(candidate => candidate.RegistrationOrder)
+                .ThenBy(candidate => candidate.TimelineStartSeconds)
+                .First()
+                .SourceKey;
+        }
+
+        var durationMatches = unclaimed
             .Where(candidate => Math.Abs(candidate.TimelineDurationSeconds - audioDurationSeconds) <= durationToleranceSeconds)
             .ToArray();
-        var eligible = durationMatches.Length > 0
-            ? durationMatches
-            : ready.Length > 0 ? ready : unclaimed;
+        var eligible = durationMatches.Length > 0 ? durationMatches : unclaimed;
 
         return eligible
-            .OrderBy(candidate => candidate.TimelineDurationSeconds > 0 ? 0 : 1)
-            .ThenBy(candidate => candidate.TimelineStartSeconds)
+            .OrderBy(candidate => candidate.TimelineStartSeconds)
             .ThenBy(candidate => candidate.RegistrationOrder)
             .First()
             .SourceKey;
     }
+}
+
+/// <summary>
+/// 1本の長い音声アイテムが複数の弾幕を跨いでいるかの判定。
+/// 個別の短い音声は false のまま、排他割り当てを使う。
+/// </summary>
+public static class DanmakuSpanningAudio
+{
+    /// <summary>音声が1本の弾幕よりこれ倍以上長いとき、跨ぎ候補とみなす。</summary>
+    public const double DurationSlackFactor = 1.5;
+
+    /// <summary>音声が確定済み弾幕の合計スパンのこれ以上を覆うとき、跨ぎとみなす。</summary>
+    public const double SpanCoverageFactor = 0.8;
+
+    /// <summary>音声の長さが、1本の弾幕の長さより明らかに長いか。</summary>
+    public static bool IsMuchLongerThanItem(double audioDurationSeconds, double itemDurationSeconds) =>
+        itemDurationSeconds > 0 &&
+        audioDurationSeconds + 1e-9 >= itemDurationSeconds * DurationSlackFactor;
+
+    /// <summary>
+    /// 伸ばした1本の音声が複数の弾幕をまたぐか。
+    /// 登録が1件だけのときは、後から2本目が現れても個別音声の割り当てを壊さない。
+    /// </summary>
+    public static bool LooksSpanning(
+        double audioDurationSeconds,
+        int registrationCount,
+        double longestReadyDurationSeconds,
+        double totalReadyTimelineSpanSeconds,
+        int readyCount)
+    {
+        if (audioDurationSeconds <= 0 || registrationCount <= 1)
+        {
+            return false;
+        }
+
+        if (IsMuchLongerThanItem(audioDurationSeconds, longestReadyDurationSeconds))
+        {
+            return true;
+        }
+
+        return readyCount > 1 &&
+               totalReadyTimelineSpanSeconds > 0 &&
+               audioDurationSeconds + 1e-9 >= totalReadyTimelineSpanSeconds * SpanCoverageFactor;
+    }
+
+    /// <summary>
+    /// 未確定の長さで組んだ効果音を、本物の長さが分かったときに作り直すか。
+    /// 他の弾幕の voices は触らない。
+    /// </summary>
+    public static bool ShouldResim(
+        double preparedDurationSeconds,
+        double currentItemDurationSeconds,
+        double durationToleranceSeconds = 0.05)
+    {
+        if (preparedDurationSeconds <= 0 && currentItemDurationSeconds > 0)
+        {
+            return true;
+        }
+
+        return preparedDurationSeconds > 0 &&
+               currentItemDurationSeconds > 0 &&
+               Math.Abs(preparedDurationSeconds - currentItemDurationSeconds) > durationToleranceSeconds;
+    }
+
+    /// <summary>
+    /// 跨ぎ再生なのに長さ0のまま全長シミュレートした弾幕は、そのキーの音だけ捨てて待つ。
+    /// 個別の短い音声では呼ばない。
+    /// </summary>
+    public static bool ShouldDropUntimed(
+        double preparedDurationSeconds,
+        double currentItemDurationSeconds,
+        bool spanning) =>
+        spanning && preparedDurationSeconds <= 0 && currentItemDurationSeconds <= 0;
 }
 
 /// <summary>
