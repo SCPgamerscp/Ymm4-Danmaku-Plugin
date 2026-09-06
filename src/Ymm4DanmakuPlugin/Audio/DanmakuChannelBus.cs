@@ -17,6 +17,8 @@ public sealed class DanmakuChannelRegistration
     public double TimelineDurationSeconds { get; }
     public int Layer { get; }
     public long TouchTick { get; }
+    public long RegistrationOrder { get; }
+    public int LastItemFrame { get; }
 
     internal DanmakuChannelRegistration(
         object sourceKey,
@@ -26,7 +28,9 @@ public sealed class DanmakuChannelRegistration
         double timelineStartSeconds,
         double timelineDurationSeconds,
         int layer,
-        long touchTick)
+        long touchTick,
+        long registrationOrder,
+        int lastItemFrame)
     {
         SourceKey = sourceKey;
         ParameterRef = parameterRef;
@@ -36,6 +40,8 @@ public sealed class DanmakuChannelRegistration
         TimelineDurationSeconds = timelineDurationSeconds;
         Layer = layer;
         TouchTick = touchTick;
+        RegistrationOrder = registrationOrder;
+        LastItemFrame = lastItemFrame;
     }
 }
 
@@ -44,8 +50,9 @@ public sealed class DanmakuChannelRegistration
 /// タイムライン上の各弾幕アイテムの開始位置（秒）を保持し、
 /// 単一の長い音声アイテムや連続配置された音声アイテムに対して正確に音響を配置する。
 /// <para>
-/// 同じチャンネルに複数の弾幕が登録されたままになることがあるため、
-/// 映像側は描画のたびに <see cref="Touch"/> し、音声側は直近に Touch された項目を優先する。
+/// 登録キーはパラメータ生成時の安定キー。映像ソースの Update を待たないため、
+/// プレビューが映像より先に音声を先読みしても、連続する弾幕へ順番に割り当てられる。
+/// 映像側の <see cref="Touch"/> は再生位置の参考情報であり、割り当てそのものには使わない。
 /// </para>
 /// </summary>
 public static class DanmakuChannelBus
@@ -67,19 +74,29 @@ public static class DanmakuChannelBus
         int totalFrame = 1,
         double timelineStartSeconds = 0,
         double timelineDurationSeconds = 0,
-        int layer = 0)
+        int layer = 0,
+        int itemFrame = -1)
     {
         lock (Gate)
         {
             var key = sourceKey ?? parameter;
             fps = fps > 0 ? fps : 60;
             totalFrame = Math.Max(1, totalFrame);
+            // itemFrame < 0 は未指定。0 はアイテム先頭なので終盤判定に使う。
+            var resolvedItemFrame = itemFrame >= 0
+                ? Math.Clamp(itemFrame, 0, Math.Max(0, totalFrame - 1))
+                : Math.Clamp(parameter.LastItemFrame, 0, Math.Max(0, totalFrame - 1));
+            var hasPlaybackFrame = itemFrame >= 0 || parameter.LastTimelineDurationSeconds > 0;
 
             if (Registrations.TryGetValue(key, out var entry))
             {
                 var changed = entry.Fps != fps || entry.TotalFrame != totalFrame;
                 entry.Fps = fps;
                 entry.TotalFrame = totalFrame;
+                if (hasPlaybackFrame)
+                {
+                    entry.LastItemFrame = resolvedItemFrame;
+                }
                 if (timelineDurationSeconds > 0)
                 {
                     changed |= Math.Abs(entry.TimelineStartSeconds - timelineStartSeconds) > 1e-9
@@ -89,20 +106,36 @@ public static class DanmakuChannelBus
                     entry.TimelineDurationSeconds = timelineDurationSeconds;
                     entry.Layer = layer;
                 }
+                else if (parameter.LastTimelineDurationSeconds > 0)
+                {
+                    changed |= Math.Abs(entry.TimelineStartSeconds - parameter.LastTimelineStartSeconds) > 1e-9
+                        || Math.Abs(entry.TimelineDurationSeconds - parameter.LastTimelineDurationSeconds) > 1e-9;
+                    entry.TimelineStartSeconds = parameter.LastTimelineStartSeconds;
+                    entry.TimelineDurationSeconds = parameter.LastTimelineDurationSeconds;
+                }
 
                 if (changed) Version++;
             }
             else
             {
+                var start = timelineStartSeconds;
+                var duration = timelineDurationSeconds;
+                if (duration <= 0 && parameter.LastTimelineDurationSeconds > 0)
+                {
+                    start = parameter.LastTimelineStartSeconds;
+                    duration = parameter.LastTimelineDurationSeconds;
+                }
+
                 Registrations[key] = new Entry(
                     key,
                     parameter,
                     fps,
                     totalFrame,
-                    timelineStartSeconds,
-                    timelineDurationSeconds,
+                    start,
+                    duration,
                     layer,
-                    ++nextRegistrationOrder);
+                    ++nextRegistrationOrder,
+                    resolvedItemFrame);
                 Version++;
             }
         }
@@ -110,9 +143,9 @@ public static class DanmakuChannelBus
 
     /// <summary>
     /// 映像側が「今この瞬間、自分が再生位置にある」と連絡簿へ伝える。
-    /// 同じチャンネルの候補が複数あるとき、音声側は直近に Touch された項目を使う。
+    /// 割り当て自体は登録順と長さで決める。Touch は再生位置の参考情報に留める。
     /// </summary>
-    public static void Touch(object sourceKey)
+    public static void Touch(object sourceKey, int itemFrame = -1, int totalFrame = 0)
     {
         if (sourceKey is null) return;
 
@@ -124,6 +157,11 @@ public static class DanmakuChannelBus
             // Touch は再生位置の担当を示すだけで、音声プロセッサの構造変更ではない。
             // ここで Version を増やすと、連続再生中に既に準備済みの音声が再構築され、
             // 次の弾幕の先頭へ切り替わる前後で音が欠落・途中再生になる。
+            if (totalFrame > 0) entry.TotalFrame = Math.Max(1, totalFrame);
+            if (itemFrame >= 0)
+            {
+                entry.LastItemFrame = Math.Clamp(itemFrame, 0, Math.Max(0, entry.TotalFrame - 1));
+            }
             var channel = ReadChannel(parameter);
             _ = FindLatest(channel);
             entry.TouchTick = ++nextTouchTick;
@@ -162,12 +200,38 @@ public static class DanmakuChannelBus
                 .Where(entry => entry.ParameterRef.TryGetTarget(out var parameter) && MatchesChannel(channel, parameter))
                 .ToArray();
             var candidates = entries
-                .Select(entry => new DanmakuAudioCandidate(
-                    entry.SourceKey,
-                    entry.TimelineStartSeconds,
-                    entry.TimelineDurationSeconds,
-                    entry.TouchTick,
-                    entry.RegistrationOrder))
+                .Select(entry =>
+                {
+                    var start = entry.TimelineStartSeconds;
+                    var duration = entry.TimelineDurationSeconds;
+                    var lastItemFrame = entry.LastItemFrame;
+                    var totalFrame = entry.TotalFrame;
+                    if (entry.ParameterRef.TryGetTarget(out var parameter))
+                    {
+                        if (duration <= 0 && parameter.LastTimelineDurationSeconds > 0)
+                        {
+                            start = parameter.LastTimelineStartSeconds;
+                            duration = parameter.LastTimelineDurationSeconds;
+                        }
+                        if (lastItemFrame <= 0 && parameter.LastItemFrame > 0)
+                        {
+                            lastItemFrame = parameter.LastItemFrame;
+                        }
+                        if (totalFrame <= 1 && parameter.LastTotalFrame > 1)
+                        {
+                            totalFrame = parameter.LastTotalFrame;
+                        }
+                    }
+
+                    return new DanmakuAudioCandidate(
+                        entry.SourceKey,
+                        start,
+                        duration,
+                        entry.TouchTick,
+                        entry.RegistrationOrder,
+                        lastItemFrame,
+                        totalFrame);
+                })
                 .ToArray();
             var claimed = AudioClaims
                 .Where(claim =>
@@ -225,7 +289,11 @@ public static class DanmakuChannelBus
                 if (!MatchesChannel(channel, parameter)) continue;
                 list.Add(entry.ToPublic());
             }
-            list.Sort(static (a, b) => a.TimelineStartSeconds.CompareTo(b.TimelineStartSeconds));
+            list.Sort(static (a, b) =>
+            {
+                var start = a.TimelineStartSeconds.CompareTo(b.TimelineStartSeconds);
+                return start != 0 ? start : a.RegistrationOrder.CompareTo(b.RegistrationOrder);
+            });
             return list;
         }
     }
@@ -347,6 +415,7 @@ public static class DanmakuChannelBus
         public int Layer { get; set; }
         public long TouchTick { get; set; }
         public long RegistrationOrder { get; }
+        public int LastItemFrame { get; set; }
 
         public Entry(
             object sourceKey,
@@ -356,7 +425,8 @@ public static class DanmakuChannelBus
             double timelineStartSeconds,
             double timelineDurationSeconds,
             int layer,
-            long registrationOrder)
+            long registrationOrder,
+            int lastItemFrame = 0)
         {
             SourceKey = sourceKey;
             ParameterRef = new WeakReference<DanmakuShapeParameter>(parameter);
@@ -366,16 +436,43 @@ public static class DanmakuChannelBus
             TimelineDurationSeconds = timelineDurationSeconds;
             Layer = layer;
             RegistrationOrder = registrationOrder;
+            LastItemFrame = lastItemFrame;
         }
 
-        public DanmakuChannelRegistration ToPublic() => new(
-            SourceKey,
-            ParameterRef,
-            Fps,
-            TotalFrame,
-            TimelineStartSeconds,
-            TimelineDurationSeconds,
-            Layer,
-            TouchTick);
+        public DanmakuChannelRegistration ToPublic()
+        {
+            var start = TimelineStartSeconds;
+            var duration = TimelineDurationSeconds;
+            var lastItemFrame = LastItemFrame;
+            var totalFrame = TotalFrame;
+            if (ParameterRef.TryGetTarget(out var parameter))
+            {
+                if (duration <= 0 && parameter.LastTimelineDurationSeconds > 0)
+                {
+                    start = parameter.LastTimelineStartSeconds;
+                    duration = parameter.LastTimelineDurationSeconds;
+                }
+                if (lastItemFrame <= 0 && parameter.LastItemFrame > 0)
+                {
+                    lastItemFrame = parameter.LastItemFrame;
+                }
+                if (totalFrame <= 1 && parameter.LastTotalFrame > 1)
+                {
+                    totalFrame = parameter.LastTotalFrame;
+                }
+            }
+
+            return new(
+                SourceKey,
+                ParameterRef,
+                Fps,
+                totalFrame,
+                start,
+                duration,
+                Layer,
+                TouchTick,
+                RegistrationOrder,
+                lastItemFrame);
+        }
     }
 }
